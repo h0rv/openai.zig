@@ -43,7 +43,7 @@ pub const RealtimeBetaServerEventInputAudioBufferCommitted = struct {
     event_id: []const u8,
     item_id: []const u8,
     type: []const u8,
-    previous_item_id: ?std.json.Value = null,
+    previous_item_id: ??[]const u8 = null,
 };
 
 pub const FunctionShellCallItemStatus = []const u8;
@@ -105,34 +105,34 @@ pub const CreateTranscriptionResponseDiarizedJson = struct {
 };
 
 pub const ResponsesClientEventResponseCreate = struct {
-    instructions: ?std.json.Value = null,
+    instructions: ??[]const u8 = null,
     tools: ?ToolsArray = null,
-    conversation: ?std.json.Value = null,
-    store: ?std.json.Value = null,
-    context_management: ?std.json.Value = null,
+    conversation: ??ConversationParam = null,
+    store: ??bool = null,
+    context_management: ??[]const ContextManagementParam = null,
     model: ?[]const u8 = null,
-    stream: ?std.json.Value = null,
-    parallel_tool_calls: ?std.json.Value = null,
+    stream: ??bool = null,
+    parallel_tool_calls: ??bool = null,
     stream_options: ?ResponseStreamOptions = null,
     safety_identifier: ?[]const u8 = null,
     text: ?ResponseTextParam = null,
     metadata: ?Metadata = null,
     input: ?InputParam = null,
     type: []const u8,
-    previous_response_id: ?std.json.Value = null,
+    previous_response_id: ??[]const u8 = null,
     top_logprobs: ?i64 = null,
-    reasoning: ?std.json.Value = null,
-    truncation: ?std.json.Value = null,
-    max_tool_calls: ?std.json.Value = null,
+    reasoning: ??Reasoning = null,
+    truncation: ??[]const u8 = null,
+    max_tool_calls: ??i64 = null,
     prompt: ?Prompt = null,
-    temperature: ?std.json.Value = null,
-    max_output_tokens: ?std.json.Value = null,
+    temperature: ??f64 = null,
+    max_output_tokens: ??i64 = null,
     user: ?[]const u8 = null,
-    background: ?std.json.Value = null,
-    prompt_cache_retention: ?std.json.Value = null,
-    include: ?std.json.Value = null,
+    background: ??bool = null,
+    prompt_cache_retention: ??[]const u8 = null,
+    include: ??[]const IncludeEnum = null,
     tool_choice: ?ToolChoiceParam = null,
-    top_p: ?std.json.Value = null,
+    top_p: ??f64 = null,
     service_tier: ?ServiceTier = null,
     prompt_cache_key: ?[]const u8 = null,
 };
@@ -178,22 +178,22 @@ pub const RealtimeServerEventInputAudioBufferTimeoutTriggered = struct {
 pub const ChatkitWorkflow = struct {
     tracing: ChatkitWorkflowTracing,
     id: []const u8,
-    version: std.json.Value,
-    state_variables: std.json.Value,
+    version: ?[]const u8,
+    state_variables: ?std.json.Value,
 };
 
 pub const EvalResponsesSource = struct {
-    top_p: ?std.json.Value = null,
-    tools: ?std.json.Value = null,
-    created_before: ?std.json.Value = null,
-    users: ?std.json.Value = null,
-    reasoning_effort: ?std.json.Value = null,
-    temperature: ?std.json.Value = null,
-    created_after: ?std.json.Value = null,
-    metadata: ?std.json.Value = null,
+    top_p: ??f64 = null,
+    tools: ??[]const []const u8 = null,
+    created_before: ??i64 = null,
+    users: ??[]const []const u8 = null,
+    reasoning_effort: ??ReasoningEffort = null,
+    temperature: ??f64 = null,
+    created_after: ??i64 = null,
+    metadata: ??std.json.Value = null,
     model: ?[]const u8 = null,
     type: []const u8,
-    instructions_search: ?std.json.Value = null,
+    instructions_search: ??[]const u8 = null,
 };
 
 pub const SpecificApplyPatchParam = struct {
@@ -304,15 +304,15 @@ pub const ApplyPatchUpdateFileOperationParam = struct {
 };
 
 pub const UsageImagesResult = struct {
-    size: ?std.json.Value = null,
+    size: ??[]const u8 = null,
     num_model_requests: i64,
-    user_id: ?std.json.Value = null,
-    api_key_id: ?std.json.Value = null,
+    user_id: ??[]const u8 = null,
+    api_key_id: ??[]const u8 = null,
     object: []const u8,
-    source: ?std.json.Value = null,
+    source: ??[]const u8 = null,
     model: ?[]const u8 = null,
     images: i64,
-    project_id: ?std.json.Value = null,
+    project_id: ??[]const u8 = null,
 };
 
 pub const RealtimeServerEventMCPListToolsCompleted = struct {
@@ -398,10 +398,10 @@ pub const CreateImageRequest = struct {
 };
 
 pub const FunctionShellCallItemParam = struct {
-    status: ?std.json.Value = null,
-    environment: ?std.json.Value = null,
+    status: ??FunctionShellCallItemStatus = null,
+    environment: ??std.json.Value = null,
     call_id: []const u8,
-    id: ?std.json.Value = null,
+    id: ??[]const u8 = null,
     type: []const u8,
     action: FunctionShellActionParam,
 };
@@ -425,12 +425,12 @@ pub const LocalShellCallOutputStatusEnum = []const u8;
 
 pub const UsageAudioTranscriptionsResult = struct {
     num_model_requests: i64,
-    user_id: ?std.json.Value = null,
-    api_key_id: ?std.json.Value = null,
+    user_id: ??[]const u8 = null,
+    api_key_id: ??[]const u8 = null,
     object: []const u8,
     seconds: i64,
     model: ?[]const u8 = null,
-    project_id: ?std.json.Value = null,
+    project_id: ??[]const u8 = null,
 };
 
 pub const RealtimeServerEventResponseCreated = struct {
@@ -441,8 +441,8 @@ pub const RealtimeServerEventResponseCreated = struct {
 
 pub const CodeInterpreterToolCall = struct {
     status: []const u8,
-    code: std.json.Value,
-    outputs: std.json.Value,
+    code: ?[]const u8,
+    outputs: ?[]const std.json.Value,
     id: []const u8,
     type: []const u8,
     container_id: []const u8,
@@ -499,9 +499,9 @@ pub const SpecificFunctionShellParam = struct {
 pub const ListFineTuningCheckpointPermissionResponse = struct {
     data: []const FineTuningCheckpointPermission,
     object: []const u8,
-    last_id: ?std.json.Value = null,
+    last_id: ??[]const u8 = null,
     has_more: bool,
-    first_id: ?std.json.Value = null,
+    first_id: ??[]const u8 = null,
 };
 
 pub const ResponseFunctionCallArgumentsDoneEvent = struct {
@@ -518,9 +518,38 @@ pub const MessageContentTextObject = struct {
     type: []const u8,
 };
 
-pub const RunStepCompletionUsage = std.json.Value;
+pub const RunStepCompletionUsage = ?std.json.Value;
 
-pub const TranscriptionChunkingStrategy = std.json.Value;
+pub const TranscriptionChunkingStrategyVariant0 = []const u8;
+
+pub const TranscriptionChunkingStrategy = union(enum) {
+    string: []const u8,
+    vadconfig: VadConfig,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (std.json.parseFromValueLeaky([]const u8, allocator, source, options)) |value| {
+            return .{ .string = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(VadConfig, allocator, source, options)) |value| {
+            return .{ .vadconfig = value };
+        } else |_| {}
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .string => |value| try jw.write(value),
+            .vadconfig => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const ModifyCertificateRequest = struct {
     name: []const u8,
@@ -598,7 +627,7 @@ pub const TextResponseFormatJsonSchema = struct {
     schema: ResponseFormatJsonSchemaSchema,
     name: []const u8,
     type: []const u8,
-    strict: ?std.json.Value = null,
+    strict: ??bool = null,
 };
 
 pub const ApplyPatchToolCall = struct {
@@ -624,7 +653,29 @@ pub const RealtimeBetaServerEventMCPListToolsFailed = struct {
     type: []const u8,
 };
 
-pub const ChatCompletionRequestSystemMessageContentPart = std.json.Value;
+pub const ChatCompletionRequestSystemMessageContentPart = union(enum) {
+    chatcompletionrequestmessagecontentparttext: ChatCompletionRequestMessageContentPartText,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (std.json.parseFromValueLeaky(ChatCompletionRequestMessageContentPartText, allocator, source, options)) |value| {
+            return .{ .chatcompletionrequestmessagecontentparttext = value };
+        } else |_| {}
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .chatcompletionrequestmessagecontentparttext => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const TranscriptionSegment = struct {
     avg_logprob: f64,
@@ -652,7 +703,7 @@ pub const InputTextContentParam = struct {
     type: []const u8,
 };
 
-pub const ChatCompletionModalities = std.json.Value;
+pub const ChatCompletionModalities = ?[]const []const u8;
 
 pub const CreateSpeechRequest = struct {
     speed: ?f64 = null,
@@ -709,8 +760,8 @@ pub const RunStepDeltaStepDetailsToolCallsFileSearchObject = struct {
 };
 
 pub const ChatSessionFileUpload = struct {
-    max_file_size: std.json.Value,
-    max_files: std.json.Value,
+    max_file_size: ?i64,
+    max_files: ?i64,
     enabled: bool,
 };
 
@@ -731,17 +782,49 @@ pub const CreateTranscriptionRequest = struct {
     include: ?[]const TranscriptionInclude = null,
     timestamp_granularities: ?[]const []const u8 = null,
     response_format: ?AudioResponseFormat = null,
-    chunking_strategy: ?std.json.Value = null,
+    chunking_strategy: ??std.json.Value = null,
     prompt: ?[]const u8 = null,
     temperature: ?f64 = null,
     known_speaker_references: ?[]const []const u8 = null,
     known_speaker_names: ?[]const []const u8 = null,
     model: []const u8,
     language: ?[]const u8 = null,
-    stream: ?std.json.Value = null,
+    stream: ??bool = null,
 };
 
-pub const CreateEvalItem = std.json.Value;
+pub const CreateEvalItemVariant0 = struct {
+    role: []const u8,
+    content: []const u8,
+};
+
+pub const CreateEvalItem = union(enum) {
+    simpleinputmessage: CreateEvalItemVariant0,
+    evalitem: EvalItem,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (std.json.parseFromValueLeaky(CreateEvalItemVariant0, allocator, source, options)) |value| {
+            return .{ .simpleinputmessage = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(EvalItem, allocator, source, options)) |value| {
+            return .{ .evalitem = value };
+        } else |_| {}
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .simpleinputmessage => |value| try jw.write(value),
+            .evalitem => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const RealtimeMCPToolExecutionError = struct {
     type: []const u8,
@@ -765,7 +848,42 @@ pub const RealtimeServerEventResponseFunctionCallArgumentsDone = struct {
     output_index: i64,
 };
 
-pub const RealtimeTruncation = std.json.Value;
+pub const RealtimeTruncationVariant0 = []const u8;
+
+pub const RealtimeTruncationVariant1 = struct {
+    token_limits: ?std.json.Value = null,
+    type: []const u8,
+    retention_ratio: f64,
+};
+
+pub const RealtimeTruncation = union(enum) {
+    string: []const u8,
+    retention_ratio: RealtimeTruncationVariant1,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (std.json.parseFromValueLeaky([]const u8, allocator, source, options)) |value| {
+            return .{ .string = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(RealtimeTruncationVariant1, allocator, source, options)) |value| {
+            return .{ .retention_ratio = value };
+        } else |_| {}
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .string => |value| try jw.write(value),
+            .retention_ratio => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const RealtimeBetaServerEventInputAudioBufferSpeechStopped = struct {
     event_id: []const u8,
@@ -776,7 +894,7 @@ pub const RealtimeBetaServerEventInputAudioBufferSpeechStopped = struct {
 
 pub const FileSearchToolCall = struct {
     status: []const u8,
-    results: ?std.json.Value = null,
+    results: ??[]const std.json.Value = null,
     id: []const u8,
     type: []const u8,
     queries: []const []const u8,
@@ -785,9 +903,9 @@ pub const FileSearchToolCall = struct {
 pub const SkillVersionListResource = struct {
     object: []const u8,
     data: []const SkillVersionResource,
-    last_id: std.json.Value,
+    last_id: ?[]const u8,
     has_more: bool,
-    first_id: std.json.Value,
+    first_id: ?[]const u8,
 };
 
 pub const UrlCitationBody = struct {
@@ -808,17 +926,17 @@ pub const WidgetMessageItem = struct {
 };
 
 pub const Error = struct {
-    code: std.json.Value,
+    code: ?[]const u8,
     message: []const u8,
     type: []const u8,
-    param: std.json.Value,
+    param: ?[]const u8,
 };
 
 pub const MCPApprovalResponse = struct {
     approve: bool,
-    id: ?std.json.Value = null,
+    id: ??[]const u8 = null,
     type: []const u8,
-    reason: ?std.json.Value = null,
+    reason: ??[]const u8 = null,
     approval_request_id: []const u8,
 };
 
@@ -877,7 +995,7 @@ pub const ImageGenTool = struct {
     action: ?ImageGenActionEnum = null,
     input_image_mask: ?std.json.Value = null,
     type: []const u8,
-    input_fidelity: ?std.json.Value = null,
+    input_fidelity: ??InputFidelity = null,
 };
 
 pub const ContainerFileResource = struct {
@@ -893,16 +1011,16 @@ pub const ContainerFileResource = struct {
 pub const RunStepObject = struct {
     created_at: i64,
     step_details: std.json.Value,
-    completed_at: std.json.Value,
-    cancelled_at: std.json.Value,
+    completed_at: ?i64,
+    cancelled_at: ?i64,
     object: []const u8,
     status: []const u8,
-    last_error: std.json.Value,
+    last_error: ?std.json.Value,
     usage: RunStepCompletionUsage,
     id: []const u8,
-    failed_at: std.json.Value,
+    failed_at: ?i64,
     assistant_id: []const u8,
-    expired_at: std.json.Value,
+    expired_at: ?i64,
     thread_id: []const u8,
     run_id: []const u8,
     metadata: Metadata,
@@ -921,12 +1039,39 @@ pub const DeletedConversation = struct {
     deleted: bool,
 };
 
-pub const EvalItemContent = std.json.Value;
+pub const EvalItemContent = union(enum) {
+    evalitemcontentitem: EvalItemContentItem,
+    evalitemcontentarray: EvalItemContentArray,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (std.json.parseFromValueLeaky(EvalItemContentItem, allocator, source, options)) |value| {
+            return .{ .evalitemcontentitem = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(EvalItemContentArray, allocator, source, options)) |value| {
+            return .{ .evalitemcontentarray = value };
+        } else |_| {}
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .evalitemcontentitem => |value| try jw.write(value),
+            .evalitemcontentarray => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const EvalRunOutputItemResult = struct {
     passed: bool,
     score: f64,
-    sample: ?std.json.Value = null,
+    sample: ??std.json.Value = null,
     name: []const u8,
     type: ?[]const u8 = null,
 };
@@ -935,7 +1080,7 @@ pub const MCPApprovalResponseResource = struct {
     approve: bool,
     id: []const u8,
     type: []const u8,
-    reason: ?std.json.Value = null,
+    reason: ??[]const u8 = null,
     approval_request_id: []const u8,
 };
 
@@ -1045,9 +1190,9 @@ pub const TypeParam = struct {
 pub const ApplyPatchToolCallOutputItemParam = struct {
     status: ApplyPatchCallOutputStatusParam,
     call_id: []const u8,
-    id: ?std.json.Value = null,
+    id: ??[]const u8 = null,
     type: []const u8,
-    output: ?std.json.Value = null,
+    output: ??[]const u8 = null,
 };
 
 pub const ResponseWebSearchCallSearchingEvent = struct {
@@ -1115,9 +1260,41 @@ pub const AssistantsNamedToolChoice = struct {
     function: ?std.json.Value = null,
 };
 
-pub const InputItem = std.json.Value;
+pub const InputItem = union(enum) {
+    easyinputmessage: EasyInputMessage,
+    item: Item,
+    itemreferenceparam: ItemReferenceParam,
+    raw: std.json.Value,
 
-pub const Verbosity = std.json.Value;
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (std.json.parseFromValueLeaky(EasyInputMessage, allocator, source, options)) |value| {
+            return .{ .easyinputmessage = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(Item, allocator, source, options)) |value| {
+            return .{ .item = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ItemReferenceParam, allocator, source, options)) |value| {
+            return .{ .itemreferenceparam = value };
+        } else |_| {}
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .easyinputmessage => |value| try jw.write(value),
+            .item => |value| try jw.write(value),
+            .itemreferenceparam => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
+
+pub const Verbosity = ?[]const u8;
 
 pub const DeletedConversationResource = struct {
     object: []const u8,
@@ -1134,8 +1311,8 @@ pub const AuditLogActor = struct {
 pub const CostsResult = struct {
     object: []const u8,
     amount: ?std.json.Value = null,
-    line_item: ?std.json.Value = null,
-    project_id: ?std.json.Value = null,
+    line_item: ??[]const u8 = null,
+    project_id: ??[]const u8 = null,
 };
 
 pub const CreateSpeechResponseStreamEvent = union(enum) {
@@ -1183,7 +1360,7 @@ pub const FineTuneSupervisedHyperparameters = struct {
 };
 
 pub const FunctionShellToolParam = struct {
-    environment: ?std.json.Value = null,
+    environment: ??std.json.Value = null,
     type: []const u8,
 };
 
@@ -1195,14 +1372,14 @@ pub const RealtimeBetaServerEventConversationItemCreated = struct {
     event_id: []const u8,
     item: RealtimeConversationItem,
     type: []const u8,
-    previous_item_id: ?std.json.Value = null,
+    previous_item_id: ??[]const u8 = null,
 };
 
 pub const ProjectGroupListResource = struct {
     object: []const u8,
     data: []const ProjectGroup,
     has_more: bool,
-    next: std.json.Value,
+    next: ?[]const u8,
 };
 
 pub const CreateEvalJsonlRunDataSource = struct {
@@ -1225,7 +1402,7 @@ pub const VectorStoreSearchResultContentObject = struct {
 };
 
 pub const EasyInputMessage = struct {
-    phase: ?std.json.Value = null,
+    phase: ??MessagePhase = null,
     role: []const u8,
     type: ?[]const u8 = null,
     content: std.json.Value,
@@ -1250,7 +1427,46 @@ pub const WebhookEvalRunSucceeded = struct {
     type: []const u8,
 };
 
-pub const AssistantsApiResponseFormatOption = std.json.Value;
+pub const AssistantsApiResponseFormatOptionVariant0 = []const u8;
+
+pub const AssistantsApiResponseFormatOption = union(enum) {
+    string: []const u8,
+    responseformattext: ResponseFormatText,
+    responseformatjsonobject: ResponseFormatJsonObject,
+    responseformatjsonschema: ResponseFormatJsonSchema,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (std.json.parseFromValueLeaky([]const u8, allocator, source, options)) |value| {
+            return .{ .string = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ResponseFormatText, allocator, source, options)) |value| {
+            return .{ .responseformattext = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ResponseFormatJsonObject, allocator, source, options)) |value| {
+            return .{ .responseformatjsonobject = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ResponseFormatJsonSchema, allocator, source, options)) |value| {
+            return .{ .responseformatjsonschema = value };
+        } else |_| {}
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .string => |value| try jw.write(value),
+            .responseformattext => |value| try jw.write(value),
+            .responseformatjsonobject => |value| try jw.write(value),
+            .responseformatjsonschema => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const ChatCompletionMessageCustomToolCall = struct {
     custom: std.json.Value,
@@ -1272,7 +1488,7 @@ pub const LocalEnvironmentParam = struct {
 pub const WebSearchPreviewTool = struct {
     search_context_size: ?SearchContextSize = null,
     search_content_types: ?[]const SearchContentType = null,
-    user_location: ?std.json.Value = null,
+    user_location: ??ApproximateLocation = null,
     type: []const u8,
 };
 
@@ -1291,7 +1507,7 @@ pub const ThreadResource = struct {
     status: std.json.Value,
     id: []const u8,
     user: []const u8,
-    title: std.json.Value,
+    title: ?[]const u8,
 };
 
 pub const RealtimeBetaServerEventResponseMCPCallCompleted = struct {
@@ -1339,7 +1555,7 @@ pub const RealtimeBetaServerEventConversationItemInputAudioTranscriptionDelta = 
     event_id: []const u8,
     item_id: []const u8,
     delta: ?[]const u8 = null,
-    logprobs: ?std.json.Value = null,
+    logprobs: ??[]const LogProbProperties = null,
     type: []const u8,
     content_index: ?i64 = null,
 };
@@ -1375,7 +1591,7 @@ pub const FileCitationBody = struct {
     index: i64,
 };
 
-pub const PartialImages = std.json.Value;
+pub const PartialImages = ?i64;
 
 pub const ResponseOutputTextAnnotationAddedEvent = struct {
     annotation: std.json.Value,
@@ -1397,7 +1613,38 @@ pub const RunStepDeltaStepDetailsToolCallsCodeOutputImageObject = struct {
     type: []const u8,
 };
 
-pub const StopConfiguration = std.json.Value;
+pub const StopConfigurationVariant0 = []const u8;
+
+pub const StopConfigurationVariant1 = []const []const u8;
+
+pub const StopConfiguration = union(enum) {
+    string: []const u8,
+    items: []const []const u8,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (std.json.parseFromValueLeaky([]const u8, allocator, source, options)) |value| {
+            return .{ .string = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky([]const []const u8, allocator, source, options)) |value| {
+            return .{ .items = value };
+        } else |_| {}
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .string => |value| try jw.write(value),
+            .items => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const ResponseOutputItemAddedEvent = struct {
     item: OutputItem,
@@ -1439,11 +1686,33 @@ pub const ChatCompletionChunkChoice = struct {
     logprobs: ?std.json.Value = null,
 };
 
-pub const ChatCompletionRequestToolMessageContentPart = std.json.Value;
+pub const ChatCompletionRequestToolMessageContentPart = union(enum) {
+    chatcompletionrequestmessagecontentparttext: ChatCompletionRequestMessageContentPartText,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (std.json.parseFromValueLeaky(ChatCompletionRequestMessageContentPartText, allocator, source, options)) |value| {
+            return .{ .chatcompletionrequestmessagecontentparttext = value };
+        } else |_| {}
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .chatcompletionrequestmessagecontentparttext => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const CompactionSummaryItemParam = struct {
     encrypted_content: []const u8,
-    id: ?std.json.Value = null,
+    id: ??[]const u8 = null,
     type: []const u8,
 };
 
@@ -1513,9 +1782,9 @@ pub const GroupUserDeletedResource = struct {
 };
 
 pub const Reasoning = struct {
-    generate_summary: ?std.json.Value = null,
+    generate_summary: ??[]const u8 = null,
     effort: ?ReasoningEffort = null,
-    summary: ?std.json.Value = null,
+    summary: ??[]const u8 = null,
 };
 
 pub const ResponseMCPCallCompletedEvent = struct {
@@ -1529,7 +1798,7 @@ pub const VectorStoreFileContentResponse = struct {
     object: []const u8,
     data: []const std.json.Value,
     has_more: bool,
-    next_page: std.json.Value,
+    next_page: ?[]const u8,
 };
 
 pub const GroupResponse = struct {
@@ -1542,7 +1811,7 @@ pub const GroupResponse = struct {
 pub const ChatCompletionRequestFunctionMessage = struct {
     role: []const u8,
     name: []const u8,
-    content: std.json.Value,
+    content: ?[]const u8,
 };
 
 pub const ListFilesResponse = struct {
@@ -1613,7 +1882,36 @@ pub const RealtimeConversationItemMessageSystem = struct {
     content: []const std.json.Value,
 };
 
-pub const ConversationParam = std.json.Value;
+pub const ConversationParamVariant0 = []const u8;
+
+pub const ConversationParam = union(enum) {
+    conversation_id: []const u8,
+    conversationparam_2: @"ConversationParam-2",
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (std.json.parseFromValueLeaky([]const u8, allocator, source, options)) |value| {
+            return .{ .conversation_id = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(@"ConversationParam-2", allocator, source, options)) |value| {
+            return .{ .conversationparam_2 = value };
+        } else |_| {}
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .conversation_id => |value| try jw.write(value),
+            .conversationparam_2 => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const ListAssistantsResponse = struct {
     object: []const u8,
@@ -1642,7 +1940,7 @@ pub const RealtimeServerEventConversationItemInputAudioTranscriptionDelta = stru
     event_id: []const u8,
     item_id: []const u8,
     delta: ?[]const u8 = null,
-    logprobs: ?std.json.Value = null,
+    logprobs: ??[]const LogProbProperties = null,
     type: []const u8,
     content_index: ?i64 = null,
 };
@@ -1734,7 +2032,7 @@ pub const Invite = struct {
 pub const UserMessageItem = struct {
     created_at: i64,
     attachments: []const Attachment,
-    inference_options: std.json.Value,
+    inference_options: ?InferenceOptions,
     object: []const u8,
     thread_id: []const u8,
     id: []const u8,
@@ -1778,7 +2076,7 @@ pub const FilePath = struct {
 };
 
 pub const PublicCreateOrganizationRoleBody = struct {
-    description: ?std.json.Value = null,
+    description: ??[]const u8 = null,
     role_name: []const u8,
     permissions: []const []const u8,
 };
@@ -1795,8 +2093,8 @@ pub const RealtimeServerEventResponseContentPartDone = struct {
 
 pub const VectorStoreObject = struct {
     created_at: i64,
-    expires_at: ?std.json.Value = null,
-    last_active_at: std.json.Value,
+    expires_at: ??i64 = null,
+    last_active_at: ?i64,
     object: []const u8,
     file_counts: std.json.Value,
     usage_bytes: i64,
@@ -2075,7 +2373,99 @@ pub const ResponseMCPListToolsCompletedEvent = struct {
     output_index: i64,
 };
 
-pub const Tool = std.json.Value;
+pub const Tool = union(enum) {
+    functiontool: FunctionTool,
+    filesearchtool: FileSearchTool,
+    computertool: ComputerTool,
+    computerusepreviewtool: ComputerUsePreviewTool,
+    websearchtool: WebSearchTool,
+    mcptool: MCPTool,
+    codeinterpretertool: CodeInterpreterTool,
+    imagegentool: ImageGenTool,
+    localshelltoolparam: LocalShellToolParam,
+    functionshelltoolparam: FunctionShellToolParam,
+    customtoolparam: CustomToolParam,
+    namespacetoolparam: NamespaceToolParam,
+    toolsearchtoolparam: ToolSearchToolParam,
+    websearchpreviewtool: WebSearchPreviewTool,
+    applypatchtoolparam: ApplyPatchToolParam,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (std.json.parseFromValueLeaky(FunctionTool, allocator, source, options)) |value| {
+            return .{ .functiontool = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(FileSearchTool, allocator, source, options)) |value| {
+            return .{ .filesearchtool = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ComputerTool, allocator, source, options)) |value| {
+            return .{ .computertool = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ComputerUsePreviewTool, allocator, source, options)) |value| {
+            return .{ .computerusepreviewtool = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(WebSearchTool, allocator, source, options)) |value| {
+            return .{ .websearchtool = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(MCPTool, allocator, source, options)) |value| {
+            return .{ .mcptool = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(CodeInterpreterTool, allocator, source, options)) |value| {
+            return .{ .codeinterpretertool = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ImageGenTool, allocator, source, options)) |value| {
+            return .{ .imagegentool = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(LocalShellToolParam, allocator, source, options)) |value| {
+            return .{ .localshelltoolparam = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(FunctionShellToolParam, allocator, source, options)) |value| {
+            return .{ .functionshelltoolparam = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(CustomToolParam, allocator, source, options)) |value| {
+            return .{ .customtoolparam = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(NamespaceToolParam, allocator, source, options)) |value| {
+            return .{ .namespacetoolparam = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ToolSearchToolParam, allocator, source, options)) |value| {
+            return .{ .toolsearchtoolparam = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(WebSearchPreviewTool, allocator, source, options)) |value| {
+            return .{ .websearchpreviewtool = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ApplyPatchToolParam, allocator, source, options)) |value| {
+            return .{ .applypatchtoolparam = value };
+        } else |_| {}
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .functiontool => |value| try jw.write(value),
+            .filesearchtool => |value| try jw.write(value),
+            .computertool => |value| try jw.write(value),
+            .computerusepreviewtool => |value| try jw.write(value),
+            .websearchtool => |value| try jw.write(value),
+            .mcptool => |value| try jw.write(value),
+            .codeinterpretertool => |value| try jw.write(value),
+            .imagegentool => |value| try jw.write(value),
+            .localshelltoolparam => |value| try jw.write(value),
+            .functionshelltoolparam => |value| try jw.write(value),
+            .customtoolparam => |value| try jw.write(value),
+            .namespacetoolparam => |value| try jw.write(value),
+            .toolsearchtoolparam => |value| try jw.write(value),
+            .websearchpreviewtool => |value| try jw.write(value),
+            .applypatchtoolparam => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const PublicAssignOrganizationGroupRoleBody = struct {
     role_id: []const u8,
@@ -2084,7 +2474,7 @@ pub const PublicAssignOrganizationGroupRoleBody = struct {
 pub const ClickParam = struct {
     x: i64,
     button: ClickButtonType,
-    keys: ?std.json.Value = null,
+    keys: ??[]const []const u8 = null,
     type: []const u8,
     y: i64,
 };
@@ -2125,9 +2515,85 @@ pub const EvalRun = struct {
     result_counts: std.json.Value,
 };
 
-pub const RealtimeAudioFormats = std.json.Value;
+pub const RealtimeAudioFormatsVariant0 = struct {
+    type: ?[]const u8 = null,
+    rate: ?i64 = null,
+};
 
-pub const InputParam = std.json.Value;
+pub const RealtimeAudioFormatsVariant1 = struct {
+    type: ?[]const u8 = null,
+};
+
+pub const RealtimeAudioFormatsVariant2 = struct {
+    type: ?[]const u8 = null,
+};
+
+pub const RealtimeAudioFormats = union(enum) {
+    audio_pcm: RealtimeAudioFormatsVariant0,
+    audio_pcmu: RealtimeAudioFormatsVariant1,
+    audio_pcma: RealtimeAudioFormatsVariant2,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (std.json.parseFromValueLeaky(RealtimeAudioFormatsVariant0, allocator, source, options)) |value| {
+            return .{ .audio_pcm = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(RealtimeAudioFormatsVariant1, allocator, source, options)) |value| {
+            return .{ .audio_pcmu = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(RealtimeAudioFormatsVariant2, allocator, source, options)) |value| {
+            return .{ .audio_pcma = value };
+        } else |_| {}
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .audio_pcm => |value| try jw.write(value),
+            .audio_pcmu => |value| try jw.write(value),
+            .audio_pcma => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
+
+pub const InputParamVariant0 = []const u8;
+
+pub const InputParamVariant1 = []const InputItem;
+
+pub const InputParam = union(enum) {
+    text: []const u8,
+    input_item_list: []const InputItem,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (std.json.parseFromValueLeaky([]const u8, allocator, source, options)) |value| {
+            return .{ .text = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky([]const InputItem, allocator, source, options)) |value| {
+            return .{ .input_item_list = value };
+        } else |_| {}
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .text => |value| try jw.write(value),
+            .input_item_list => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const ChatSessionAutomaticThreadTitling = struct {
     enabled: bool,
@@ -2157,11 +2623,11 @@ pub const RealtimeSessionCreateResponse = struct {
 pub const UsageModerationsResult = struct {
     input_tokens: i64,
     num_model_requests: i64,
-    user_id: ?std.json.Value = null,
-    api_key_id: ?std.json.Value = null,
+    user_id: ??[]const u8 = null,
+    api_key_id: ??[]const u8 = null,
     object: []const u8,
     model: ?[]const u8 = null,
-    project_id: ?std.json.Value = null,
+    project_id: ??[]const u8 = null,
 };
 
 pub const Batch = struct {
@@ -2189,7 +2655,7 @@ pub const Batch = struct {
     request_counts: ?std.json.Value = null,
 };
 
-pub const Metadata = std.json.Value;
+pub const Metadata = ?std.json.Value;
 
 pub const ImageGenInputUsageDetails = struct {
     image_tokens: i64,
@@ -2247,22 +2713,22 @@ pub const Role = struct {
     resource_type: []const u8,
     permissions: []const []const u8,
     object: []const u8,
-    description: std.json.Value,
+    description: ?[]const u8,
     predefined_role: bool,
     id: []const u8,
     name: []const u8,
 };
 
 pub const MCPToolCall = struct {
-    @"error": ?std.json.Value = null,
-    output: ?std.json.Value = null,
+    @"error": ??[]const u8 = null,
+    output: ??[]const u8 = null,
     server_label: []const u8,
     status: ?MCPToolCallStatus = null,
     arguments: []const u8,
     id: []const u8,
     type: []const u8,
     name: []const u8,
-    approval_request_id: ?std.json.Value = null,
+    approval_request_id: ??[]const u8 = null,
 };
 
 pub const ResponseReasoningTextDeltaEvent = struct {
@@ -2294,7 +2760,7 @@ pub const RealtimeSessionCreateRequest = struct {
 };
 
 pub const ToolSearchCall = struct {
-    call_id: std.json.Value,
+    call_id: ?[]const u8,
     status: FunctionCallStatus,
     arguments: std.json.Value,
     id: []const u8,
@@ -2315,7 +2781,7 @@ pub const ResponseTextDoneEvent = struct {
     output_index: i64,
 };
 
-pub const ReasoningEffort = std.json.Value;
+pub const ReasoningEffort = ?[]const u8;
 
 pub const AssistantToolsFileSearchTypeOnly = struct {
     type: []const u8,
@@ -2333,7 +2799,7 @@ pub const MessageContentImageUrlObject = struct {
     type: []const u8,
 };
 
-pub const VectorStoreFileAttributes = std.json.Value;
+pub const VectorStoreFileAttributes = ?std.json.Value;
 
 pub const ProjectListResponse = struct {
     object: []const u8,
@@ -2343,17 +2809,83 @@ pub const ProjectListResponse = struct {
     first_id: []const u8,
 };
 
-pub const Filters = std.json.Value;
+pub const Filters = union(enum) {
+    comparisonfilter: ComparisonFilter,
+    compoundfilter: CompoundFilter,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (std.json.parseFromValueLeaky(ComparisonFilter, allocator, source, options)) |value| {
+            return .{ .comparisonfilter = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(CompoundFilter, allocator, source, options)) |value| {
+            return .{ .compoundfilter = value };
+        } else |_| {}
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .comparisonfilter => |value| try jw.write(value),
+            .compoundfilter => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const ThreadListResource = struct {
     object: []const u8,
     data: []const ThreadResource,
-    last_id: std.json.Value,
+    last_id: ?[]const u8,
     has_more: bool,
-    first_id: std.json.Value,
+    first_id: ?[]const u8,
 };
 
-pub const ChatCompletionToolChoiceOption = std.json.Value;
+pub const ChatCompletionToolChoiceOptionVariant0 = []const u8;
+
+pub const ChatCompletionToolChoiceOption = union(enum) {
+    tool_choice_mode: []const u8,
+    chatcompletionallowedtoolschoice: ChatCompletionAllowedToolsChoice,
+    chatcompletionnamedtoolchoice: ChatCompletionNamedToolChoice,
+    chatcompletionnamedtoolchoicecustom: ChatCompletionNamedToolChoiceCustom,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (std.json.parseFromValueLeaky([]const u8, allocator, source, options)) |value| {
+            return .{ .tool_choice_mode = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ChatCompletionAllowedToolsChoice, allocator, source, options)) |value| {
+            return .{ .chatcompletionallowedtoolschoice = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ChatCompletionNamedToolChoice, allocator, source, options)) |value| {
+            return .{ .chatcompletionnamedtoolchoice = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ChatCompletionNamedToolChoiceCustom, allocator, source, options)) |value| {
+            return .{ .chatcompletionnamedtoolchoicecustom = value };
+        } else |_| {}
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .tool_choice_mode => |value| try jw.write(value),
+            .chatcompletionallowedtoolschoice => |value| try jw.write(value),
+            .chatcompletionnamedtoolchoice => |value| try jw.write(value),
+            .chatcompletionnamedtoolchoicecustom => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const CreateImageVariationRequest = struct {
     size: ?[]const u8 = null,
@@ -2384,8 +2916,8 @@ pub const ResponseCodeInterpreterCallInProgressEvent = struct {
 };
 
 pub const CreateConversationBody = struct {
-    items: ?std.json.Value = null,
-    metadata: ?std.json.Value = null,
+    items: ??[]const InputItem = null,
+    metadata: ??Metadata = null,
 };
 
 pub const TaskType = []const u8;
@@ -2416,10 +2948,10 @@ pub const ResponseReasoningSummaryTextDeltaEvent = struct {
 
 pub const LocalShellExecAction = struct {
     command: []const []const u8,
-    working_directory: ?std.json.Value = null,
-    timeout_ms: ?std.json.Value = null,
+    working_directory: ??[]const u8 = null,
+    timeout_ms: ??i64 = null,
     env: std.json.Value,
-    user: ?std.json.Value = null,
+    user: ??[]const u8 = null,
     type: []const u8,
 };
 
@@ -2446,9 +2978,9 @@ pub const ChatCompletionStreamResponseDelta = struct {
 };
 
 pub const FunctionCallOutputItemParam = struct {
-    status: ?std.json.Value = null,
+    status: ??FunctionCallItemStatus = null,
     call_id: []const u8,
-    id: ?std.json.Value = null,
+    id: ??[]const u8 = null,
     type: []const u8,
     output: std.json.Value,
 };
@@ -2472,7 +3004,7 @@ pub const OutputAudio = struct {
 pub const FunctionShellCallOutput = struct {
     call_id: []const u8,
     output: []const FunctionShellCallOutputContent,
-    max_output_length: std.json.Value,
+    max_output_length: ?i64,
     status: LocalShellCallOutputStatusEnum,
     id: []const u8,
     type: []const u8,
@@ -2499,26 +3031,26 @@ pub const MessageContentImageFileObject = struct {
 
 pub const MessageObject = struct {
     created_at: i64,
-    completed_at: std.json.Value,
-    attachments: std.json.Value,
-    incomplete_at: std.json.Value,
+    completed_at: ?i64,
+    attachments: ?[]const std.json.Value,
+    incomplete_at: ?i64,
     object: []const u8,
     status: []const u8,
     id: []const u8,
-    incomplete_details: std.json.Value,
-    assistant_id: std.json.Value,
+    incomplete_details: ?std.json.Value,
+    assistant_id: ?[]const u8,
     content: []const std.json.Value,
     thread_id: []const u8,
-    run_id: std.json.Value,
+    run_id: ?[]const u8,
     metadata: Metadata,
     role: []const u8,
 };
 
 pub const ComputerCallOutputItemParam = struct {
-    status: ?std.json.Value = null,
-    acknowledged_safety_checks: ?std.json.Value = null,
+    status: ??FunctionCallItemStatus = null,
+    acknowledged_safety_checks: ??[]const ComputerCallSafetyCheckParam = null,
     call_id: []const u8,
-    id: ?std.json.Value = null,
+    id: ??[]const u8 = null,
     type: []const u8,
     output: ComputerScreenshotImage,
 };
@@ -2610,7 +3142,7 @@ pub const ChatCompletionRequestMessage = struct {
 
 pub const InferenceOptions = struct {
     model: []const u8,
-    tool_choice: std.json.Value,
+    tool_choice: ?ToolChoice,
 };
 
 pub const RunStepDetailsMessageCreationObject = struct {
@@ -2619,16 +3151,16 @@ pub const RunStepDetailsMessageCreationObject = struct {
 };
 
 pub const ModifyAssistantRequest = struct {
-    instructions: ?std.json.Value = null,
+    instructions: ??[]const u8 = null,
     tools: ?[]const std.json.Value = null,
-    response_format: ?std.json.Value = null,
-    top_p: ?std.json.Value = null,
+    response_format: ??AssistantsApiResponseFormatOption = null,
+    top_p: ??f64 = null,
     reasoning_effort: ?ReasoningEffort = null,
-    description: ?std.json.Value = null,
-    temperature: ?std.json.Value = null,
+    description: ??[]const u8 = null,
+    temperature: ??f64 = null,
     model: ?[]const u8 = null,
-    name: ?std.json.Value = null,
-    tool_resources: ?std.json.Value = null,
+    name: ??[]const u8 = null,
+    tool_resources: ??std.json.Value = null,
     metadata: ?Metadata = null,
 };
 
@@ -2651,19 +3183,19 @@ pub const InlineSkillParam = struct {
 };
 
 pub const RealtimeMCPToolCall = struct {
-    @"error": ?std.json.Value = null,
-    output: ?std.json.Value = null,
+    @"error": ??std.json.Value = null,
+    output: ??[]const u8 = null,
     server_label: []const u8,
     arguments: []const u8,
     id: []const u8,
     type: []const u8,
     name: []const u8,
-    approval_request_id: ?std.json.Value = null,
+    approval_request_id: ??[]const u8 = null,
 };
 
 pub const ComputerScreenshotContent = struct {
-    file_id: std.json.Value,
-    image_url: std.json.Value,
+    file_id: ?[]const u8,
+    image_url: ?[]const u8,
     type: []const u8,
     detail: ImageDetail,
 };
@@ -2989,14 +3521,14 @@ pub const ResponseMCPCallInProgressEvent = struct {
 
 pub const ContainerAutoParam = struct {
     skills: ?[]const std.json.Value = null,
-    memory_limit: ?std.json.Value = null,
+    memory_limit: ??ContainerMemoryLimit = null,
     network_policy: ?std.json.Value = null,
     file_ids: ?[]const []const u8 = null,
     type: []const u8,
 };
 
 pub const ChatSessionHistory = struct {
-    recent_threads: std.json.Value,
+    recent_threads: ?i64,
     enabled: bool,
 };
 
@@ -3006,12 +3538,59 @@ pub const AdminApiKey = struct {
     redacted_value: []const u8,
     object: []const u8,
     value: ?[]const u8 = null,
-    last_used_at: std.json.Value,
+    last_used_at: ?i64,
     id: []const u8,
     name: []const u8,
 };
 
-pub const AssistantStreamEvent = std.json.Value;
+pub const AssistantStreamEvent = union(enum) {
+    threadstreamevent: ThreadStreamEvent,
+    runstreamevent: RunStreamEvent,
+    runstepstreamevent: RunStepStreamEvent,
+    messagestreamevent: MessageStreamEvent,
+    errorevent: ErrorEvent,
+    doneevent: DoneEvent,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (std.json.parseFromValueLeaky(ThreadStreamEvent, allocator, source, options)) |value| {
+            return .{ .threadstreamevent = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(RunStreamEvent, allocator, source, options)) |value| {
+            return .{ .runstreamevent = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(RunStepStreamEvent, allocator, source, options)) |value| {
+            return .{ .runstepstreamevent = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(MessageStreamEvent, allocator, source, options)) |value| {
+            return .{ .messagestreamevent = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ErrorEvent, allocator, source, options)) |value| {
+            return .{ .errorevent = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(DoneEvent, allocator, source, options)) |value| {
+            return .{ .doneevent = value };
+        } else |_| {}
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .threadstreamevent => |value| try jw.write(value),
+            .runstreamevent => |value| try jw.write(value),
+            .runstepstreamevent => |value| try jw.write(value),
+            .messagestreamevent => |value| try jw.write(value),
+            .errorevent => |value| try jw.write(value),
+            .doneevent => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const ComputerScreenshotImage = struct {
     file_id: ?[]const u8 = null,
@@ -3031,7 +3610,7 @@ pub const VectorStoreFileObject = struct {
     object: []const u8,
     status: []const u8,
     usage_bytes: i64,
-    last_error: std.json.Value,
+    last_error: ?std.json.Value,
     id: []const u8,
     attributes: ?VectorStoreFileAttributes = null,
     vector_store_id: []const u8,
@@ -3161,7 +3740,7 @@ pub const SpeechAudioDoneEvent = struct {
 pub const UsageVectorStoresResult = struct {
     object: []const u8,
     usage_bytes: i64,
-    project_id: ?std.json.Value = null,
+    project_id: ??[]const u8 = null,
 };
 
 pub const RealtimeServerEventOutputAudioBufferStarted = struct {
@@ -3177,7 +3756,7 @@ pub const Attachment = struct {
     id: []const u8,
     type: AttachmentType,
     name: []const u8,
-    preview_url: std.json.Value,
+    preview_url: ?[]const u8,
 };
 
 pub const RealtimeBetaServerEventResponseAudioDone = struct {
@@ -3190,11 +3769,11 @@ pub const RealtimeBetaServerEventResponseAudioDone = struct {
 };
 
 pub const FunctionToolParam = struct {
-    description: ?std.json.Value = null,
-    strict: ?std.json.Value = null,
+    description: ??[]const u8 = null,
+    strict: ??bool = null,
     name: []const u8,
     type: []const u8,
-    parameters: ?std.json.Value = null,
+    parameters: ??EmptyModelParam = null,
     defer_loading: ?bool = null,
 };
 
@@ -3217,7 +3796,29 @@ pub const NamespaceToolParam = struct {
     tools: []const std.json.Value,
 };
 
-pub const ResponsesServerEvent = std.json.Value;
+pub const ResponsesServerEvent = union(enum) {
+    responsestreamevent: ResponseStreamEvent,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (std.json.parseFromValueLeaky(ResponseStreamEvent, allocator, source, options)) |value| {
+            return .{ .responsestreamevent = value };
+        } else |_| {}
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .responsestreamevent => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const OutputItem = union(enum) {
     message: OutputMessage,
@@ -3370,7 +3971,7 @@ pub const OutputItem = union(enum) {
 pub const FileSearchTool = struct {
     max_num_results: ?i64 = null,
     ranking_options: ?RankingOptions = null,
-    filters: ?std.json.Value = null,
+    filters: ??Filters = null,
     type: []const u8,
     vector_store_ids: []const []const u8,
 };
@@ -3383,12 +3984,12 @@ pub const ListVectorStoreFilesResponse = struct {
     first_id: []const u8,
 };
 
-pub const ResponseError = std.json.Value;
+pub const ResponseError = ?std.json.Value;
 
 pub const ClientToolCallItem = struct {
     created_at: i64,
     call_id: []const u8,
-    output: std.json.Value,
+    output: ?[]const u8,
     object: []const u8,
     thread_id: []const u8,
     status: ClientToolCallStatus,
@@ -3399,23 +4000,23 @@ pub const ClientToolCallItem = struct {
 };
 
 pub const AssignedRoleDetails = struct {
-    created_at: std.json.Value,
-    updated_at: std.json.Value,
+    created_at: ?i64,
+    updated_at: ?i64,
     resource_type: []const u8,
     permissions: []const []const u8,
-    created_by_user_obj: std.json.Value,
-    description: std.json.Value,
-    metadata: std.json.Value,
+    created_by_user_obj: ?std.json.Value,
+    description: ?[]const u8,
+    metadata: ?std.json.Value,
     predefined_role: bool,
     id: []const u8,
     name: []const u8,
-    created_by: std.json.Value,
+    created_by: ?[]const u8,
 };
 
-pub const VideoModel = std.json.Value;
+pub const VideoModel = []const u8;
 
 pub const InputFileContent = struct {
-    file_id: ?std.json.Value = null,
+    file_id: ??[]const u8 = null,
     filename: ?[]const u8 = null,
     file_data: ?[]const u8 = null,
     file_url: ?[]const u8 = null,
@@ -3451,7 +4052,44 @@ pub const DeleteVectorStoreResponse = struct {
     deleted: bool,
 };
 
-pub const ChatCompletionRequestUserMessageContentPart = std.json.Value;
+pub const ChatCompletionRequestUserMessageContentPart = union(enum) {
+    chatcompletionrequestmessagecontentparttext: ChatCompletionRequestMessageContentPartText,
+    chatcompletionrequestmessagecontentpartimage: ChatCompletionRequestMessageContentPartImage,
+    chatcompletionrequestmessagecontentpartaudio: ChatCompletionRequestMessageContentPartAudio,
+    chatcompletionrequestmessagecontentpartfile: ChatCompletionRequestMessageContentPartFile,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (std.json.parseFromValueLeaky(ChatCompletionRequestMessageContentPartText, allocator, source, options)) |value| {
+            return .{ .chatcompletionrequestmessagecontentparttext = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ChatCompletionRequestMessageContentPartImage, allocator, source, options)) |value| {
+            return .{ .chatcompletionrequestmessagecontentpartimage = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ChatCompletionRequestMessageContentPartAudio, allocator, source, options)) |value| {
+            return .{ .chatcompletionrequestmessagecontentpartaudio = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ChatCompletionRequestMessageContentPartFile, allocator, source, options)) |value| {
+            return .{ .chatcompletionrequestmessagecontentpartfile = value };
+        } else |_| {}
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .chatcompletionrequestmessagecontentparttext => |value| try jw.write(value),
+            .chatcompletionrequestmessagecontentpartimage => |value| try jw.write(value),
+            .chatcompletionrequestmessagecontentpartaudio => |value| try jw.write(value),
+            .chatcompletionrequestmessagecontentpartfile => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const RealtimeBetaClientEventInputAudioBufferClear = struct {
     event_id: ?[]const u8 = null,
@@ -3479,9 +4117,9 @@ pub const ResponseMCPCallArgumentsDeltaEvent = struct {
 pub const VideoListResource = struct {
     object: []const u8,
     data: []const VideoResource,
-    last_id: std.json.Value,
+    last_id: ?[]const u8,
     has_more: bool,
-    first_id: std.json.Value,
+    first_id: ?[]const u8,
 };
 
 pub const RealtimeServerEventInputAudioBufferCleared = struct {
@@ -3507,15 +4145,15 @@ pub const WebhookFineTuningJobCancelled = struct {
 };
 
 pub const ToolSearchToolParam = struct {
-    description: ?std.json.Value = null,
+    description: ??[]const u8 = null,
     type: []const u8,
     execution: ?ToolSearchExecutionType = null,
-    parameters: ?std.json.Value = null,
+    parameters: ??EmptyModelParam = null,
 };
 
 pub const VideoContentVariant = []const u8;
 
-pub const ResponsePromptVariables = std.json.Value;
+pub const ResponsePromptVariables = ?std.json.Value;
 
 pub const RealtimeBetaServerEventResponseCreated = struct {
     event_id: []const u8,
@@ -3532,7 +4170,7 @@ pub const ThreadObject = struct {
     created_at: i64,
     metadata: Metadata,
     id: []const u8,
-    tool_resources: std.json.Value,
+    tool_resources: ?std.json.Value,
 };
 
 pub const ChatCompletionRequestToolMessage = struct {
@@ -3543,7 +4181,7 @@ pub const ChatCompletionRequestToolMessage = struct {
 
 pub const MoveParam = struct {
     x: i64,
-    keys: ?std.json.Value = null,
+    keys: ??[]const []const u8 = null,
     type: []const u8,
     y: i64,
 };
@@ -3563,7 +4201,154 @@ pub const Group = struct {
     name: []const u8,
 };
 
-pub const ItemResource = std.json.Value;
+pub const ItemResource = union(enum) {
+    inputmessageresource: InputMessageResource,
+    outputmessage: OutputMessage,
+    filesearchtoolcall: FileSearchToolCall,
+    computertoolcall: ComputerToolCall,
+    computertoolcalloutputresource: ComputerToolCallOutputResource,
+    websearchtoolcall: WebSearchToolCall,
+    functiontoolcallresource: FunctionToolCallResource,
+    functiontoolcalloutputresource: FunctionToolCallOutputResource,
+    toolsearchcall: ToolSearchCall,
+    toolsearchoutput: ToolSearchOutput,
+    reasoningitem: ReasoningItem,
+    compactionbody: CompactionBody,
+    imagegentoolcall: ImageGenToolCall,
+    codeinterpretertoolcall: CodeInterpreterToolCall,
+    localshelltoolcall: LocalShellToolCall,
+    localshelltoolcalloutput: LocalShellToolCallOutput,
+    functionshellcall: FunctionShellCall,
+    functionshellcalloutput: FunctionShellCallOutput,
+    applypatchtoolcall: ApplyPatchToolCall,
+    applypatchtoolcalloutput: ApplyPatchToolCallOutput,
+    mcplisttools: MCPListTools,
+    mcpapprovalrequest: MCPApprovalRequest,
+    mcpapprovalresponseresource: MCPApprovalResponseResource,
+    mcptoolcall: MCPToolCall,
+    customtoolcallresource: CustomToolCallResource,
+    customtoolcalloutputresource: CustomToolCallOutputResource,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (std.json.parseFromValueLeaky(InputMessageResource, allocator, source, options)) |value| {
+            return .{ .inputmessageresource = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(OutputMessage, allocator, source, options)) |value| {
+            return .{ .outputmessage = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(FileSearchToolCall, allocator, source, options)) |value| {
+            return .{ .filesearchtoolcall = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ComputerToolCall, allocator, source, options)) |value| {
+            return .{ .computertoolcall = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ComputerToolCallOutputResource, allocator, source, options)) |value| {
+            return .{ .computertoolcalloutputresource = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(WebSearchToolCall, allocator, source, options)) |value| {
+            return .{ .websearchtoolcall = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(FunctionToolCallResource, allocator, source, options)) |value| {
+            return .{ .functiontoolcallresource = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(FunctionToolCallOutputResource, allocator, source, options)) |value| {
+            return .{ .functiontoolcalloutputresource = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ToolSearchCall, allocator, source, options)) |value| {
+            return .{ .toolsearchcall = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ToolSearchOutput, allocator, source, options)) |value| {
+            return .{ .toolsearchoutput = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ReasoningItem, allocator, source, options)) |value| {
+            return .{ .reasoningitem = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(CompactionBody, allocator, source, options)) |value| {
+            return .{ .compactionbody = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ImageGenToolCall, allocator, source, options)) |value| {
+            return .{ .imagegentoolcall = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(CodeInterpreterToolCall, allocator, source, options)) |value| {
+            return .{ .codeinterpretertoolcall = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(LocalShellToolCall, allocator, source, options)) |value| {
+            return .{ .localshelltoolcall = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(LocalShellToolCallOutput, allocator, source, options)) |value| {
+            return .{ .localshelltoolcalloutput = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(FunctionShellCall, allocator, source, options)) |value| {
+            return .{ .functionshellcall = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(FunctionShellCallOutput, allocator, source, options)) |value| {
+            return .{ .functionshellcalloutput = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ApplyPatchToolCall, allocator, source, options)) |value| {
+            return .{ .applypatchtoolcall = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ApplyPatchToolCallOutput, allocator, source, options)) |value| {
+            return .{ .applypatchtoolcalloutput = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(MCPListTools, allocator, source, options)) |value| {
+            return .{ .mcplisttools = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(MCPApprovalRequest, allocator, source, options)) |value| {
+            return .{ .mcpapprovalrequest = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(MCPApprovalResponseResource, allocator, source, options)) |value| {
+            return .{ .mcpapprovalresponseresource = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(MCPToolCall, allocator, source, options)) |value| {
+            return .{ .mcptoolcall = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(CustomToolCallResource, allocator, source, options)) |value| {
+            return .{ .customtoolcallresource = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(CustomToolCallOutputResource, allocator, source, options)) |value| {
+            return .{ .customtoolcalloutputresource = value };
+        } else |_| {}
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .inputmessageresource => |value| try jw.write(value),
+            .outputmessage => |value| try jw.write(value),
+            .filesearchtoolcall => |value| try jw.write(value),
+            .computertoolcall => |value| try jw.write(value),
+            .computertoolcalloutputresource => |value| try jw.write(value),
+            .websearchtoolcall => |value| try jw.write(value),
+            .functiontoolcallresource => |value| try jw.write(value),
+            .functiontoolcalloutputresource => |value| try jw.write(value),
+            .toolsearchcall => |value| try jw.write(value),
+            .toolsearchoutput => |value| try jw.write(value),
+            .reasoningitem => |value| try jw.write(value),
+            .compactionbody => |value| try jw.write(value),
+            .imagegentoolcall => |value| try jw.write(value),
+            .codeinterpretertoolcall => |value| try jw.write(value),
+            .localshelltoolcall => |value| try jw.write(value),
+            .localshelltoolcalloutput => |value| try jw.write(value),
+            .functionshellcall => |value| try jw.write(value),
+            .functionshellcalloutput => |value| try jw.write(value),
+            .applypatchtoolcall => |value| try jw.write(value),
+            .applypatchtoolcalloutput => |value| try jw.write(value),
+            .mcplisttools => |value| try jw.write(value),
+            .mcpapprovalrequest => |value| try jw.write(value),
+            .mcpapprovalresponseresource => |value| try jw.write(value),
+            .mcptoolcall => |value| try jw.write(value),
+            .customtoolcallresource => |value| try jw.write(value),
+            .customtoolcalloutputresource => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const ResponseImageGenCallInProgressEvent = struct {
     item_id: []const u8,
@@ -3588,7 +4373,38 @@ pub const CreateVideoJsonBody = struct {
     prompt: []const u8,
 };
 
-pub const VoiceIdsOrCustomVoice = std.json.Value;
+pub const VoiceIdsOrCustomVoiceVariant1 = struct {
+    id: []const u8,
+};
+
+pub const VoiceIdsOrCustomVoice = union(enum) {
+    voiceidsshared: VoiceIdsShared,
+    object: VoiceIdsOrCustomVoiceVariant1,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (std.json.parseFromValueLeaky(VoiceIdsShared, allocator, source, options)) |value| {
+            return .{ .voiceidsshared = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(VoiceIdsOrCustomVoiceVariant1, allocator, source, options)) |value| {
+            return .{ .object = value };
+        } else |_| {}
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .voiceidsshared => |value| try jw.write(value),
+            .object => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const RunStepDetailsToolCallsFunctionObject = struct {
     id: []const u8,
@@ -3613,9 +4429,9 @@ pub const RealtimeClientEventTranscriptionSessionUpdate = struct {
 pub const ListFineTuningJobCheckpointsResponse = struct {
     data: []const FineTuningJobCheckpoint,
     object: []const u8,
-    last_id: ?std.json.Value = null,
+    last_id: ??[]const u8 = null,
     has_more: bool,
-    first_id: ?std.json.Value = null,
+    first_id: ??[]const u8 = null,
 };
 
 pub const CreateTranslationResponseVerboseJson = struct {
@@ -3633,7 +4449,7 @@ pub const InviteListResponse = struct {
     first_id: ?[]const u8 = null,
 };
 
-pub const RunCompletionUsage = std.json.Value;
+pub const RunCompletionUsage = ?std.json.Value;
 
 pub const WebhookRealtimeCallIncoming = struct {
     created_at: i64,
@@ -3712,14 +4528,14 @@ pub const CreateSkillBody = struct {
 };
 
 pub const FineTuneChatCompletionRequestAssistantMessage = struct {
-    content: ?std.json.Value = null,
-    function_call: ?std.json.Value = null,
-    audio: ?std.json.Value = null,
+    content: ??std.json.Value = null,
+    function_call: ??std.json.Value = null,
+    audio: ??std.json.Value = null,
     tool_calls: ?ChatCompletionMessageToolCalls = null,
     role: []const u8,
     name: ?[]const u8 = null,
     weight: ?i64 = null,
-    refusal: ?std.json.Value = null,
+    refusal: ??[]const u8 = null,
 };
 
 pub const CreateModerationResponse = struct {
@@ -3892,16 +4708,16 @@ pub const CreateChatCompletionRequest = struct {
     max_tokens: ?i64 = null,
     messages: []const ChatCompletionRequestMessage,
     seed: ?i64 = null,
-    temperature: ?std.json.Value = null,
+    temperature: ??f64 = null,
     web_search_options: ?std.json.Value = null,
     function_call: ?std.json.Value = null,
     user: ?[]const u8 = null,
     functions: ?[]const ChatCompletionFunctions = null,
-    prompt_cache_retention: ?std.json.Value = null,
+    prompt_cache_retention: ??[]const u8 = null,
     frequency_penalty: ?f64 = null,
     presence_penalty: ?f64 = null,
     tool_choice: ?ChatCompletionToolChoiceOption = null,
-    top_p: ?std.json.Value = null,
+    top_p: ??f64 = null,
     service_tier: ?ServiceTier = null,
     prompt_cache_key: ?[]const u8 = null,
     extra_body: ?std.json.Value = null,
@@ -4061,7 +4877,7 @@ pub const CreateChatCompletionRequest = struct {
 
 pub const OutputMessage = struct {
     status: []const u8,
-    phase: ?std.json.Value = null,
+    phase: ??MessagePhase = null,
     id: []const u8,
     type: []const u8,
     role: []const u8,
@@ -4085,7 +4901,7 @@ pub const GroupListResource = struct {
     object: []const u8,
     data: []const GroupResponse,
     has_more: bool,
-    next: std.json.Value,
+    next: ?[]const u8,
 };
 
 pub const RealtimeFunctionTool = struct {
@@ -4101,13 +4917,13 @@ pub const RealtimeClientEventInputAudioBufferCommit = struct {
 };
 
 pub const ChatCompletionRequestAssistantMessage = struct {
-    audio: ?std.json.Value = null,
-    function_call: ?std.json.Value = null,
+    audio: ??std.json.Value = null,
+    function_call: ??std.json.Value = null,
     tool_calls: ?ChatCompletionMessageToolCalls = null,
     role: []const u8,
     name: ?[]const u8 = null,
-    refusal: ?std.json.Value = null,
-    content: ?std.json.Value = null,
+    refusal: ??[]const u8 = null,
+    content: ??std.json.Value = null,
     reasoning_details: ?std.json.Value = null,
 };
 
@@ -4156,8 +4972,8 @@ pub const RealtimeMCPApprovalRequest = struct {
 
 pub const FunctionShellAction = struct {
     commands: []const []const u8,
-    timeout_ms: std.json.Value,
-    max_output_length: std.json.Value,
+    timeout_ms: ?i64,
+    max_output_length: ?i64,
 };
 
 pub const OrderEnum = []const u8;
@@ -4175,8 +4991,8 @@ pub const Upload = struct {
 };
 
 pub const InputImageContent = struct {
-    file_id: ?std.json.Value = null,
-    image_url: ?std.json.Value = null,
+    file_id: ??[]const u8 = null,
+    image_url: ??[]const u8 = null,
     type: []const u8,
     detail: ImageDetail,
 };
@@ -4233,18 +5049,18 @@ pub const WorkflowTracingParam = struct {
 
 pub const AssistantObject = struct {
     created_at: i64,
-    instructions: std.json.Value,
+    instructions: ?[]const u8,
     tools: []const std.json.Value,
-    response_format: ?std.json.Value = null,
+    response_format: ??AssistantsApiResponseFormatOption = null,
     object: []const u8,
-    temperature: ?std.json.Value = null,
+    temperature: ??f64 = null,
     model: []const u8,
     id: []const u8,
-    top_p: ?std.json.Value = null,
-    description: std.json.Value,
+    top_p: ??f64 = null,
+    description: ?[]const u8,
     metadata: Metadata,
-    name: std.json.Value,
-    tool_resources: ?std.json.Value = null,
+    name: ?[]const u8,
+    tool_resources: ??std.json.Value = null,
 };
 
 pub const AudioTranscription = struct {
@@ -4274,7 +5090,74 @@ pub const OtherChunkingStrategyResponseParam = struct {
 
 pub const ImageDetail = []const u8;
 
-pub const MessageStreamEvent = std.json.Value;
+pub const MessageStreamEventVariant0 = struct {
+    data: MessageObject,
+    event: []const u8,
+};
+
+pub const MessageStreamEventVariant1 = struct {
+    data: MessageObject,
+    event: []const u8,
+};
+
+pub const MessageStreamEventVariant2 = struct {
+    data: MessageDeltaObject,
+    event: []const u8,
+};
+
+pub const MessageStreamEventVariant3 = struct {
+    data: MessageObject,
+    event: []const u8,
+};
+
+pub const MessageStreamEventVariant4 = struct {
+    data: MessageObject,
+    event: []const u8,
+};
+
+pub const MessageStreamEvent = union(enum) {
+    thread_message_created: MessageStreamEventVariant0,
+    thread_message_in_progress: MessageStreamEventVariant1,
+    thread_message_delta: MessageStreamEventVariant2,
+    thread_message_completed: MessageStreamEventVariant3,
+    thread_message_incomplete: MessageStreamEventVariant4,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (std.json.parseFromValueLeaky(MessageStreamEventVariant0, allocator, source, options)) |value| {
+            return .{ .thread_message_created = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(MessageStreamEventVariant1, allocator, source, options)) |value| {
+            return .{ .thread_message_in_progress = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(MessageStreamEventVariant2, allocator, source, options)) |value| {
+            return .{ .thread_message_delta = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(MessageStreamEventVariant3, allocator, source, options)) |value| {
+            return .{ .thread_message_completed = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(MessageStreamEventVariant4, allocator, source, options)) |value| {
+            return .{ .thread_message_incomplete = value };
+        } else |_| {}
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .thread_message_created => |value| try jw.write(value),
+            .thread_message_in_progress => |value| try jw.write(value),
+            .thread_message_delta => |value| try jw.write(value),
+            .thread_message_completed => |value| try jw.write(value),
+            .thread_message_incomplete => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const CodeInterpreterFileOutput = struct {
     files: []const std.json.Value,
@@ -4292,7 +5175,7 @@ pub const ApplyPatchToolCallItemParam = struct {
     status: ApplyPatchCallStatusParam,
     operation: ApplyPatchOperationParam,
     call_id: []const u8,
-    id: ?std.json.Value = null,
+    id: ??[]const u8 = null,
     type: []const u8,
 };
 
@@ -4348,7 +5231,7 @@ pub const RealtimeMCPApprovalResponse = struct {
     approve: bool,
     id: []const u8,
     type: []const u8,
-    reason: ?std.json.Value = null,
+    reason: ??[]const u8 = null,
     approval_request_id: []const u8,
 };
 
@@ -4357,10 +5240,10 @@ pub const ContainerReferenceResource = struct {
     container_id: []const u8,
 };
 
-pub const ModelIdsShared = std.json.Value;
+pub const ModelIdsShared = []const u8;
 
 pub const AutoCodeInterpreterToolParam = struct {
-    memory_limit: ?std.json.Value = null,
+    memory_limit: ??ContainerMemoryLimit = null,
     network_policy: ?std.json.Value = null,
     file_ids: ?[]const []const u8 = null,
     type: []const u8,
@@ -4534,7 +5417,7 @@ pub const ProjectGroup = struct {
 pub const UsageCodeInterpreterSessionsResult = struct {
     object: []const u8,
     num_sessions: ?i64 = null,
-    project_id: ?std.json.Value = null,
+    project_id: ??[]const u8 = null,
 };
 
 pub const EvalJsonlFileIdSource = struct {
@@ -4544,11 +5427,11 @@ pub const EvalJsonlFileIdSource = struct {
 
 pub const NoiseReductionType = []const u8;
 
-pub const WebSearchApproximateLocation = std.json.Value;
+pub const WebSearchApproximateLocation = ?std.json.Value;
 
 pub const ContextManagementParam = struct {
     type: []const u8,
-    compact_threshold: ?std.json.Value = null,
+    compact_threshold: ??i64 = null,
 };
 
 pub const CreateEvalLogsDataSourceConfig = struct {
@@ -4580,9 +5463,9 @@ pub const CreateCompletionRequest = struct {
 pub const VoiceConsentListResource = struct {
     object: []const u8,
     data: []const VoiceConsentResource,
-    last_id: ?std.json.Value = null,
+    last_id: ??[]const u8 = null,
     has_more: bool,
-    first_id: ?std.json.Value = null,
+    first_id: ??[]const u8 = null,
 };
 
 pub const ChatCompletionTool = struct {
@@ -4602,7 +5485,7 @@ pub const RealtimeCallRejectRequest = struct {
     status_code: ?i64 = null,
 };
 
-pub const ServiceTier = std.json.Value;
+pub const ServiceTier = ?[]const u8;
 
 pub const CreateRunRequest = struct {
     max_prompt_tokens: ?i64 = null,
@@ -4642,7 +5525,7 @@ pub const RealtimeClientEventResponseCreate = struct {
 };
 
 pub const ClosedStatus = struct {
-    reason: std.json.Value,
+    reason: ?[]const u8,
     type: []const u8,
 };
 
@@ -4707,7 +5590,36 @@ pub const Model = struct {
     created: i64,
 };
 
-pub const AssistantsApiToolChoiceOption = std.json.Value;
+pub const AssistantsApiToolChoiceOptionVariant0 = []const u8;
+
+pub const AssistantsApiToolChoiceOption = union(enum) {
+    string: []const u8,
+    assistantsnamedtoolchoice: AssistantsNamedToolChoice,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (std.json.parseFromValueLeaky([]const u8, allocator, source, options)) |value| {
+            return .{ .string = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(AssistantsNamedToolChoice, allocator, source, options)) |value| {
+            return .{ .assistantsnamedtoolchoice = value };
+        } else |_| {}
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .string => |value| try jw.write(value),
+            .assistantsnamedtoolchoice => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const ChatCompletionMessageToolCalls = []const ChatCompletionMessageToolCall;
 
@@ -4784,24 +5696,24 @@ pub const FileExpirationAfter = struct {
 
 pub const FineTuningJob = struct {
     created_at: i64,
-    integrations: ?std.json.Value = null,
+    integrations: ??[]const std.json.Value = null,
     seed: i64,
     object: []const u8,
     status: []const u8,
-    trained_tokens: std.json.Value,
-    fine_tuned_model: std.json.Value,
+    trained_tokens: ?i64,
+    fine_tuned_model: ?[]const u8,
     model: []const u8,
     id: []const u8,
-    finished_at: std.json.Value,
+    finished_at: ?i64,
     result_files: []const []const u8,
-    @"error": std.json.Value,
+    @"error": ?std.json.Value,
     method: ?FineTuneMethod = null,
     hyperparameters: std.json.Value,
     organization_id: []const u8,
     metadata: ?Metadata = null,
-    estimated_finish: ?std.json.Value = null,
+    estimated_finish: ??i64 = null,
     training_file: []const u8,
-    validation_file: std.json.Value,
+    validation_file: ?[]const u8,
 };
 
 pub const DeletedVideoResource = struct {
@@ -4858,7 +5770,7 @@ pub const RoleListResource = struct {
     object: []const u8,
     data: []const AssignedRoleDetails,
     has_more: bool,
-    next: std.json.Value,
+    next: ?[]const u8,
 };
 
 pub const AddUploadPartRequest = struct {
@@ -4882,7 +5794,7 @@ pub const WorkflowParam = struct {
 pub const CreateVectorStoreFileBatchRequest = std.json.Value;
 
 pub const ToolChoiceMCP = struct {
-    name: ?std.json.Value = null,
+    name: ??[]const u8 = null,
     type: []const u8,
     server_label: []const u8,
 };
@@ -4935,7 +5847,7 @@ pub const RealtimeSessionCreateResponseGA = struct {
     client_secret: std.json.Value,
     max_output_tokens: ?std.json.Value = null,
     model: ?[]const u8 = null,
-    tracing: ?std.json.Value = null,
+    tracing: ??std.json.Value = null,
     output_modalities: ?[]const []const u8 = null,
     include: ?[]const []const u8 = null,
     tool_choice: ?std.json.Value = null,
@@ -4968,14 +5880,14 @@ pub const UserListResource = struct {
     object: []const u8,
     data: []const User,
     has_more: bool,
-    next: std.json.Value,
+    next: ?[]const u8,
 };
 
 pub const ToolSearchCallItemParam = struct {
-    status: ?std.json.Value = null,
+    status: ??FunctionCallItemStatus = null,
     arguments: EmptyModelParam,
-    call_id: ?std.json.Value = null,
-    id: ?std.json.Value = null,
+    call_id: ??[]const u8 = null,
+    id: ??[]const u8 = null,
     type: []const u8,
     execution: ?ToolSearchExecutionType = null,
 };
@@ -4989,7 +5901,7 @@ pub const WebhookEvalRunFailed = struct {
 };
 
 pub const LockedStatus = struct {
-    reason: std.json.Value,
+    reason: ?[]const u8,
     type: []const u8,
 };
 
@@ -5008,7 +5920,7 @@ pub const RealtimeServerEventConversationItemCreated = struct {
     event_id: []const u8,
     item: RealtimeConversationItem,
     type: []const u8,
-    previous_item_id: ?std.json.Value = null,
+    previous_item_id: ??[]const u8 = null,
 };
 
 pub const CodeInterpreterOutputImage = struct {
@@ -5032,7 +5944,7 @@ pub const ResponseLogProb = struct {
 };
 
 pub const FunctionShellCall = struct {
-    environment: std.json.Value,
+    environment: ?std.json.Value,
     call_id: []const u8,
     status: LocalShellCallStatus,
     action: FunctionShellAction,
@@ -5081,7 +5993,7 @@ pub const OutputContent = union(enum) {
 
 pub const ReasoningItem = struct {
     status: ?[]const u8 = null,
-    encrypted_content: ?std.json.Value = null,
+    encrypted_content: ??[]const u8 = null,
     id: []const u8,
     type: []const u8,
     summary: []const SummaryTextContent,
@@ -5089,7 +6001,7 @@ pub const ReasoningItem = struct {
 };
 
 pub const SubmitToolOutputsRunRequest = struct {
-    stream: ?std.json.Value = null,
+    stream: ??bool = null,
     tool_outputs: []const std.json.Value,
 };
 
@@ -5136,7 +6048,7 @@ pub const CreateImageEditRequest = struct {
     stream: ?bool = null,
     model: ?[]const u8 = null,
     user: ?[]const u8 = null,
-    input_fidelity: ?std.json.Value = null,
+    input_fidelity: ??InputFidelity = null,
     background: ?[]const u8 = null,
     size: ?[]const u8 = null,
     image: std.json.Value,
@@ -5216,37 +6128,37 @@ pub const ToolSearchExecutionType = []const u8;
 pub const ComputerEnvironment = []const u8;
 
 pub const Response = struct {
-    completed_at: ?std.json.Value = null,
-    instructions: std.json.Value,
+    completed_at: ??f64 = null,
+    instructions: ?std.json.Value,
     tools: ToolsArray,
-    conversation: ?std.json.Value = null,
+    conversation: ??@"Conversation-2" = null,
     object: []const u8,
     status: ?[]const u8 = null,
     model: []const u8,
     id: []const u8,
-    incomplete_details: std.json.Value,
+    incomplete_details: ?std.json.Value,
     @"error": ResponseError,
     parallel_tool_calls: bool,
     safety_identifier: ?[]const u8 = null,
     text: ?ResponseTextParam = null,
     metadata: Metadata,
-    previous_response_id: ?std.json.Value = null,
-    top_logprobs: ?std.json.Value = null,
+    previous_response_id: ??[]const u8 = null,
+    top_logprobs: ??i64 = null,
     created_at: f64,
-    reasoning: ?std.json.Value = null,
-    truncation: ?std.json.Value = null,
-    max_tool_calls: ?std.json.Value = null,
+    reasoning: ??Reasoning = null,
+    truncation: ??[]const u8 = null,
+    max_tool_calls: ??i64 = null,
     prompt: ?Prompt = null,
-    temperature: std.json.Value,
-    max_output_tokens: ?std.json.Value = null,
+    temperature: ?f64,
+    max_output_tokens: ??i64 = null,
     usage: ?ResponseUsage = null,
-    output_text: ?std.json.Value = null,
+    output_text: ??[]const u8 = null,
     user: ?[]const u8 = null,
-    background: ?std.json.Value = null,
-    prompt_cache_retention: ?std.json.Value = null,
+    background: ??bool = null,
+    prompt_cache_retention: ??[]const u8 = null,
     output: []const OutputItem,
     tool_choice: ToolChoiceParam,
-    top_p: std.json.Value,
+    top_p: ?f64,
     service_tier: ?ServiceTier = null,
     prompt_cache_key: ?[]const u8 = null,
 };
@@ -5261,22 +6173,22 @@ pub const ComputerToolCallOutput = struct {
 };
 
 pub const ResponseProperties = struct {
-    reasoning: ?std.json.Value = null,
+    reasoning: ??Reasoning = null,
     tools: ?ToolsArray = null,
     tool_choice: ?ToolChoiceParam = null,
-    max_tool_calls: ?std.json.Value = null,
+    max_tool_calls: ??i64 = null,
     prompt: ?Prompt = null,
     text: ?ResponseTextParam = null,
-    truncation: ?std.json.Value = null,
+    truncation: ??[]const u8 = null,
     model: ?[]const u8 = null,
-    previous_response_id: ?std.json.Value = null,
-    background: ?std.json.Value = null,
+    previous_response_id: ??[]const u8 = null,
+    background: ??bool = null,
 };
 
 pub const TaskItem = struct {
     created_at: i64,
-    summary: std.json.Value,
-    heading: std.json.Value,
+    summary: ?[]const u8,
+    heading: ?[]const u8,
     object: []const u8,
     thread_id: []const u8,
     id: []const u8,
@@ -5293,33 +6205,33 @@ pub const RealtimeBetaServerEventResponseOutputItemDone = struct {
 };
 
 pub const CreateResponse = struct {
-    instructions: ?std.json.Value = null,
+    instructions: ??[]const u8 = null,
     tools: ?ToolsArray = null,
-    conversation: ?std.json.Value = null,
-    store: ?std.json.Value = null,
-    context_management: ?std.json.Value = null,
+    conversation: ??ConversationParam = null,
+    store: ??bool = null,
+    context_management: ??[]const ContextManagementParam = null,
     model: ?[]const u8 = null,
-    stream: ?std.json.Value = null,
-    parallel_tool_calls: ?std.json.Value = null,
+    stream: ??bool = null,
+    parallel_tool_calls: ??bool = null,
     stream_options: ?ResponseStreamOptions = null,
     safety_identifier: ?[]const u8 = null,
     text: ?ResponseTextParam = null,
     metadata: ?Metadata = null,
-    previous_response_id: ?std.json.Value = null,
+    previous_response_id: ??[]const u8 = null,
     top_logprobs: ?i64 = null,
     input: ?InputParam = null,
-    reasoning: ?std.json.Value = null,
-    truncation: ?std.json.Value = null,
-    max_tool_calls: ?std.json.Value = null,
+    reasoning: ??Reasoning = null,
+    truncation: ??[]const u8 = null,
+    max_tool_calls: ??i64 = null,
     prompt: ?Prompt = null,
-    temperature: ?std.json.Value = null,
-    max_output_tokens: ?std.json.Value = null,
+    temperature: ??f64 = null,
+    max_output_tokens: ??i64 = null,
     user: ?[]const u8 = null,
-    background: ?std.json.Value = null,
-    prompt_cache_retention: ?std.json.Value = null,
-    include: ?std.json.Value = null,
+    background: ??bool = null,
+    prompt_cache_retention: ??[]const u8 = null,
+    include: ??[]const IncludeEnum = null,
     tool_choice: ?ToolChoiceParam = null,
-    top_p: ?std.json.Value = null,
+    top_p: ??f64 = null,
     service_tier: ?ServiceTier = null,
     prompt_cache_key: ?[]const u8 = null,
     extra_body: ?std.json.Value = null,
@@ -5458,7 +6370,7 @@ pub const CreateResponse = struct {
 };
 
 pub const MCPListTools = struct {
-    @"error": ?std.json.Value = null,
+    @"error": ??[]const u8 = null,
     id: []const u8,
     type: []const u8,
     tools: []const MCPListToolsTool,
@@ -5467,12 +6379,41 @@ pub const MCPListTools = struct {
 
 pub const ImageGenToolCall = struct {
     status: []const u8,
-    result: std.json.Value,
+    result: ?[]const u8,
     id: []const u8,
     type: []const u8,
 };
 
-pub const ModelIdsResponses = std.json.Value;
+pub const ModelIdsResponsesVariant1 = []const u8;
+
+pub const ModelIdsResponses = union(enum) {
+    modelidsshared: ModelIdsShared,
+    responsesonlymodel: []const u8,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (std.json.parseFromValueLeaky(ModelIdsShared, allocator, source, options)) |value| {
+            return .{ .modelidsshared = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky([]const u8, allocator, source, options)) |value| {
+            return .{ .responsesonlymodel = value };
+        } else |_| {}
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .modelidsshared => |value| try jw.write(value),
+            .responsesonlymodel => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const ComputerActionList = []const ComputerAction;
 
@@ -5503,14 +6444,14 @@ pub const CreateVideoEditJsonBody = struct {
 };
 
 pub const ApproximateLocation = struct {
-    city: ?std.json.Value = null,
-    country: ?std.json.Value = null,
+    city: ??[]const u8 = null,
+    country: ??[]const u8 = null,
     type: []const u8,
-    region: ?std.json.Value = null,
-    timezone: ?std.json.Value = null,
+    region: ??[]const u8 = null,
+    timezone: ??[]const u8 = null,
 };
 
-pub const ChatCompletionStreamOptions = std.json.Value;
+pub const ChatCompletionStreamOptions = ?std.json.Value;
 
 pub const RealtimeServerEventConversationCreated = struct {
     event_id: []const u8,
@@ -5551,16 +6492,135 @@ pub const ResponseCompletedEvent = struct {
     sequence_number: i64,
 };
 
-pub const RunStepStreamEvent = std.json.Value;
+pub const RunStepStreamEventVariant0 = struct {
+    data: RunStepObject,
+    event: []const u8,
+};
 
-pub const TextResponseFormatConfiguration = std.json.Value;
+pub const RunStepStreamEventVariant1 = struct {
+    data: RunStepObject,
+    event: []const u8,
+};
+
+pub const RunStepStreamEventVariant2 = struct {
+    data: RunStepDeltaObject,
+    event: []const u8,
+};
+
+pub const RunStepStreamEventVariant3 = struct {
+    data: RunStepObject,
+    event: []const u8,
+};
+
+pub const RunStepStreamEventVariant4 = struct {
+    data: RunStepObject,
+    event: []const u8,
+};
+
+pub const RunStepStreamEventVariant5 = struct {
+    data: RunStepObject,
+    event: []const u8,
+};
+
+pub const RunStepStreamEventVariant6 = struct {
+    data: RunStepObject,
+    event: []const u8,
+};
+
+pub const RunStepStreamEvent = union(enum) {
+    thread_run_step_created: RunStepStreamEventVariant0,
+    thread_run_step_in_progress: RunStepStreamEventVariant1,
+    thread_run_step_delta: RunStepStreamEventVariant2,
+    thread_run_step_completed: RunStepStreamEventVariant3,
+    thread_run_step_failed: RunStepStreamEventVariant4,
+    thread_run_step_cancelled: RunStepStreamEventVariant5,
+    thread_run_step_expired: RunStepStreamEventVariant6,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (std.json.parseFromValueLeaky(RunStepStreamEventVariant0, allocator, source, options)) |value| {
+            return .{ .thread_run_step_created = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(RunStepStreamEventVariant1, allocator, source, options)) |value| {
+            return .{ .thread_run_step_in_progress = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(RunStepStreamEventVariant2, allocator, source, options)) |value| {
+            return .{ .thread_run_step_delta = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(RunStepStreamEventVariant3, allocator, source, options)) |value| {
+            return .{ .thread_run_step_completed = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(RunStepStreamEventVariant4, allocator, source, options)) |value| {
+            return .{ .thread_run_step_failed = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(RunStepStreamEventVariant5, allocator, source, options)) |value| {
+            return .{ .thread_run_step_cancelled = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(RunStepStreamEventVariant6, allocator, source, options)) |value| {
+            return .{ .thread_run_step_expired = value };
+        } else |_| {}
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .thread_run_step_created => |value| try jw.write(value),
+            .thread_run_step_in_progress => |value| try jw.write(value),
+            .thread_run_step_delta => |value| try jw.write(value),
+            .thread_run_step_completed => |value| try jw.write(value),
+            .thread_run_step_failed => |value| try jw.write(value),
+            .thread_run_step_cancelled => |value| try jw.write(value),
+            .thread_run_step_expired => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
+
+pub const TextResponseFormatConfiguration = union(enum) {
+    responseformattext: ResponseFormatText,
+    textresponseformatjsonschema: TextResponseFormatJsonSchema,
+    responseformatjsonobject: ResponseFormatJsonObject,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (std.json.parseFromValueLeaky(ResponseFormatText, allocator, source, options)) |value| {
+            return .{ .responseformattext = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(TextResponseFormatJsonSchema, allocator, source, options)) |value| {
+            return .{ .textresponseformatjsonschema = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ResponseFormatJsonObject, allocator, source, options)) |value| {
+            return .{ .responseformatjsonobject = value };
+        } else |_| {}
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .responseformattext => |value| try jw.write(value),
+            .textresponseformatjsonschema => |value| try jw.write(value),
+            .responseformatjsonobject => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const ThreadItemListResource = struct {
     object: []const u8,
     data: []const ThreadItem,
-    last_id: std.json.Value,
+    last_id: ?[]const u8,
     has_more: bool,
-    first_id: std.json.Value,
+    first_id: ?[]const u8,
 };
 
 pub const MessageDeltaContentImageUrlObject = struct {
@@ -5580,7 +6640,7 @@ pub const RealtimeTranscriptionSessionCreateResponseGA = struct {
 
 pub const ModifyThreadRequest = struct {
     metadata: ?Metadata = null,
-    tool_resources: ?std.json.Value = null,
+    tool_resources: ??std.json.Value = null,
 };
 
 pub const CreateEvalRequest = struct {
@@ -5957,17 +7017,17 @@ pub const ResponseOutputText = struct {
 };
 
 pub const TokenCountsBody = struct {
-    parallel_tool_calls: ?std.json.Value = null,
-    reasoning: ?std.json.Value = null,
-    instructions: ?std.json.Value = null,
-    tools: ?std.json.Value = null,
+    parallel_tool_calls: ??bool = null,
+    reasoning: ??Reasoning = null,
+    instructions: ??[]const u8 = null,
+    tools: ??[]const Tool = null,
     truncation: ?TruncationEnum = null,
-    conversation: ?std.json.Value = null,
-    tool_choice: ?std.json.Value = null,
-    text: ?std.json.Value = null,
+    conversation: ??ConversationParam = null,
+    tool_choice: ??ToolChoiceParam = null,
+    text: ??ResponseTextParam = null,
     model: ?[]const u8 = null,
-    input: ?std.json.Value = null,
-    previous_response_id: ?std.json.Value = null,
+    input: ??std.json.Value = null,
+    previous_response_id: ??[]const u8 = null,
 };
 
 pub const AuditLogActorApiKey = struct {
@@ -6015,7 +7075,7 @@ pub const IncludeEnum = []const u8;
 pub const ChatCompletionTokenLogprob = struct {
     logprob: f64,
     token: []const u8,
-    bytes: std.json.Value,
+    bytes: ?[]const i64,
     top_logprobs: []const std.json.Value,
 };
 
@@ -6024,7 +7084,34 @@ pub const EvalApiError = struct {
     code: []const u8,
 };
 
-pub const Content = std.json.Value;
+pub const Content = union(enum) {
+    inputcontent: InputContent,
+    outputcontent: OutputContent,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (std.json.parseFromValueLeaky(InputContent, allocator, source, options)) |value| {
+            return .{ .inputcontent = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(OutputContent, allocator, source, options)) |value| {
+            return .{ .outputcontent = value };
+        } else |_| {}
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .inputcontent => |value| try jw.write(value),
+            .outputcontent => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const CreateVideoEditMultipartBody = struct {
     video: std.json.Value,
@@ -6032,8 +7119,8 @@ pub const CreateVideoEditMultipartBody = struct {
 };
 
 pub const MCPListToolsTool = struct {
-    annotations: ?std.json.Value = null,
-    description: ?std.json.Value = null,
+    annotations: ??std.json.Value = null,
+    description: ??[]const u8 = null,
     input_schema: std.json.Value,
     name: []const u8,
 };
@@ -6091,7 +7178,34 @@ pub const ThreadItem = union(enum) {
     }
 };
 
-pub const ModelIds = std.json.Value;
+pub const ModelIds = union(enum) {
+    modelidsshared: ModelIdsShared,
+    modelidsresponses: ModelIdsResponses,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (std.json.parseFromValueLeaky(ModelIdsShared, allocator, source, options)) |value| {
+            return .{ .modelidsshared = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ModelIdsResponses, allocator, source, options)) |value| {
+            return .{ .modelidsresponses = value };
+        } else |_| {}
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .modelidsshared => |value| try jw.write(value),
+            .modelidsresponses => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const ChatCompletionNamedToolChoiceCustom = struct {
     custom: std.json.Value,
@@ -6225,7 +7339,7 @@ pub const GraderMulti = struct {
 pub const Project = struct {
     object: []const u8,
     created_at: i64,
-    archived_at: ?std.json.Value = null,
+    archived_at: ??i64 = null,
     status: []const u8,
     id: []const u8,
     name: []const u8,
@@ -6325,7 +7439,7 @@ pub const ContainerFileCitationBody = struct {
 
 pub const ItemReferenceParam = struct {
     id: []const u8,
-    type: ?std.json.Value = null,
+    type: ??[]const u8 = null,
 };
 
 pub const RealtimeTranscriptionSessionCreateRequest = struct {
@@ -6336,7 +7450,7 @@ pub const RealtimeTranscriptionSessionCreateRequest = struct {
     input_audio_transcription: ?AudioTranscription = null,
 };
 
-pub const ResponseModalities = std.json.Value;
+pub const ResponseModalities = ?[]const []const u8;
 
 pub const RealtimeBetaServerEventResponseFunctionCallArgumentsDelta = struct {
     call_id: []const u8,
@@ -6519,7 +7633,7 @@ pub const VectorStoreSearchResultsPage = struct {
     data: []const VectorStoreSearchResultItem,
     search_query: []const []const u8,
     has_more: bool,
-    next_page: std.json.Value,
+    next_page: ?[]const u8,
 };
 
 pub const ApplyPatchToolCallOutput = struct {
@@ -6527,17 +7641,17 @@ pub const ApplyPatchToolCallOutput = struct {
     call_id: []const u8,
     id: []const u8,
     type: []const u8,
-    output: ?std.json.Value = null,
+    output: ??[]const u8 = null,
     created_by: ?[]const u8 = null,
 };
 
 pub const EvalStoredCompletionsSource = struct {
-    limit: ?std.json.Value = null,
-    created_after: ?std.json.Value = null,
+    limit: ??i64 = null,
+    created_after: ??i64 = null,
     metadata: ?Metadata = null,
     model: ?[]const u8 = null,
     type: []const u8,
-    created_before: ?std.json.Value = null,
+    created_before: ??i64 = null,
 };
 
 pub const ResponseFileSearchCallSearchingEvent = struct {
@@ -6557,11 +7671,11 @@ pub const ResponseImageGenCallGeneratingEvent = struct {
 pub const UsageEmbeddingsResult = struct {
     input_tokens: i64,
     num_model_requests: i64,
-    user_id: ?std.json.Value = null,
-    api_key_id: ?std.json.Value = null,
+    user_id: ??[]const u8 = null,
+    api_key_id: ??[]const u8 = null,
     object: []const u8,
     model: ?[]const u8 = null,
-    project_id: ?std.json.Value = null,
+    project_id: ??[]const u8 = null,
 };
 
 pub const DeletedSkillResource = struct {
@@ -6585,7 +7699,7 @@ pub const RealtimeServerEventRateLimitsUpdated = struct {
 
 pub const ScrollParam = struct {
     x: i64,
-    keys: ?std.json.Value = null,
+    keys: ??[]const []const u8 = null,
     scroll_x: i64,
     type: []const u8,
     y: i64,
@@ -6629,17 +7743,17 @@ pub const ResponseCustomToolCallInputDeltaEvent = struct {
 
 pub const FunctionShellActionParam = struct {
     commands: []const []const u8,
-    timeout_ms: ?std.json.Value = null,
-    max_output_length: ?std.json.Value = null,
+    timeout_ms: ??i64 = null,
+    max_output_length: ??i64 = null,
 };
 
 pub const CompactResponseMethodPublicBody = struct {
-    prompt_cache_retention: ?std.json.Value = null,
+    prompt_cache_retention: ??PromptCacheRetentionEnum = null,
     model: []const u8,
-    instructions: ?std.json.Value = null,
-    input: ?std.json.Value = null,
-    previous_response_id: ?std.json.Value = null,
-    prompt_cache_key: ?std.json.Value = null,
+    instructions: ??[]const u8 = null,
+    input: ??std.json.Value = null,
+    previous_response_id: ??[]const u8 = null,
+    prompt_cache_key: ??[]const u8 = null,
 };
 
 pub const ImageGenUsage = struct {
@@ -6671,8 +7785,8 @@ pub const CreateEvalRunRequest = struct {
 
 pub const VideoCharacterResource = struct {
     created_at: i64,
-    id: std.json.Value,
-    name: std.json.Value,
+    id: ?[]const u8,
+    name: ?[]const u8,
 };
 
 pub const MessageDeltaContentRefusalObject = struct {
@@ -6687,12 +7801,129 @@ pub const RealtimeBetaClientEventConversationItemRetrieve = struct {
     type: []const u8,
 };
 
-pub const RunStreamEvent = std.json.Value;
+pub const RunStreamEventVariant0 = struct {
+    data: RunObject,
+    event: []const u8,
+};
+
+pub const RunStreamEventVariant1 = struct {
+    data: RunObject,
+    event: []const u8,
+};
+
+pub const RunStreamEventVariant2 = struct {
+    data: RunObject,
+    event: []const u8,
+};
+
+pub const RunStreamEventVariant3 = struct {
+    data: RunObject,
+    event: []const u8,
+};
+
+pub const RunStreamEventVariant4 = struct {
+    data: RunObject,
+    event: []const u8,
+};
+
+pub const RunStreamEventVariant5 = struct {
+    data: RunObject,
+    event: []const u8,
+};
+
+pub const RunStreamEventVariant6 = struct {
+    data: RunObject,
+    event: []const u8,
+};
+
+pub const RunStreamEventVariant7 = struct {
+    data: RunObject,
+    event: []const u8,
+};
+
+pub const RunStreamEventVariant8 = struct {
+    data: RunObject,
+    event: []const u8,
+};
+
+pub const RunStreamEventVariant9 = struct {
+    data: RunObject,
+    event: []const u8,
+};
+
+pub const RunStreamEvent = union(enum) {
+    thread_run_created: RunStreamEventVariant0,
+    thread_run_queued: RunStreamEventVariant1,
+    thread_run_in_progress: RunStreamEventVariant2,
+    thread_run_requires_action: RunStreamEventVariant3,
+    thread_run_completed: RunStreamEventVariant4,
+    thread_run_incomplete: RunStreamEventVariant5,
+    thread_run_failed: RunStreamEventVariant6,
+    thread_run_cancelling: RunStreamEventVariant7,
+    thread_run_cancelled: RunStreamEventVariant8,
+    thread_run_expired: RunStreamEventVariant9,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (std.json.parseFromValueLeaky(RunStreamEventVariant0, allocator, source, options)) |value| {
+            return .{ .thread_run_created = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(RunStreamEventVariant1, allocator, source, options)) |value| {
+            return .{ .thread_run_queued = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(RunStreamEventVariant2, allocator, source, options)) |value| {
+            return .{ .thread_run_in_progress = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(RunStreamEventVariant3, allocator, source, options)) |value| {
+            return .{ .thread_run_requires_action = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(RunStreamEventVariant4, allocator, source, options)) |value| {
+            return .{ .thread_run_completed = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(RunStreamEventVariant5, allocator, source, options)) |value| {
+            return .{ .thread_run_incomplete = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(RunStreamEventVariant6, allocator, source, options)) |value| {
+            return .{ .thread_run_failed = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(RunStreamEventVariant7, allocator, source, options)) |value| {
+            return .{ .thread_run_cancelling = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(RunStreamEventVariant8, allocator, source, options)) |value| {
+            return .{ .thread_run_cancelled = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(RunStreamEventVariant9, allocator, source, options)) |value| {
+            return .{ .thread_run_expired = value };
+        } else |_| {}
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .thread_run_created => |value| try jw.write(value),
+            .thread_run_queued => |value| try jw.write(value),
+            .thread_run_in_progress => |value| try jw.write(value),
+            .thread_run_requires_action => |value| try jw.write(value),
+            .thread_run_completed => |value| try jw.write(value),
+            .thread_run_incomplete => |value| try jw.write(value),
+            .thread_run_failed => |value| try jw.write(value),
+            .thread_run_cancelling => |value| try jw.write(value),
+            .thread_run_cancelled => |value| try jw.write(value),
+            .thread_run_expired => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const ComputerCallSafetyCheckParam = struct {
     id: []const u8,
-    message: ?std.json.Value = null,
-    code: ?std.json.Value = null,
+    message: ??[]const u8 = null,
+    code: ??[]const u8 = null,
 };
 
 pub const ImageEditPartialImageEvent = struct {
@@ -6717,14 +7948,14 @@ pub const ResponseCodeInterpreterCallCodeDeltaEvent = struct {
 pub const MCPTool = struct {
     server_description: ?[]const u8 = null,
     defer_loading: ?bool = null,
-    require_approval: ?std.json.Value = null,
+    require_approval: ??std.json.Value = null,
     server_label: []const u8,
     connector_id: ?[]const u8 = null,
     authorization: ?[]const u8 = null,
     server_url: ?[]const u8 = null,
-    allowed_tools: ?std.json.Value = null,
+    allowed_tools: ??std.json.Value = null,
     type: []const u8,
-    headers: ?std.json.Value = null,
+    headers: ??std.json.Value = null,
 };
 
 pub const AuditLogActorServiceAccount = struct {
@@ -6801,7 +8032,7 @@ pub const RealtimeBetaClientEventConversationItemCreate = struct {
 };
 
 pub const DragParam = struct {
-    keys: ?std.json.Value = null,
+    keys: ??[]const []const u8 = null,
     path: []const CoordParam,
     type: []const u8,
 };
@@ -6885,7 +8116,7 @@ pub const ProjectApiKey = struct {
 pub const EvalItemContentText = []const u8;
 
 pub const WebSearchActionOpenPage = struct {
-    url: ?std.json.Value = null,
+    url: ??[]const u8 = null,
     type: []const u8,
 };
 
@@ -6897,12 +8128,12 @@ pub const RealtimeBetaServerEventInputAudioBufferSpeechStarted = struct {
 };
 
 pub const FunctionShellCallOutputItemParam = struct {
-    status: ?std.json.Value = null,
+    status: ??FunctionShellCallItemStatus = null,
     call_id: []const u8,
-    id: ?std.json.Value = null,
+    id: ??[]const u8 = null,
     type: []const u8,
     output: []const FunctionShellCallOutputContentParam,
-    max_output_length: ?std.json.Value = null,
+    max_output_length: ??i64 = null,
 };
 
 pub const ChatSessionResource = struct {
@@ -6931,8 +8162,8 @@ pub const RealtimeBetaServerEventResponseFunctionCallArgumentsDone = struct {
 
 pub const TaskGroupTask = struct {
     type: TaskType,
-    heading: std.json.Value,
-    summary: std.json.Value,
+    heading: ?[]const u8,
+    summary: ?[]const u8,
 };
 
 pub const ProjectUserUpdateRequest = struct {
@@ -6949,10 +8180,10 @@ pub const ResponseRefusalDeltaEvent = struct {
 };
 
 pub const InputFileContentParam = struct {
-    file_id: ?std.json.Value = null,
-    filename: ?std.json.Value = null,
-    file_data: ?std.json.Value = null,
-    file_url: ?std.json.Value = null,
+    file_id: ??[]const u8 = null,
+    filename: ??[]const u8 = null,
+    file_data: ??[]const u8 = null,
+    file_url: ??[]const u8 = null,
     type: []const u8,
     detail: ?FileDetailEnum = null,
 };
@@ -6968,7 +8199,7 @@ pub const ChatCompletionFunctionCallOption = struct {
     name: []const u8,
 };
 
-pub const RealtimeTurnDetection = std.json.Value;
+pub const RealtimeTurnDetection = ?std.json.Value;
 
 pub const RunStepDetailsToolCallsCodeObject = struct {
     id: []const u8,
@@ -6978,7 +8209,7 @@ pub const RunStepDetailsToolCallsCodeObject = struct {
 
 pub const DoubleClickAction = struct {
     x: i64,
-    keys: std.json.Value,
+    keys: ?[]const []const u8,
     type: []const u8,
     y: i64,
 };
@@ -7020,7 +8251,7 @@ pub const PublicRoleListResource = struct {
     object: []const u8,
     data: []const Role,
     has_more: bool,
-    next: std.json.Value,
+    next: ?[]const u8,
 };
 
 pub const ResponseIncompleteEvent = struct {
@@ -7056,7 +8287,7 @@ pub const TranscriptTextDeltaEvent = struct {
 
 pub const FunctionObject = struct {
     description: ?[]const u8 = null,
-    strict: ?std.json.Value = null,
+    strict: ??bool = null,
     name: []const u8,
     parameters: ?FunctionParameters = null,
 };
@@ -7090,7 +8321,7 @@ pub const WebSearchLocation = struct {
 };
 
 pub const CreateMessageRequest = struct {
-    attachments: ?std.json.Value = null,
+    attachments: ??[]const std.json.Value = null,
     metadata: ?Metadata = null,
     role: []const u8,
     content: std.json.Value,
@@ -7136,7 +8367,7 @@ pub const ChatCompletionDeleted = struct {
 };
 
 pub const LocalShellToolCallOutput = struct {
-    status: ?std.json.Value = null,
+    status: ??[]const u8 = null,
     id: []const u8,
     type: []const u8,
     output: []const u8,
@@ -7170,14 +8401,14 @@ pub const RealtimeServerEventConversationItemDone = struct {
     event_id: []const u8,
     item: RealtimeConversationItem,
     type: []const u8,
-    previous_item_id: ?std.json.Value = null,
+    previous_item_id: ??[]const u8 = null,
 };
 
 pub const CreateModelResponseProperties = struct {
-    prompt_cache_retention: ?std.json.Value = null,
+    prompt_cache_retention: ??[]const u8 = null,
     safety_identifier: ?[]const u8 = null,
-    temperature: ?std.json.Value = null,
-    top_p: ?std.json.Value = null,
+    temperature: ??f64 = null,
+    top_p: ??f64 = null,
     metadata: ?Metadata = null,
     service_tier: ?ServiceTier = null,
     user: ?[]const u8 = null,
@@ -7208,7 +8439,7 @@ pub const AssistantToolsFileSearch = struct {
 
 pub const CreateThreadRequest = struct {
     metadata: ?Metadata = null,
-    tool_resources: ?std.json.Value = null,
+    tool_resources: ??std.json.Value = null,
     messages: ?[]const CreateMessageRequest = null,
 };
 
@@ -7219,11 +8450,11 @@ pub const RealtimeServerEventResponseMCPCallArgumentsDelta = struct {
     item_id: []const u8,
     delta: []const u8,
     type: []const u8,
-    obfuscation: ?std.json.Value = null,
+    obfuscation: ??[]const u8 = null,
 };
 
 pub const RealtimeServerEventConversationItemInputAudioTranscriptionCompleted = struct {
-    logprobs: ?std.json.Value = null,
+    logprobs: ??[]const LogProbProperties = null,
     transcript: []const u8,
     content_index: i64,
     event_id: []const u8,
@@ -7304,12 +8535,12 @@ pub const RealtimeServerEventResponseMCPCallInProgress = struct {
 
 pub const UsageAudioSpeechesResult = struct {
     num_model_requests: i64,
-    user_id: ?std.json.Value = null,
-    api_key_id: ?std.json.Value = null,
+    user_id: ??[]const u8 = null,
+    api_key_id: ??[]const u8 = null,
     object: []const u8,
     model: ?[]const u8 = null,
     characters: i64,
-    project_id: ?std.json.Value = null,
+    project_id: ??[]const u8 = null,
 };
 
 pub const RealtimeBetaServerEventTranscriptionSessionUpdated = struct {
@@ -7324,19 +8555,19 @@ pub const ApplyPatchUpdateFileOperation = struct {
     type: []const u8,
 };
 
-pub const VoiceIdsShared = std.json.Value;
+pub const VoiceIdsShared = []const u8;
 
 pub const CreateAssistantRequest = struct {
-    instructions: ?std.json.Value = null,
+    instructions: ??[]const u8 = null,
     tools: ?[]const std.json.Value = null,
-    response_format: ?std.json.Value = null,
-    top_p: ?std.json.Value = null,
+    response_format: ??AssistantsApiResponseFormatOption = null,
+    top_p: ??f64 = null,
     reasoning_effort: ?ReasoningEffort = null,
-    description: ?std.json.Value = null,
-    temperature: ?std.json.Value = null,
+    description: ??[]const u8 = null,
+    temperature: ??f64 = null,
     model: []const u8,
-    name: ?std.json.Value = null,
-    tool_resources: ?std.json.Value = null,
+    name: ??[]const u8 = null,
+    tool_resources: ??std.json.Value = null,
     metadata: ?Metadata = null,
 };
 
@@ -7392,31 +8623,31 @@ pub const ChatCompletionList = struct {
 };
 
 pub const ModelResponseProperties = struct {
-    prompt_cache_retention: ?std.json.Value = null,
-    top_p: ?std.json.Value = null,
-    temperature: ?std.json.Value = null,
+    prompt_cache_retention: ??[]const u8 = null,
+    top_p: ??f64 = null,
+    temperature: ??f64 = null,
     safety_identifier: ?[]const u8 = null,
     metadata: ?Metadata = null,
     service_tier: ?ServiceTier = null,
     user: ?[]const u8 = null,
-    top_logprobs: ?std.json.Value = null,
+    top_logprobs: ??i64 = null,
     prompt_cache_key: ?[]const u8 = null,
 };
 
 pub const EditImageBodyJsonParam = struct {
-    output_format: ?std.json.Value = null,
+    output_format: ??[]const u8 = null,
     prompt: []const u8,
-    output_compression: ?std.json.Value = null,
+    output_compression: ??i64 = null,
     model: ?[]const u8 = null,
-    stream: ?std.json.Value = null,
+    stream: ??bool = null,
     user: ?[]const u8 = null,
-    input_fidelity: ?std.json.Value = null,
-    background: ?std.json.Value = null,
-    size: ?std.json.Value = null,
+    input_fidelity: ??[]const u8 = null,
+    background: ??[]const u8 = null,
+    size: ??[]const u8 = null,
     images: []const ImageRefParam,
-    moderation: ?std.json.Value = null,
-    quality: ?std.json.Value = null,
-    n: ?std.json.Value = null,
+    moderation: ??[]const u8 = null,
+    quality: ??[]const u8 = null,
+    n: ??i64 = null,
     partial_images: ?PartialImages = null,
     mask: ?ImageRefParam = null,
 };
@@ -7454,18 +8685,18 @@ pub const RealtimeServerEventConversationItemInputAudioTranscriptionFailed = str
 
 pub const UsageCompletionsResult = struct {
     input_tokens: i64,
-    user_id: ?std.json.Value = null,
-    api_key_id: ?std.json.Value = null,
+    user_id: ??[]const u8 = null,
+    api_key_id: ??[]const u8 = null,
     input_audio_tokens: ?i64 = null,
     object: []const u8,
     input_cached_tokens: ?i64 = null,
     output_tokens: i64,
     model: ?[]const u8 = null,
     num_model_requests: i64,
-    batch: ?std.json.Value = null,
+    batch: ??bool = null,
     output_audio_tokens: ?i64 = null,
-    service_tier: ?std.json.Value = null,
-    project_id: ?std.json.Value = null,
+    service_tier: ??[]const u8 = null,
+    project_id: ??[]const u8 = null,
 };
 
 pub const UploadCertificateRequest = struct {
@@ -7515,9 +8746,66 @@ pub const RealtimeConversationItemFunctionCall = struct {
     name: []const u8,
 };
 
-pub const Prompt = std.json.Value;
+pub const Prompt = ?std.json.Value;
 
-pub const ToolChoiceParam = std.json.Value;
+pub const ToolChoiceParam = union(enum) {
+    toolchoiceoptions: ToolChoiceOptions,
+    toolchoiceallowed: ToolChoiceAllowed,
+    toolchoicetypes: ToolChoiceTypes,
+    toolchoicefunction: ToolChoiceFunction,
+    toolchoicemcp: ToolChoiceMCP,
+    toolchoicecustom: ToolChoiceCustom,
+    specificapplypatchparam: SpecificApplyPatchParam,
+    specificfunctionshellparam: SpecificFunctionShellParam,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (std.json.parseFromValueLeaky(ToolChoiceOptions, allocator, source, options)) |value| {
+            return .{ .toolchoiceoptions = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ToolChoiceAllowed, allocator, source, options)) |value| {
+            return .{ .toolchoiceallowed = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ToolChoiceTypes, allocator, source, options)) |value| {
+            return .{ .toolchoicetypes = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ToolChoiceFunction, allocator, source, options)) |value| {
+            return .{ .toolchoicefunction = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ToolChoiceMCP, allocator, source, options)) |value| {
+            return .{ .toolchoicemcp = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ToolChoiceCustom, allocator, source, options)) |value| {
+            return .{ .toolchoicecustom = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(SpecificApplyPatchParam, allocator, source, options)) |value| {
+            return .{ .specificapplypatchparam = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(SpecificFunctionShellParam, allocator, source, options)) |value| {
+            return .{ .specificfunctionshellparam = value };
+        } else |_| {}
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .toolchoiceoptions => |value| try jw.write(value),
+            .toolchoiceallowed => |value| try jw.write(value),
+            .toolchoicetypes => |value| try jw.write(value),
+            .toolchoicefunction => |value| try jw.write(value),
+            .toolchoicemcp => |value| try jw.write(value),
+            .toolchoicecustom => |value| try jw.write(value),
+            .specificapplypatchparam => |value| try jw.write(value),
+            .specificfunctionshellparam => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const ResponseReasoningSummaryTextDoneEvent = struct {
     text: []const u8,
@@ -7532,10 +8820,10 @@ pub const FunctionCallStatus = []const u8;
 
 pub const ResponseErrorEvent = struct {
     message: []const u8,
-    code: std.json.Value,
+    code: ?[]const u8,
     sequence_number: i64,
     type: []const u8,
-    param: std.json.Value,
+    param: ?[]const u8,
 };
 
 pub const UserRoleUpdateRequest = struct {
@@ -7574,11 +8862,11 @@ pub const RunStepDetailsToolCallsFileSearchResultObject = struct {
 };
 
 pub const FunctionTool = struct {
-    description: ?std.json.Value = null,
-    strict: std.json.Value,
+    description: ??[]const u8 = null,
+    strict: ?bool,
     name: []const u8,
     type: []const u8,
-    parameters: std.json.Value,
+    parameters: ?std.json.Value,
     defer_loading: ?bool = null,
 };
 
@@ -7602,7 +8890,7 @@ pub const RealtimeServerEventInputAudioBufferCommitted = struct {
     event_id: []const u8,
     item_id: []const u8,
     type: []const u8,
-    previous_item_id: ?std.json.Value = null,
+    previous_item_id: ??[]const u8 = null,
 };
 
 pub const WebhookResponseIncomplete = struct {
@@ -7620,15 +8908,15 @@ pub const ComputerTool = struct {
 pub const ToolChoiceOptions = []const u8;
 
 pub const PublicUpdateOrganizationRoleBody = struct {
-    description: ?std.json.Value = null,
-    role_name: ?std.json.Value = null,
-    permissions: ?std.json.Value = null,
+    description: ??[]const u8 = null,
+    role_name: ??[]const u8 = null,
+    permissions: ??[]const []const u8 = null,
 };
 
 pub const ToolSearchOutputItemParam = struct {
-    status: ?std.json.Value = null,
-    call_id: ?std.json.Value = null,
-    id: ?std.json.Value = null,
+    status: ??FunctionCallItemStatus = null,
+    call_id: ??[]const u8 = null,
+    id: ??[]const u8 = null,
     type: []const u8,
     execution: ?ToolSearchExecutionType = null,
     tools: []const Tool,
@@ -7643,7 +8931,154 @@ pub const EvalGraderTextSimilarity = struct {
     reference: []const u8,
 };
 
-pub const Item = std.json.Value;
+pub const Item = union(enum) {
+    inputmessage: InputMessage,
+    outputmessage: OutputMessage,
+    filesearchtoolcall: FileSearchToolCall,
+    computertoolcall: ComputerToolCall,
+    computercalloutputitemparam: ComputerCallOutputItemParam,
+    websearchtoolcall: WebSearchToolCall,
+    functiontoolcall: FunctionToolCall,
+    functioncalloutputitemparam: FunctionCallOutputItemParam,
+    toolsearchcallitemparam: ToolSearchCallItemParam,
+    toolsearchoutputitemparam: ToolSearchOutputItemParam,
+    reasoningitem: ReasoningItem,
+    compactionsummaryitemparam: CompactionSummaryItemParam,
+    imagegentoolcall: ImageGenToolCall,
+    codeinterpretertoolcall: CodeInterpreterToolCall,
+    localshelltoolcall: LocalShellToolCall,
+    localshelltoolcalloutput: LocalShellToolCallOutput,
+    functionshellcallitemparam: FunctionShellCallItemParam,
+    functionshellcalloutputitemparam: FunctionShellCallOutputItemParam,
+    applypatchtoolcallitemparam: ApplyPatchToolCallItemParam,
+    applypatchtoolcalloutputitemparam: ApplyPatchToolCallOutputItemParam,
+    mcplisttools: MCPListTools,
+    mcpapprovalrequest: MCPApprovalRequest,
+    mcpapprovalresponse: MCPApprovalResponse,
+    mcptoolcall: MCPToolCall,
+    customtoolcalloutput: CustomToolCallOutput,
+    customtoolcall: CustomToolCall,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (std.json.parseFromValueLeaky(InputMessage, allocator, source, options)) |value| {
+            return .{ .inputmessage = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(OutputMessage, allocator, source, options)) |value| {
+            return .{ .outputmessage = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(FileSearchToolCall, allocator, source, options)) |value| {
+            return .{ .filesearchtoolcall = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ComputerToolCall, allocator, source, options)) |value| {
+            return .{ .computertoolcall = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ComputerCallOutputItemParam, allocator, source, options)) |value| {
+            return .{ .computercalloutputitemparam = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(WebSearchToolCall, allocator, source, options)) |value| {
+            return .{ .websearchtoolcall = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(FunctionToolCall, allocator, source, options)) |value| {
+            return .{ .functiontoolcall = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(FunctionCallOutputItemParam, allocator, source, options)) |value| {
+            return .{ .functioncalloutputitemparam = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ToolSearchCallItemParam, allocator, source, options)) |value| {
+            return .{ .toolsearchcallitemparam = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ToolSearchOutputItemParam, allocator, source, options)) |value| {
+            return .{ .toolsearchoutputitemparam = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ReasoningItem, allocator, source, options)) |value| {
+            return .{ .reasoningitem = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(CompactionSummaryItemParam, allocator, source, options)) |value| {
+            return .{ .compactionsummaryitemparam = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ImageGenToolCall, allocator, source, options)) |value| {
+            return .{ .imagegentoolcall = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(CodeInterpreterToolCall, allocator, source, options)) |value| {
+            return .{ .codeinterpretertoolcall = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(LocalShellToolCall, allocator, source, options)) |value| {
+            return .{ .localshelltoolcall = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(LocalShellToolCallOutput, allocator, source, options)) |value| {
+            return .{ .localshelltoolcalloutput = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(FunctionShellCallItemParam, allocator, source, options)) |value| {
+            return .{ .functionshellcallitemparam = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(FunctionShellCallOutputItemParam, allocator, source, options)) |value| {
+            return .{ .functionshellcalloutputitemparam = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ApplyPatchToolCallItemParam, allocator, source, options)) |value| {
+            return .{ .applypatchtoolcallitemparam = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(ApplyPatchToolCallOutputItemParam, allocator, source, options)) |value| {
+            return .{ .applypatchtoolcalloutputitemparam = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(MCPListTools, allocator, source, options)) |value| {
+            return .{ .mcplisttools = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(MCPApprovalRequest, allocator, source, options)) |value| {
+            return .{ .mcpapprovalrequest = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(MCPApprovalResponse, allocator, source, options)) |value| {
+            return .{ .mcpapprovalresponse = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(MCPToolCall, allocator, source, options)) |value| {
+            return .{ .mcptoolcall = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(CustomToolCallOutput, allocator, source, options)) |value| {
+            return .{ .customtoolcalloutput = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(CustomToolCall, allocator, source, options)) |value| {
+            return .{ .customtoolcall = value };
+        } else |_| {}
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .inputmessage => |value| try jw.write(value),
+            .outputmessage => |value| try jw.write(value),
+            .filesearchtoolcall => |value| try jw.write(value),
+            .computertoolcall => |value| try jw.write(value),
+            .computercalloutputitemparam => |value| try jw.write(value),
+            .websearchtoolcall => |value| try jw.write(value),
+            .functiontoolcall => |value| try jw.write(value),
+            .functioncalloutputitemparam => |value| try jw.write(value),
+            .toolsearchcallitemparam => |value| try jw.write(value),
+            .toolsearchoutputitemparam => |value| try jw.write(value),
+            .reasoningitem => |value| try jw.write(value),
+            .compactionsummaryitemparam => |value| try jw.write(value),
+            .imagegentoolcall => |value| try jw.write(value),
+            .codeinterpretertoolcall => |value| try jw.write(value),
+            .localshelltoolcall => |value| try jw.write(value),
+            .localshelltoolcalloutput => |value| try jw.write(value),
+            .functionshellcallitemparam => |value| try jw.write(value),
+            .functionshellcalloutputitemparam => |value| try jw.write(value),
+            .applypatchtoolcallitemparam => |value| try jw.write(value),
+            .applypatchtoolcalloutputitemparam => |value| try jw.write(value),
+            .mcplisttools => |value| try jw.write(value),
+            .mcpapprovalrequest => |value| try jw.write(value),
+            .mcpapprovalresponse => |value| try jw.write(value),
+            .mcptoolcall => |value| try jw.write(value),
+            .customtoolcalloutput => |value| try jw.write(value),
+            .customtoolcall => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const RealtimeBetaServerEventResponseMCPCallArgumentsDelta = struct {
     output_index: i64,
@@ -7652,7 +9087,7 @@ pub const RealtimeBetaServerEventResponseMCPCallArgumentsDelta = struct {
     item_id: []const u8,
     delta: []const u8,
     type: []const u8,
-    obfuscation: ?std.json.Value = null,
+    obfuscation: ??[]const u8 = null,
 };
 
 pub const RealtimeBetaServerEventResponseMCPCallFailed = struct {
@@ -7706,7 +9141,7 @@ pub const RealtimeServerEventConversationItemAdded = struct {
     event_id: []const u8,
     item: RealtimeConversationItem,
     type: []const u8,
-    previous_item_id: ?std.json.Value = null,
+    previous_item_id: ??[]const u8 = null,
 };
 
 pub const RealtimeBetaServerEventMCPListToolsInProgress = struct {
@@ -7732,7 +9167,7 @@ pub const InputAudio = struct {
     type: []const u8,
 };
 
-pub const ResponseStreamOptions = std.json.Value;
+pub const ResponseStreamOptions = ?std.json.Value;
 
 pub const VoiceConsentDeletedResource = struct {
     object: []const u8,
@@ -7742,7 +9177,7 @@ pub const VoiceConsentDeletedResource = struct {
 
 pub const Message = struct {
     status: MessageStatus,
-    phase: ?std.json.Value = null,
+    phase: ??@"MessagePhase-2" = null,
     id: []const u8,
     type: []const u8,
     role: MessageRole,
@@ -7759,7 +9194,49 @@ pub const RateLimitsParam = struct {
     max_requests_per_1_minute: ?i64 = null,
 };
 
-pub const EvalItemContentItem = std.json.Value;
+pub const EvalItemContentItem = union(enum) {
+    evalitemcontenttext: EvalItemContentText,
+    inputtextcontent: InputTextContent,
+    evalitemcontentoutputtext: EvalItemContentOutputText,
+    evaliteminputimage: EvalItemInputImage,
+    inputaudio: InputAudio,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (std.json.parseFromValueLeaky(EvalItemContentText, allocator, source, options)) |value| {
+            return .{ .evalitemcontenttext = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(InputTextContent, allocator, source, options)) |value| {
+            return .{ .inputtextcontent = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(EvalItemContentOutputText, allocator, source, options)) |value| {
+            return .{ .evalitemcontentoutputtext = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(EvalItemInputImage, allocator, source, options)) |value| {
+            return .{ .evaliteminputimage = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(InputAudio, allocator, source, options)) |value| {
+            return .{ .inputaudio = value };
+        } else |_| {}
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .evalitemcontenttext => |value| try jw.write(value),
+            .inputtextcontent => |value| try jw.write(value),
+            .evalitemcontentoutputtext => |value| try jw.write(value),
+            .evaliteminputimage => |value| try jw.write(value),
+            .inputaudio => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const Annotation = union(enum) {
     file_citation: FileCitationBody,
@@ -7804,12 +9281,40 @@ pub const Annotation = union(enum) {
     }
 };
 
-pub const ThreadStreamEvent = std.json.Value;
+pub const ThreadStreamEventVariant0 = struct {
+    data: ThreadObject,
+    event: []const u8,
+    enabled: ?bool = null,
+};
+
+pub const ThreadStreamEvent = union(enum) {
+    thread_created: ThreadStreamEventVariant0,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (std.json.parseFromValueLeaky(ThreadStreamEventVariant0, allocator, source, options)) |value| {
+            return .{ .thread_created = value };
+        } else |_| {}
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .thread_created => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const DetailEnum = []const u8;
 
 pub const TruncationObject = struct {
-    last_messages: ?std.json.Value = null,
+    last_messages: ??i64 = null,
     type: []const u8,
 };
 
@@ -7822,9 +9327,9 @@ pub const RealtimeBetaServerEventRateLimitsUpdated = struct {
 pub const SkillListResource = struct {
     object: []const u8,
     data: []const SkillResource,
-    last_id: std.json.Value,
+    last_id: ?[]const u8,
     has_more: bool,
-    first_id: std.json.Value,
+    first_id: ?[]const u8,
 };
 
 pub const UserListResponse = struct {
@@ -7860,7 +9365,7 @@ pub const ImageGenOutputTokensDetails = struct {
 };
 
 pub const ToolSearchOutput = struct {
-    call_id: std.json.Value,
+    call_id: ?[]const u8,
     tools: []const Tool,
     status: FunctionCallOutputStatusEnum,
     id: []const u8,
@@ -7876,18 +9381,18 @@ pub const UpdateConversationBody = struct {
 pub const RealtimeSession = struct {
     speed: ?f64 = null,
     max_response_output_tokens: ?std.json.Value = null,
-    input_audio_transcription: ?std.json.Value = null,
+    input_audio_transcription: ??std.json.Value = null,
     instructions: ?[]const u8 = null,
     turn_detection: ?RealtimeTurnDetection = null,
     tools: ?[]const RealtimeFunctionTool = null,
-    prompt: ?std.json.Value = null,
+    prompt: ??Prompt = null,
     object: ?[]const u8 = null,
     temperature: ?f64 = null,
     input_audio_format: ?[]const u8 = null,
     model: ?[]const u8 = null,
     id: ?[]const u8 = null,
-    tracing: ?std.json.Value = null,
-    include: ?std.json.Value = null,
+    tracing: ??std.json.Value = null,
+    include: ??[]const []const u8 = null,
     modalities: ?std.json.Value = null,
     expires_at: ?i64 = null,
     tool_choice: ?[]const u8 = null,
@@ -7907,16 +9412,16 @@ pub const VoiceConsentResource = struct {
 pub const WebSearchContextSize = []const u8;
 
 pub const InputImageContentParamAutoParam = struct {
-    file_id: ?std.json.Value = null,
-    image_url: ?std.json.Value = null,
+    file_id: ??[]const u8 = null,
+    image_url: ??[]const u8 = null,
     type: []const u8,
-    detail: ?std.json.Value = null,
+    detail: ??DetailEnum = null,
 };
 
 pub const WebSearchTool = struct {
     search_context_size: ?[]const u8 = null,
     user_location: ?WebSearchApproximateLocation = null,
-    filters: ?std.json.Value = null,
+    filters: ??std.json.Value = null,
     type: []const u8,
 };
 
@@ -7957,7 +9462,7 @@ pub const CreateEvalStoredCompletionsDataSourceConfig = struct {
 };
 
 pub const RealtimeBetaServerEventConversationItemInputAudioTranscriptionCompleted = struct {
-    logprobs: ?std.json.Value = null,
+    logprobs: ??[]const LogProbProperties = null,
     transcript: []const u8,
     content_index: i64,
     event_id: []const u8,
@@ -8138,7 +9643,69 @@ pub const RealtimeBetaClientEventConversationItemTruncate = struct {
     content_index: i64,
 };
 
-pub const RealtimeConversationItem = std.json.Value;
+pub const RealtimeConversationItem = union(enum) {
+    realtimeconversationitemmessagesystem: RealtimeConversationItemMessageSystem,
+    realtimeconversationitemmessageuser: RealtimeConversationItemMessageUser,
+    realtimeconversationitemmessageassistant: RealtimeConversationItemMessageAssistant,
+    realtimeconversationitemfunctioncall: RealtimeConversationItemFunctionCall,
+    realtimeconversationitemfunctioncalloutput: RealtimeConversationItemFunctionCallOutput,
+    realtimemcpapprovalresponse: RealtimeMCPApprovalResponse,
+    realtimemcplisttools: RealtimeMCPListTools,
+    realtimemcptoolcall: RealtimeMCPToolCall,
+    realtimemcpapprovalrequest: RealtimeMCPApprovalRequest,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (std.json.parseFromValueLeaky(RealtimeConversationItemMessageSystem, allocator, source, options)) |value| {
+            return .{ .realtimeconversationitemmessagesystem = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(RealtimeConversationItemMessageUser, allocator, source, options)) |value| {
+            return .{ .realtimeconversationitemmessageuser = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(RealtimeConversationItemMessageAssistant, allocator, source, options)) |value| {
+            return .{ .realtimeconversationitemmessageassistant = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(RealtimeConversationItemFunctionCall, allocator, source, options)) |value| {
+            return .{ .realtimeconversationitemfunctioncall = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(RealtimeConversationItemFunctionCallOutput, allocator, source, options)) |value| {
+            return .{ .realtimeconversationitemfunctioncalloutput = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(RealtimeMCPApprovalResponse, allocator, source, options)) |value| {
+            return .{ .realtimemcpapprovalresponse = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(RealtimeMCPListTools, allocator, source, options)) |value| {
+            return .{ .realtimemcplisttools = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(RealtimeMCPToolCall, allocator, source, options)) |value| {
+            return .{ .realtimemcptoolcall = value };
+        } else |_| {}
+        if (std.json.parseFromValueLeaky(RealtimeMCPApprovalRequest, allocator, source, options)) |value| {
+            return .{ .realtimemcpapprovalrequest = value };
+        } else |_| {}
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .realtimeconversationitemmessagesystem => |value| try jw.write(value),
+            .realtimeconversationitemmessageuser => |value| try jw.write(value),
+            .realtimeconversationitemmessageassistant => |value| try jw.write(value),
+            .realtimeconversationitemfunctioncall => |value| try jw.write(value),
+            .realtimeconversationitemfunctioncalloutput => |value| try jw.write(value),
+            .realtimemcpapprovalresponse => |value| try jw.write(value),
+            .realtimemcplisttools => |value| try jw.write(value),
+            .realtimemcptoolcall => |value| try jw.write(value),
+            .realtimemcpapprovalrequest => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const ModelIdsCompaction = std.json.Value;
 
@@ -8146,18 +9713,18 @@ pub const AuditLogEventType = []const u8;
 
 pub const VideoResource = struct {
     created_at: i64,
-    completed_at: std.json.Value,
+    completed_at: ?i64,
     progress: i64,
-    prompt: std.json.Value,
+    prompt: ?[]const u8,
     object: []const u8,
     status: VideoStatus,
     model: []const u8,
     id: []const u8,
     size: VideoSize,
-    @"error": std.json.Value,
-    expires_at: std.json.Value,
+    @"error": ?@"Error-2",
+    expires_at: ?i64,
     seconds: []const u8,
-    remixed_from_video_id: std.json.Value,
+    remixed_from_video_id: ?[]const u8,
 };
 
 pub const RealtimeServerEventMCPListToolsFailed = struct {

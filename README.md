@@ -53,15 +53,15 @@ Port of the basic `openai-python` Responses example:
 ```zig
 var response = try openai.responses.create(&client, .{
     .model = "gpt-5.4-mini",
-    .instructions = .{ .string = "You are a coding assistant that talks like a pirate." },
-    .input = .{ .string = "How do I check if a Python object is an instance of a class?" },
+    .instructions = "You are a coding assistant that talks like a pirate.",
+    .input = .{ .text = "How do I check if a Python object is an instance of a class?" },
 });
 defer response.deinit();
 
-std.debug.print("{any}\n", .{response.value().output_text});
+if (response.value().output_text) |text| {
+    std.debug.print("{s}\n", .{text});
+}
 ```
-
-`output_text` is currently generated as `?std.json.Value`. Use chat completions if you want typed text at `choices[0].message.content` today.
 
 ## Chat completions
 
@@ -92,15 +92,19 @@ Responses stream, ported from the `openai-python` streaming example:
 
 ```zig
 const Events = struct {
-    pub fn event(_: *@This(), value: *std.json.Value) !void {
-        std.debug.print("{any}\n", .{value.*});
+    pub fn event(_: *@This(), event: *openai.ResponseStreamEvent) !void {
+        switch (event.*) {
+            .response_output_text_delta => |e| std.debug.print("{s}", .{e.delta}),
+            .response_completed => std.debug.print("\n", .{}),
+            else => {},
+        }
     }
 };
 
 var events = Events{};
-try openai.responses.streamEvents(std.json.Value, &client, .{
+try openai.responses.streamEvents(openai.ResponseStreamEvent, &client, .{
     .model = "gpt-5.4-mini",
-    .input = .{ .string = "Write a one-sentence bedtime story about a unicorn." },
+    .input = .{ .text = "Write a one-sentence bedtime story about a unicorn." },
 }, &events);
 ```
 
@@ -131,7 +135,7 @@ Callback data is borrowed and valid only during the callback. Copy it if you nee
 
 ## Vision
 
-Port of the `openai-python` image URL example. `input` is still `std.json.Value`, so parse the request fragment once and pass the parsed value.
+Port of the `openai-python` image URL example. Some nested content schemas are still raw, so parse that fragment once and wrap it in typed `InputParam`.
 
 ```zig
 const input_json =
@@ -151,7 +155,7 @@ defer input.deinit();
 
 var response = try openai.responses.create(&client, .{
     .model = "gpt-5.4-mini",
-    .input = input.value,
+    .input = .{ .raw = input.value },
 });
 defer response.deinit();
 ```
@@ -213,7 +217,7 @@ Generated resource wrappers:
 ```zig
 openai.responses.create(&client, request)
 openai.responses.createResult(&client, request)
-openai.responses.streamEvents(std.json.Value, &client, request, &callback)
+openai.responses.streamEvents(openai.ResponseStreamEvent, &client, request, &callback)
 
 openai.chat.completions.create(&client, request)
 openai.chat.completions.createResult(&client, request)
