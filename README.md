@@ -135,27 +135,28 @@ Callback data is borrowed and valid only during the callback. Copy it if you nee
 
 ## Vision
 
-Port of the `openai-python` image URL example. Some nested content schemas are still raw, so parse that fragment once and wrap it in typed `InputParam`.
+Port of the `openai-python` image URL example.
 
 ```zig
-const input_json =
-    \\[
-    \\  {
-    \\    "role": "user",
-    \\    "content": [
-    \\      {"type": "input_text", "text": "What is in this image?"},
-    \\      {"type": "input_image", "image_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/2023_06_08_Raccoon1.jpg/1599px-2023_06_08_Raccoon1.jpg"}
-    \\    ]
-    \\  }
-    \\]
-;
+const content = [_]openai.InputContent{
+    .{ .input_text = .{ .type = "input_text", .text = "What is in this image?" } },
+    .{ .input_image = .{
+        .type = "input_image",
+        .image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/2023_06_08_Raccoon1.jpg/1599px-2023_06_08_Raccoon1.jpg",
+        .detail = "auto",
+    } },
+};
 
-const input = try std.json.parseFromSlice(std.json.Value, gpa, input_json, .{});
-defer input.deinit();
+const input = [_]openai.InputItem{
+    .{ .easy_input_message = .{
+        .role = "user",
+        .content = .{ .parts = &content },
+    } },
+};
 
 var response = try openai.responses.create(&client, .{
     .model = "gpt-5.4-mini",
-    .input = .{ .raw = input.value },
+    .input = .{ .input_item_list = &input },
 });
 defer response.deinit();
 ```
@@ -183,10 +184,15 @@ switch (result) {
         @intFromEnum(err.status),
         err.body,
     }),
+    .parse_error => |err| std.debug.print("status={} parse={s} body={s}\n", .{
+        @intFromEnum(err.raw.status),
+        err.error_name,
+        err.raw.body,
+    }),
 }
 ```
 
-The plain methods, such as `create`, return `error.ResponseError` for non-2xx responses.
+The plain methods, such as `create`, return `error.ResponseError` for non-2xx or parse-error responses.
 
 ## OpenAI-compatible providers
 

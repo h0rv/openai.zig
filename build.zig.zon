@@ -5,8 +5,8 @@
     .minimum_zig_version = "0.16.0",
     .dependencies = .{
         .openapi2zig = .{
-            .url = "https://github.com/h0rv/openapi2zig/archive/3c6f6163a173545e135734ae74028c5ba2f28528.tar.gz",
-            .hash = "openapi2zig-0.1.1-ykENAnouDQCH4IknHB9J_uxCd1WcGgb0ZuaSRqnvLwgM",
+            .url = "https://github.com/h0rv/openapi2zig/archive/8d606aa3b6d91d08b09c8e78c72a0e190bfe4557.tar.gz",
+            .hash = "openapi2zig-0.1.1-ykENAm5uDQBdfsJTgtA2u1jASfT9YBUN3ZPyLHZF11dH",
         },
     },
     .paths = .{
