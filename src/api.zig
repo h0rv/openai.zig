@@ -1138,7 +1138,38 @@ pub const CostsResult = struct {
     project_id: ?std.json.Value = null,
 };
 
-pub const CreateSpeechResponseStreamEvent = std.json.Value;
+pub const CreateSpeechResponseStreamEvent = union(enum) {
+    speech_audio_delta: SpeechAudioDeltaEvent,
+    speech_audio_done: SpeechAudioDoneEvent,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (source != .object) return error.UnexpectedToken;
+        const discriminator = source.object.get("type") orelse return .{ .raw = source };
+        if (discriminator != .string) return .{ .raw = source };
+        if (std.mem.eql(u8, discriminator.string, "speech.audio.delta")) {
+            return .{ .speech_audio_delta = try std.json.parseFromValueLeaky(SpeechAudioDeltaEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "speech.audio.done")) {
+            return .{ .speech_audio_done = try std.json.parseFromValueLeaky(SpeechAudioDoneEvent, allocator, source, options) };
+        }
+
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .speech_audio_delta => |value| try jw.write(value),
+            .speech_audio_done => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const EvalCustomDataSourceConfig = struct {
     schema: std.json.Value,
@@ -1432,7 +1463,43 @@ pub const LogProbProperties = struct {
     bytes: []const i64,
 };
 
-pub const FunctionAndCustomToolCallOutput = std.json.Value;
+pub const FunctionAndCustomToolCallOutput = union(enum) {
+    input_text: InputTextContent,
+    input_image: InputImageContent,
+    input_file: InputFileContent,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (source != .object) return error.UnexpectedToken;
+        const discriminator = source.object.get("type") orelse return .{ .raw = source };
+        if (discriminator != .string) return .{ .raw = source };
+        if (std.mem.eql(u8, discriminator.string, "input_text")) {
+            return .{ .input_text = try std.json.parseFromValueLeaky(InputTextContent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "input_image")) {
+            return .{ .input_image = try std.json.parseFromValueLeaky(InputImageContent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "input_file")) {
+            return .{ .input_file = try std.json.parseFromValueLeaky(InputFileContent, allocator, source, options) };
+        }
+
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .input_text => |value| try jw.write(value),
+            .input_image => |value| try jw.write(value),
+            .input_file => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const ChatCompletionMessageToolCall = struct {
     id: []const u8,
@@ -1580,7 +1647,43 @@ pub const RealtimeServerEventConversationItemInputAudioTranscriptionDelta = stru
     content_index: ?i64 = null,
 };
 
-pub const ApplyPatchOperationParam = std.json.Value;
+pub const ApplyPatchOperationParam = union(enum) {
+    create_file: ApplyPatchCreateFileOperationParam,
+    delete_file: ApplyPatchDeleteFileOperationParam,
+    update_file: ApplyPatchUpdateFileOperationParam,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (source != .object) return error.UnexpectedToken;
+        const discriminator = source.object.get("type") orelse return .{ .raw = source };
+        if (discriminator != .string) return .{ .raw = source };
+        if (std.mem.eql(u8, discriminator.string, "create_file")) {
+            return .{ .create_file = try std.json.parseFromValueLeaky(ApplyPatchCreateFileOperationParam, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "delete_file")) {
+            return .{ .delete_file = try std.json.parseFromValueLeaky(ApplyPatchDeleteFileOperationParam, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "update_file")) {
+            return .{ .update_file = try std.json.parseFromValueLeaky(ApplyPatchUpdateFileOperationParam, allocator, source, options) };
+        }
+
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .create_file => |value| try jw.write(value),
+            .delete_file => |value| try jw.write(value),
+            .update_file => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const User = struct {
     object: []const u8,
@@ -1734,7 +1837,153 @@ pub const ResponseCustomToolCallInputDoneEvent = struct {
     sequence_number: i64,
 };
 
-pub const ItemField = std.json.Value;
+pub const ItemField = union(enum) {
+    message: Message,
+    function_call: FunctionToolCall,
+    tool_search_call: ToolSearchCall,
+    tool_search_output: ToolSearchOutput,
+    function_call_output: FunctionToolCallOutput,
+    file_search_call: FileSearchToolCall,
+    web_search_call: WebSearchToolCall,
+    image_generation_call: ImageGenToolCall,
+    computer_call: ComputerToolCall,
+    computer_call_output: ComputerToolCallOutputResource,
+    reasoning: ReasoningItem,
+    compaction: CompactionBody,
+    code_interpreter_call: CodeInterpreterToolCall,
+    local_shell_call: LocalShellToolCall,
+    local_shell_call_output: LocalShellToolCallOutput,
+    shell_call: FunctionShellCall,
+    shell_call_output: FunctionShellCallOutput,
+    apply_patch_call: ApplyPatchToolCall,
+    apply_patch_call_output: ApplyPatchToolCallOutput,
+    mcp_list_tools: MCPListTools,
+    mcp_approval_request: MCPApprovalRequest,
+    mcp_approval_response: MCPApprovalResponseResource,
+    mcp_call: MCPToolCall,
+    custom_tool_call: CustomToolCall,
+    custom_tool_call_output: CustomToolCallOutput,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (source != .object) return error.UnexpectedToken;
+        const discriminator = source.object.get("type") orelse return .{ .raw = source };
+        if (discriminator != .string) return .{ .raw = source };
+        if (std.mem.eql(u8, discriminator.string, "message")) {
+            return .{ .message = try std.json.parseFromValueLeaky(Message, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "function_call")) {
+            return .{ .function_call = try std.json.parseFromValueLeaky(FunctionToolCall, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "tool_search_call")) {
+            return .{ .tool_search_call = try std.json.parseFromValueLeaky(ToolSearchCall, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "tool_search_output")) {
+            return .{ .tool_search_output = try std.json.parseFromValueLeaky(ToolSearchOutput, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "function_call_output")) {
+            return .{ .function_call_output = try std.json.parseFromValueLeaky(FunctionToolCallOutput, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "file_search_call")) {
+            return .{ .file_search_call = try std.json.parseFromValueLeaky(FileSearchToolCall, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "web_search_call")) {
+            return .{ .web_search_call = try std.json.parseFromValueLeaky(WebSearchToolCall, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "image_generation_call")) {
+            return .{ .image_generation_call = try std.json.parseFromValueLeaky(ImageGenToolCall, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "computer_call")) {
+            return .{ .computer_call = try std.json.parseFromValueLeaky(ComputerToolCall, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "computer_call_output")) {
+            return .{ .computer_call_output = try std.json.parseFromValueLeaky(ComputerToolCallOutputResource, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "reasoning")) {
+            return .{ .reasoning = try std.json.parseFromValueLeaky(ReasoningItem, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "compaction")) {
+            return .{ .compaction = try std.json.parseFromValueLeaky(CompactionBody, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "code_interpreter_call")) {
+            return .{ .code_interpreter_call = try std.json.parseFromValueLeaky(CodeInterpreterToolCall, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "local_shell_call")) {
+            return .{ .local_shell_call = try std.json.parseFromValueLeaky(LocalShellToolCall, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "local_shell_call_output")) {
+            return .{ .local_shell_call_output = try std.json.parseFromValueLeaky(LocalShellToolCallOutput, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "shell_call")) {
+            return .{ .shell_call = try std.json.parseFromValueLeaky(FunctionShellCall, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "shell_call_output")) {
+            return .{ .shell_call_output = try std.json.parseFromValueLeaky(FunctionShellCallOutput, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "apply_patch_call")) {
+            return .{ .apply_patch_call = try std.json.parseFromValueLeaky(ApplyPatchToolCall, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "apply_patch_call_output")) {
+            return .{ .apply_patch_call_output = try std.json.parseFromValueLeaky(ApplyPatchToolCallOutput, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "mcp_list_tools")) {
+            return .{ .mcp_list_tools = try std.json.parseFromValueLeaky(MCPListTools, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "mcp_approval_request")) {
+            return .{ .mcp_approval_request = try std.json.parseFromValueLeaky(MCPApprovalRequest, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "mcp_approval_response")) {
+            return .{ .mcp_approval_response = try std.json.parseFromValueLeaky(MCPApprovalResponseResource, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "mcp_call")) {
+            return .{ .mcp_call = try std.json.parseFromValueLeaky(MCPToolCall, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "custom_tool_call")) {
+            return .{ .custom_tool_call = try std.json.parseFromValueLeaky(CustomToolCall, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "custom_tool_call_output")) {
+            return .{ .custom_tool_call_output = try std.json.parseFromValueLeaky(CustomToolCallOutput, allocator, source, options) };
+        }
+
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .message => |value| try jw.write(value),
+            .function_call => |value| try jw.write(value),
+            .tool_search_call => |value| try jw.write(value),
+            .tool_search_output => |value| try jw.write(value),
+            .function_call_output => |value| try jw.write(value),
+            .file_search_call => |value| try jw.write(value),
+            .web_search_call => |value| try jw.write(value),
+            .image_generation_call => |value| try jw.write(value),
+            .computer_call => |value| try jw.write(value),
+            .computer_call_output => |value| try jw.write(value),
+            .reasoning => |value| try jw.write(value),
+            .compaction => |value| try jw.write(value),
+            .code_interpreter_call => |value| try jw.write(value),
+            .local_shell_call => |value| try jw.write(value),
+            .local_shell_call_output => |value| try jw.write(value),
+            .shell_call => |value| try jw.write(value),
+            .shell_call_output => |value| try jw.write(value),
+            .apply_patch_call => |value| try jw.write(value),
+            .apply_patch_call_output => |value| try jw.write(value),
+            .mcp_list_tools => |value| try jw.write(value),
+            .mcp_approval_request => |value| try jw.write(value),
+            .mcp_approval_response => |value| try jw.write(value),
+            .mcp_call => |value| try jw.write(value),
+            .custom_tool_call => |value| try jw.write(value),
+            .custom_tool_call_output => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const RealtimeBetaServerEventResponseDone = struct {
     event_id: []const u8,
@@ -1781,7 +2030,43 @@ pub const VoiceResource = struct {
     name: []const u8,
 };
 
-pub const InputContent = std.json.Value;
+pub const InputContent = union(enum) {
+    input_text: InputTextContent,
+    input_image: InputImageContent,
+    input_file: InputFileContent,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (source != .object) return error.UnexpectedToken;
+        const discriminator = source.object.get("type") orelse return .{ .raw = source };
+        if (discriminator != .string) return .{ .raw = source };
+        if (std.mem.eql(u8, discriminator.string, "input_text")) {
+            return .{ .input_text = try std.json.parseFromValueLeaky(InputTextContent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "input_image")) {
+            return .{ .input_image = try std.json.parseFromValueLeaky(InputImageContent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "input_file")) {
+            return .{ .input_file = try std.json.parseFromValueLeaky(InputFileContent, allocator, source, options) };
+        }
+
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .input_text => |value| try jw.write(value),
+            .input_image => |value| try jw.write(value),
+            .input_file => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const ResponseMCPListToolsCompletedEvent = struct {
     item_id: []const u8,
@@ -2238,7 +2523,33 @@ pub const ComputerCallOutputItemParam = struct {
     output: ComputerScreenshotImage,
 };
 
-pub const ResponsesClientEvent = std.json.Value;
+pub const ResponsesClientEvent = union(enum) {
+    response_create: ResponsesClientEventResponseCreate,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (source != .object) return error.UnexpectedToken;
+        const discriminator = source.object.get("type") orelse return .{ .raw = source };
+        if (discriminator != .string) return .{ .raw = source };
+        if (std.mem.eql(u8, discriminator.string, "response.create")) {
+            return .{ .response_create = try std.json.parseFromValueLeaky(ResponsesClientEventResponseCreate, allocator, source, options) };
+        }
+
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .response_create => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const RealtimeBetaServerEventConversationItemDeleted = struct {
     event_id: []const u8,
@@ -2401,7 +2712,258 @@ pub const RunStepDetailsToolCallsCodeOutputImageObject = struct {
     type: []const u8,
 };
 
-pub const RealtimeServerEvent = std.json.Value;
+pub const RealtimeServerEvent = union(enum) {
+    conversation_created: RealtimeServerEventConversationCreated,
+    conversation_item_created: RealtimeServerEventConversationItemCreated,
+    conversation_item_deleted: RealtimeServerEventConversationItemDeleted,
+    conversation_item_input_audio_transcription_completed: RealtimeServerEventConversationItemInputAudioTranscriptionCompleted,
+    conversation_item_input_audio_transcription_delta: RealtimeServerEventConversationItemInputAudioTranscriptionDelta,
+    conversation_item_input_audio_transcription_failed: RealtimeServerEventConversationItemInputAudioTranscriptionFailed,
+    conversation_item_retrieved: RealtimeServerEventConversationItemRetrieved,
+    conversation_item_truncated: RealtimeServerEventConversationItemTruncated,
+    error_: RealtimeServerEventError,
+    input_audio_buffer_cleared: RealtimeServerEventInputAudioBufferCleared,
+    input_audio_buffer_committed: RealtimeServerEventInputAudioBufferCommitted,
+    input_audio_buffer_dtmf_event_received: RealtimeServerEventInputAudioBufferDtmfEventReceived,
+    input_audio_buffer_speech_started: RealtimeServerEventInputAudioBufferSpeechStarted,
+    input_audio_buffer_speech_stopped: RealtimeServerEventInputAudioBufferSpeechStopped,
+    rate_limits_updated: RealtimeServerEventRateLimitsUpdated,
+    response_output_audio_delta: RealtimeServerEventResponseAudioDelta,
+    response_output_audio_done: RealtimeServerEventResponseAudioDone,
+    response_output_audio_transcript_delta: RealtimeServerEventResponseAudioTranscriptDelta,
+    response_output_audio_transcript_done: RealtimeServerEventResponseAudioTranscriptDone,
+    response_content_part_added: RealtimeServerEventResponseContentPartAdded,
+    response_content_part_done: RealtimeServerEventResponseContentPartDone,
+    response_created: RealtimeServerEventResponseCreated,
+    response_done: RealtimeServerEventResponseDone,
+    response_function_call_arguments_delta: RealtimeServerEventResponseFunctionCallArgumentsDelta,
+    response_function_call_arguments_done: RealtimeServerEventResponseFunctionCallArgumentsDone,
+    response_output_item_added: RealtimeServerEventResponseOutputItemAdded,
+    response_output_item_done: RealtimeServerEventResponseOutputItemDone,
+    response_output_text_delta: RealtimeServerEventResponseTextDelta,
+    response_output_text_done: RealtimeServerEventResponseTextDone,
+    session_created: RealtimeServerEventSessionCreated,
+    session_updated: RealtimeServerEventSessionUpdated,
+    output_audio_buffer_started: RealtimeServerEventOutputAudioBufferStarted,
+    output_audio_buffer_stopped: RealtimeServerEventOutputAudioBufferStopped,
+    output_audio_buffer_cleared: RealtimeServerEventOutputAudioBufferCleared,
+    conversation_item_added: RealtimeServerEventConversationItemAdded,
+    conversation_item_done: RealtimeServerEventConversationItemDone,
+    input_audio_buffer_timeout_triggered: RealtimeServerEventInputAudioBufferTimeoutTriggered,
+    conversation_item_input_audio_transcription_segment: RealtimeServerEventConversationItemInputAudioTranscriptionSegment,
+    mcp_list_tools_in_progress: RealtimeServerEventMCPListToolsInProgress,
+    mcp_list_tools_completed: RealtimeServerEventMCPListToolsCompleted,
+    mcp_list_tools_failed: RealtimeServerEventMCPListToolsFailed,
+    response_mcp_call_arguments_delta: RealtimeServerEventResponseMCPCallArgumentsDelta,
+    response_mcp_call_arguments_done: RealtimeServerEventResponseMCPCallArgumentsDone,
+    response_mcp_call_in_progress: RealtimeServerEventResponseMCPCallInProgress,
+    response_mcp_call_completed: RealtimeServerEventResponseMCPCallCompleted,
+    response_mcp_call_failed: RealtimeServerEventResponseMCPCallFailed,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (source != .object) return error.UnexpectedToken;
+        const discriminator = source.object.get("type") orelse return .{ .raw = source };
+        if (discriminator != .string) return .{ .raw = source };
+        if (std.mem.eql(u8, discriminator.string, "conversation.created")) {
+            return .{ .conversation_created = try std.json.parseFromValueLeaky(RealtimeServerEventConversationCreated, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "conversation.item.created")) {
+            return .{ .conversation_item_created = try std.json.parseFromValueLeaky(RealtimeServerEventConversationItemCreated, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "conversation.item.deleted")) {
+            return .{ .conversation_item_deleted = try std.json.parseFromValueLeaky(RealtimeServerEventConversationItemDeleted, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "conversation.item.input_audio_transcription.completed")) {
+            return .{ .conversation_item_input_audio_transcription_completed = try std.json.parseFromValueLeaky(RealtimeServerEventConversationItemInputAudioTranscriptionCompleted, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "conversation.item.input_audio_transcription.delta")) {
+            return .{ .conversation_item_input_audio_transcription_delta = try std.json.parseFromValueLeaky(RealtimeServerEventConversationItemInputAudioTranscriptionDelta, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "conversation.item.input_audio_transcription.failed")) {
+            return .{ .conversation_item_input_audio_transcription_failed = try std.json.parseFromValueLeaky(RealtimeServerEventConversationItemInputAudioTranscriptionFailed, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "conversation.item.retrieved")) {
+            return .{ .conversation_item_retrieved = try std.json.parseFromValueLeaky(RealtimeServerEventConversationItemRetrieved, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "conversation.item.truncated")) {
+            return .{ .conversation_item_truncated = try std.json.parseFromValueLeaky(RealtimeServerEventConversationItemTruncated, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "error")) {
+            return .{ .error_ = try std.json.parseFromValueLeaky(RealtimeServerEventError, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "input_audio_buffer.cleared")) {
+            return .{ .input_audio_buffer_cleared = try std.json.parseFromValueLeaky(RealtimeServerEventInputAudioBufferCleared, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "input_audio_buffer.committed")) {
+            return .{ .input_audio_buffer_committed = try std.json.parseFromValueLeaky(RealtimeServerEventInputAudioBufferCommitted, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "input_audio_buffer.dtmf_event_received")) {
+            return .{ .input_audio_buffer_dtmf_event_received = try std.json.parseFromValueLeaky(RealtimeServerEventInputAudioBufferDtmfEventReceived, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "input_audio_buffer.speech_started")) {
+            return .{ .input_audio_buffer_speech_started = try std.json.parseFromValueLeaky(RealtimeServerEventInputAudioBufferSpeechStarted, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "input_audio_buffer.speech_stopped")) {
+            return .{ .input_audio_buffer_speech_stopped = try std.json.parseFromValueLeaky(RealtimeServerEventInputAudioBufferSpeechStopped, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "rate_limits.updated")) {
+            return .{ .rate_limits_updated = try std.json.parseFromValueLeaky(RealtimeServerEventRateLimitsUpdated, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.output_audio.delta")) {
+            return .{ .response_output_audio_delta = try std.json.parseFromValueLeaky(RealtimeServerEventResponseAudioDelta, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.output_audio.done")) {
+            return .{ .response_output_audio_done = try std.json.parseFromValueLeaky(RealtimeServerEventResponseAudioDone, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.output_audio_transcript.delta")) {
+            return .{ .response_output_audio_transcript_delta = try std.json.parseFromValueLeaky(RealtimeServerEventResponseAudioTranscriptDelta, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.output_audio_transcript.done")) {
+            return .{ .response_output_audio_transcript_done = try std.json.parseFromValueLeaky(RealtimeServerEventResponseAudioTranscriptDone, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.content_part.added")) {
+            return .{ .response_content_part_added = try std.json.parseFromValueLeaky(RealtimeServerEventResponseContentPartAdded, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.content_part.done")) {
+            return .{ .response_content_part_done = try std.json.parseFromValueLeaky(RealtimeServerEventResponseContentPartDone, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.created")) {
+            return .{ .response_created = try std.json.parseFromValueLeaky(RealtimeServerEventResponseCreated, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.done")) {
+            return .{ .response_done = try std.json.parseFromValueLeaky(RealtimeServerEventResponseDone, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.function_call_arguments.delta")) {
+            return .{ .response_function_call_arguments_delta = try std.json.parseFromValueLeaky(RealtimeServerEventResponseFunctionCallArgumentsDelta, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.function_call_arguments.done")) {
+            return .{ .response_function_call_arguments_done = try std.json.parseFromValueLeaky(RealtimeServerEventResponseFunctionCallArgumentsDone, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.output_item.added")) {
+            return .{ .response_output_item_added = try std.json.parseFromValueLeaky(RealtimeServerEventResponseOutputItemAdded, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.output_item.done")) {
+            return .{ .response_output_item_done = try std.json.parseFromValueLeaky(RealtimeServerEventResponseOutputItemDone, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.output_text.delta")) {
+            return .{ .response_output_text_delta = try std.json.parseFromValueLeaky(RealtimeServerEventResponseTextDelta, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.output_text.done")) {
+            return .{ .response_output_text_done = try std.json.parseFromValueLeaky(RealtimeServerEventResponseTextDone, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "session.created")) {
+            return .{ .session_created = try std.json.parseFromValueLeaky(RealtimeServerEventSessionCreated, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "session.updated")) {
+            return .{ .session_updated = try std.json.parseFromValueLeaky(RealtimeServerEventSessionUpdated, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "output_audio_buffer.started")) {
+            return .{ .output_audio_buffer_started = try std.json.parseFromValueLeaky(RealtimeServerEventOutputAudioBufferStarted, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "output_audio_buffer.stopped")) {
+            return .{ .output_audio_buffer_stopped = try std.json.parseFromValueLeaky(RealtimeServerEventOutputAudioBufferStopped, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "output_audio_buffer.cleared")) {
+            return .{ .output_audio_buffer_cleared = try std.json.parseFromValueLeaky(RealtimeServerEventOutputAudioBufferCleared, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "conversation.item.added")) {
+            return .{ .conversation_item_added = try std.json.parseFromValueLeaky(RealtimeServerEventConversationItemAdded, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "conversation.item.done")) {
+            return .{ .conversation_item_done = try std.json.parseFromValueLeaky(RealtimeServerEventConversationItemDone, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "input_audio_buffer.timeout_triggered")) {
+            return .{ .input_audio_buffer_timeout_triggered = try std.json.parseFromValueLeaky(RealtimeServerEventInputAudioBufferTimeoutTriggered, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "conversation.item.input_audio_transcription.segment")) {
+            return .{ .conversation_item_input_audio_transcription_segment = try std.json.parseFromValueLeaky(RealtimeServerEventConversationItemInputAudioTranscriptionSegment, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "mcp_list_tools.in_progress")) {
+            return .{ .mcp_list_tools_in_progress = try std.json.parseFromValueLeaky(RealtimeServerEventMCPListToolsInProgress, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "mcp_list_tools.completed")) {
+            return .{ .mcp_list_tools_completed = try std.json.parseFromValueLeaky(RealtimeServerEventMCPListToolsCompleted, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "mcp_list_tools.failed")) {
+            return .{ .mcp_list_tools_failed = try std.json.parseFromValueLeaky(RealtimeServerEventMCPListToolsFailed, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.mcp_call_arguments.delta")) {
+            return .{ .response_mcp_call_arguments_delta = try std.json.parseFromValueLeaky(RealtimeServerEventResponseMCPCallArgumentsDelta, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.mcp_call_arguments.done")) {
+            return .{ .response_mcp_call_arguments_done = try std.json.parseFromValueLeaky(RealtimeServerEventResponseMCPCallArgumentsDone, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.mcp_call.in_progress")) {
+            return .{ .response_mcp_call_in_progress = try std.json.parseFromValueLeaky(RealtimeServerEventResponseMCPCallInProgress, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.mcp_call.completed")) {
+            return .{ .response_mcp_call_completed = try std.json.parseFromValueLeaky(RealtimeServerEventResponseMCPCallCompleted, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.mcp_call.failed")) {
+            return .{ .response_mcp_call_failed = try std.json.parseFromValueLeaky(RealtimeServerEventResponseMCPCallFailed, allocator, source, options) };
+        }
+
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .conversation_created => |value| try jw.write(value),
+            .conversation_item_created => |value| try jw.write(value),
+            .conversation_item_deleted => |value| try jw.write(value),
+            .conversation_item_input_audio_transcription_completed => |value| try jw.write(value),
+            .conversation_item_input_audio_transcription_delta => |value| try jw.write(value),
+            .conversation_item_input_audio_transcription_failed => |value| try jw.write(value),
+            .conversation_item_retrieved => |value| try jw.write(value),
+            .conversation_item_truncated => |value| try jw.write(value),
+            .error_ => |value| try jw.write(value),
+            .input_audio_buffer_cleared => |value| try jw.write(value),
+            .input_audio_buffer_committed => |value| try jw.write(value),
+            .input_audio_buffer_dtmf_event_received => |value| try jw.write(value),
+            .input_audio_buffer_speech_started => |value| try jw.write(value),
+            .input_audio_buffer_speech_stopped => |value| try jw.write(value),
+            .rate_limits_updated => |value| try jw.write(value),
+            .response_output_audio_delta => |value| try jw.write(value),
+            .response_output_audio_done => |value| try jw.write(value),
+            .response_output_audio_transcript_delta => |value| try jw.write(value),
+            .response_output_audio_transcript_done => |value| try jw.write(value),
+            .response_content_part_added => |value| try jw.write(value),
+            .response_content_part_done => |value| try jw.write(value),
+            .response_created => |value| try jw.write(value),
+            .response_done => |value| try jw.write(value),
+            .response_function_call_arguments_delta => |value| try jw.write(value),
+            .response_function_call_arguments_done => |value| try jw.write(value),
+            .response_output_item_added => |value| try jw.write(value),
+            .response_output_item_done => |value| try jw.write(value),
+            .response_output_text_delta => |value| try jw.write(value),
+            .response_output_text_done => |value| try jw.write(value),
+            .session_created => |value| try jw.write(value),
+            .session_updated => |value| try jw.write(value),
+            .output_audio_buffer_started => |value| try jw.write(value),
+            .output_audio_buffer_stopped => |value| try jw.write(value),
+            .output_audio_buffer_cleared => |value| try jw.write(value),
+            .conversation_item_added => |value| try jw.write(value),
+            .conversation_item_done => |value| try jw.write(value),
+            .input_audio_buffer_timeout_triggered => |value| try jw.write(value),
+            .conversation_item_input_audio_transcription_segment => |value| try jw.write(value),
+            .mcp_list_tools_in_progress => |value| try jw.write(value),
+            .mcp_list_tools_completed => |value| try jw.write(value),
+            .mcp_list_tools_failed => |value| try jw.write(value),
+            .response_mcp_call_arguments_delta => |value| try jw.write(value),
+            .response_mcp_call_arguments_done => |value| try jw.write(value),
+            .response_mcp_call_in_progress => |value| try jw.write(value),
+            .response_mcp_call_completed => |value| try jw.write(value),
+            .response_mcp_call_failed => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const UsageResponse = struct {
     object: []const u8,
@@ -2657,7 +3219,153 @@ pub const NamespaceToolParam = struct {
 
 pub const ResponsesServerEvent = std.json.Value;
 
-pub const OutputItem = std.json.Value;
+pub const OutputItem = union(enum) {
+    message: OutputMessage,
+    file_search_call: FileSearchToolCall,
+    function_call: FunctionToolCall,
+    function_call_output: FunctionToolCallOutputResource,
+    web_search_call: WebSearchToolCall,
+    computer_call: ComputerToolCall,
+    computer_call_output: ComputerToolCallOutputResource,
+    reasoning: ReasoningItem,
+    tool_search_call: ToolSearchCall,
+    tool_search_output: ToolSearchOutput,
+    compaction: CompactionBody,
+    image_generation_call: ImageGenToolCall,
+    code_interpreter_call: CodeInterpreterToolCall,
+    local_shell_call: LocalShellToolCall,
+    local_shell_call_output: LocalShellToolCallOutput,
+    shell_call: FunctionShellCall,
+    shell_call_output: FunctionShellCallOutput,
+    apply_patch_call: ApplyPatchToolCall,
+    apply_patch_call_output: ApplyPatchToolCallOutput,
+    mcp_call: MCPToolCall,
+    mcp_list_tools: MCPListTools,
+    mcp_approval_request: MCPApprovalRequest,
+    mcp_approval_response: MCPApprovalResponseResource,
+    custom_tool_call: CustomToolCall,
+    custom_tool_call_output: CustomToolCallOutputResource,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (source != .object) return error.UnexpectedToken;
+        const discriminator = source.object.get("type") orelse return .{ .raw = source };
+        if (discriminator != .string) return .{ .raw = source };
+        if (std.mem.eql(u8, discriminator.string, "message")) {
+            return .{ .message = try std.json.parseFromValueLeaky(OutputMessage, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "file_search_call")) {
+            return .{ .file_search_call = try std.json.parseFromValueLeaky(FileSearchToolCall, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "function_call")) {
+            return .{ .function_call = try std.json.parseFromValueLeaky(FunctionToolCall, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "function_call_output")) {
+            return .{ .function_call_output = try std.json.parseFromValueLeaky(FunctionToolCallOutputResource, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "web_search_call")) {
+            return .{ .web_search_call = try std.json.parseFromValueLeaky(WebSearchToolCall, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "computer_call")) {
+            return .{ .computer_call = try std.json.parseFromValueLeaky(ComputerToolCall, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "computer_call_output")) {
+            return .{ .computer_call_output = try std.json.parseFromValueLeaky(ComputerToolCallOutputResource, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "reasoning")) {
+            return .{ .reasoning = try std.json.parseFromValueLeaky(ReasoningItem, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "tool_search_call")) {
+            return .{ .tool_search_call = try std.json.parseFromValueLeaky(ToolSearchCall, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "tool_search_output")) {
+            return .{ .tool_search_output = try std.json.parseFromValueLeaky(ToolSearchOutput, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "compaction")) {
+            return .{ .compaction = try std.json.parseFromValueLeaky(CompactionBody, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "image_generation_call")) {
+            return .{ .image_generation_call = try std.json.parseFromValueLeaky(ImageGenToolCall, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "code_interpreter_call")) {
+            return .{ .code_interpreter_call = try std.json.parseFromValueLeaky(CodeInterpreterToolCall, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "local_shell_call")) {
+            return .{ .local_shell_call = try std.json.parseFromValueLeaky(LocalShellToolCall, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "local_shell_call_output")) {
+            return .{ .local_shell_call_output = try std.json.parseFromValueLeaky(LocalShellToolCallOutput, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "shell_call")) {
+            return .{ .shell_call = try std.json.parseFromValueLeaky(FunctionShellCall, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "shell_call_output")) {
+            return .{ .shell_call_output = try std.json.parseFromValueLeaky(FunctionShellCallOutput, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "apply_patch_call")) {
+            return .{ .apply_patch_call = try std.json.parseFromValueLeaky(ApplyPatchToolCall, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "apply_patch_call_output")) {
+            return .{ .apply_patch_call_output = try std.json.parseFromValueLeaky(ApplyPatchToolCallOutput, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "mcp_call")) {
+            return .{ .mcp_call = try std.json.parseFromValueLeaky(MCPToolCall, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "mcp_list_tools")) {
+            return .{ .mcp_list_tools = try std.json.parseFromValueLeaky(MCPListTools, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "mcp_approval_request")) {
+            return .{ .mcp_approval_request = try std.json.parseFromValueLeaky(MCPApprovalRequest, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "mcp_approval_response")) {
+            return .{ .mcp_approval_response = try std.json.parseFromValueLeaky(MCPApprovalResponseResource, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "custom_tool_call")) {
+            return .{ .custom_tool_call = try std.json.parseFromValueLeaky(CustomToolCall, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "custom_tool_call_output")) {
+            return .{ .custom_tool_call_output = try std.json.parseFromValueLeaky(CustomToolCallOutputResource, allocator, source, options) };
+        }
+
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .message => |value| try jw.write(value),
+            .file_search_call => |value| try jw.write(value),
+            .function_call => |value| try jw.write(value),
+            .function_call_output => |value| try jw.write(value),
+            .web_search_call => |value| try jw.write(value),
+            .computer_call => |value| try jw.write(value),
+            .computer_call_output => |value| try jw.write(value),
+            .reasoning => |value| try jw.write(value),
+            .tool_search_call => |value| try jw.write(value),
+            .tool_search_output => |value| try jw.write(value),
+            .compaction => |value| try jw.write(value),
+            .image_generation_call => |value| try jw.write(value),
+            .code_interpreter_call => |value| try jw.write(value),
+            .local_shell_call => |value| try jw.write(value),
+            .local_shell_call_output => |value| try jw.write(value),
+            .shell_call => |value| try jw.write(value),
+            .shell_call_output => |value| try jw.write(value),
+            .apply_patch_call => |value| try jw.write(value),
+            .apply_patch_call_output => |value| try jw.write(value),
+            .mcp_call => |value| try jw.write(value),
+            .mcp_list_tools => |value| try jw.write(value),
+            .mcp_approval_request => |value| try jw.write(value),
+            .mcp_approval_response => |value| try jw.write(value),
+            .custom_tool_call => |value| try jw.write(value),
+            .custom_tool_call_output => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const FileSearchTool = struct {
     max_num_results: ?i64 = null,
@@ -3043,7 +3751,73 @@ pub const ListRunsResponse = struct {
 
 pub const EvalItemContentArray = []const EvalItemContentItem;
 
-pub const ComputerAction = std.json.Value;
+pub const ComputerAction = union(enum) {
+    click: ClickParam,
+    double_click: DoubleClickAction,
+    drag: DragParam,
+    keypress: KeyPressAction,
+    move: MoveParam,
+    screenshot: ScreenshotParam,
+    scroll: ScrollParam,
+    type_: TypeParam,
+    wait: WaitParam,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (source != .object) return error.UnexpectedToken;
+        const discriminator = source.object.get("type") orelse return .{ .raw = source };
+        if (discriminator != .string) return .{ .raw = source };
+        if (std.mem.eql(u8, discriminator.string, "click")) {
+            return .{ .click = try std.json.parseFromValueLeaky(ClickParam, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "double_click")) {
+            return .{ .double_click = try std.json.parseFromValueLeaky(DoubleClickAction, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "drag")) {
+            return .{ .drag = try std.json.parseFromValueLeaky(DragParam, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "keypress")) {
+            return .{ .keypress = try std.json.parseFromValueLeaky(KeyPressAction, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "move")) {
+            return .{ .move = try std.json.parseFromValueLeaky(MoveParam, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "screenshot")) {
+            return .{ .screenshot = try std.json.parseFromValueLeaky(ScreenshotParam, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "scroll")) {
+            return .{ .scroll = try std.json.parseFromValueLeaky(ScrollParam, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "type")) {
+            return .{ .type_ = try std.json.parseFromValueLeaky(TypeParam, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "wait")) {
+            return .{ .wait = try std.json.parseFromValueLeaky(WaitParam, allocator, source, options) };
+        }
+
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .click => |value| try jw.write(value),
+            .double_click => |value| try jw.write(value),
+            .drag => |value| try jw.write(value),
+            .keypress => |value| try jw.write(value),
+            .move => |value| try jw.write(value),
+            .screenshot => |value| try jw.write(value),
+            .scroll => |value| try jw.write(value),
+            .type_ => |value| try jw.write(value),
+            .wait => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const ResponseFileSearchCallInProgressEvent = struct {
     item_id: []const u8,
@@ -3522,7 +4296,38 @@ pub const ApplyPatchToolCallItemParam = struct {
     type: []const u8,
 };
 
-pub const ImageGenStreamEvent = std.json.Value;
+pub const ImageGenStreamEvent = union(enum) {
+    image_generation_partial_image: ImageGenPartialImageEvent,
+    image_generation_completed: ImageGenCompletedEvent,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (source != .object) return error.UnexpectedToken;
+        const discriminator = source.object.get("type") orelse return .{ .raw = source };
+        if (discriminator != .string) return .{ .raw = source };
+        if (std.mem.eql(u8, discriminator.string, "image_generation.partial_image")) {
+            return .{ .image_generation_partial_image = try std.json.parseFromValueLeaky(ImageGenPartialImageEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "image_generation.completed")) {
+            return .{ .image_generation_completed = try std.json.parseFromValueLeaky(ImageGenCompletedEvent, allocator, source, options) };
+        }
+
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .image_generation_partial_image => |value| try jw.write(value),
+            .image_generation_completed => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const EvalRunOutputItemList = struct {
     object: []const u8,
@@ -3566,7 +4371,38 @@ pub const PredictionContent = struct {
     content: std.json.Value,
 };
 
-pub const ChunkingStrategyRequestParam = std.json.Value;
+pub const ChunkingStrategyRequestParam = union(enum) {
+    auto: AutoChunkingStrategyRequestParam,
+    static: StaticChunkingStrategyRequestParam,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (source != .object) return error.UnexpectedToken;
+        const discriminator = source.object.get("type") orelse return .{ .raw = source };
+        if (discriminator != .string) return .{ .raw = source };
+        if (std.mem.eql(u8, discriminator.string, "auto")) {
+            return .{ .auto = try std.json.parseFromValueLeaky(AutoChunkingStrategyRequestParam, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "static")) {
+            return .{ .static = try std.json.parseFromValueLeaky(StaticChunkingStrategyRequestParam, allocator, source, options) };
+        }
+
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .auto => |value| try jw.write(value),
+            .static => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const GroupResourceWithSuccess = struct {
     created_at: i64,
@@ -3616,7 +4452,38 @@ pub const ChatCompletionResponseMessage = struct {
     audio: ?std.json.Value = null,
 };
 
-pub const FunctionShellCallOutputOutcomeParam = std.json.Value;
+pub const FunctionShellCallOutputOutcomeParam = union(enum) {
+    timeout: FunctionShellCallOutputTimeoutOutcomeParam,
+    exit: FunctionShellCallOutputExitOutcomeParam,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (source != .object) return error.UnexpectedToken;
+        const discriminator = source.object.get("type") orelse return .{ .raw = source };
+        if (discriminator != .string) return .{ .raw = source };
+        if (std.mem.eql(u8, discriminator.string, "timeout")) {
+            return .{ .timeout = try std.json.parseFromValueLeaky(FunctionShellCallOutputTimeoutOutcomeParam, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "exit")) {
+            return .{ .exit = try std.json.parseFromValueLeaky(FunctionShellCallOutputExitOutcomeParam, allocator, source, options) };
+        }
+
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .timeout => |value| try jw.write(value),
+            .exit => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const CustomTextFormatParam = struct {
     type: []const u8,
@@ -3779,7 +4646,38 @@ pub const ClosedStatus = struct {
     type: []const u8,
 };
 
-pub const ChatCompletionRequestAssistantMessageContentPart = std.json.Value;
+pub const ChatCompletionRequestAssistantMessageContentPart = union(enum) {
+    text: ChatCompletionRequestMessageContentPartText,
+    refusal: ChatCompletionRequestMessageContentPartRefusal,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (source != .object) return error.UnexpectedToken;
+        const discriminator = source.object.get("type") orelse return .{ .raw = source };
+        if (discriminator != .string) return .{ .raw = source };
+        if (std.mem.eql(u8, discriminator.string, "text")) {
+            return .{ .text = try std.json.parseFromValueLeaky(ChatCompletionRequestMessageContentPartText, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "refusal")) {
+            return .{ .refusal = try std.json.parseFromValueLeaky(ChatCompletionRequestMessageContentPartRefusal, allocator, source, options) };
+        }
+
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .text => |value| try jw.write(value),
+            .refusal => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const MCPToolFilter = struct {
     tool_names: ?[]const []const u8 = null,
@@ -4143,7 +5041,43 @@ pub const FunctionShellCall = struct {
     created_by: ?[]const u8 = null,
 };
 
-pub const OutputContent = std.json.Value;
+pub const OutputContent = union(enum) {
+    output_text: OutputTextContent,
+    refusal: RefusalContent,
+    reasoning_text: ReasoningTextContent,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (source != .object) return error.UnexpectedToken;
+        const discriminator = source.object.get("type") orelse return .{ .raw = source };
+        if (discriminator != .string) return .{ .raw = source };
+        if (std.mem.eql(u8, discriminator.string, "output_text")) {
+            return .{ .output_text = try std.json.parseFromValueLeaky(OutputTextContent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "refusal")) {
+            return .{ .refusal = try std.json.parseFromValueLeaky(RefusalContent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "reasoning_text")) {
+            return .{ .reasoning_text = try std.json.parseFromValueLeaky(ReasoningTextContent, allocator, source, options) };
+        }
+
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .output_text => |value| try jw.write(value),
+            .refusal => |value| try jw.write(value),
+            .reasoning_text => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const ReasoningItem = struct {
     status: ?[]const u8 = null,
@@ -4720,7 +5654,293 @@ pub const RealtimeServerEventInputAudioBufferDtmfEventReceived = struct {
     type: []const u8,
 };
 
-pub const ResponseStreamEvent = std.json.Value;
+pub const ResponseStreamEvent = union(enum) {
+    response_audio_delta: ResponseAudioDeltaEvent,
+    response_audio_done: ResponseAudioDoneEvent,
+    response_audio_transcript_delta: ResponseAudioTranscriptDeltaEvent,
+    response_audio_transcript_done: ResponseAudioTranscriptDoneEvent,
+    response_code_interpreter_call_code_delta: ResponseCodeInterpreterCallCodeDeltaEvent,
+    response_code_interpreter_call_code_done: ResponseCodeInterpreterCallCodeDoneEvent,
+    response_code_interpreter_call_completed: ResponseCodeInterpreterCallCompletedEvent,
+    response_code_interpreter_call_in_progress: ResponseCodeInterpreterCallInProgressEvent,
+    response_code_interpreter_call_interpreting: ResponseCodeInterpreterCallInterpretingEvent,
+    response_completed: ResponseCompletedEvent,
+    response_content_part_added: ResponseContentPartAddedEvent,
+    response_content_part_done: ResponseContentPartDoneEvent,
+    response_created: ResponseCreatedEvent,
+    error_: ResponseErrorEvent,
+    response_file_search_call_completed: ResponseFileSearchCallCompletedEvent,
+    response_file_search_call_in_progress: ResponseFileSearchCallInProgressEvent,
+    response_file_search_call_searching: ResponseFileSearchCallSearchingEvent,
+    response_function_call_arguments_delta: ResponseFunctionCallArgumentsDeltaEvent,
+    response_function_call_arguments_done: ResponseFunctionCallArgumentsDoneEvent,
+    response_in_progress: ResponseInProgressEvent,
+    response_failed: ResponseFailedEvent,
+    response_incomplete: ResponseIncompleteEvent,
+    response_output_item_added: ResponseOutputItemAddedEvent,
+    response_output_item_done: ResponseOutputItemDoneEvent,
+    response_reasoning_summary_part_added: ResponseReasoningSummaryPartAddedEvent,
+    response_reasoning_summary_part_done: ResponseReasoningSummaryPartDoneEvent,
+    response_reasoning_summary_text_delta: ResponseReasoningSummaryTextDeltaEvent,
+    response_reasoning_summary_text_done: ResponseReasoningSummaryTextDoneEvent,
+    response_reasoning_text_delta: ResponseReasoningTextDeltaEvent,
+    response_reasoning_text_done: ResponseReasoningTextDoneEvent,
+    response_refusal_delta: ResponseRefusalDeltaEvent,
+    response_refusal_done: ResponseRefusalDoneEvent,
+    response_output_text_delta: ResponseTextDeltaEvent,
+    response_output_text_done: ResponseTextDoneEvent,
+    response_web_search_call_completed: ResponseWebSearchCallCompletedEvent,
+    response_web_search_call_in_progress: ResponseWebSearchCallInProgressEvent,
+    response_web_search_call_searching: ResponseWebSearchCallSearchingEvent,
+    response_image_generation_call_completed: ResponseImageGenCallCompletedEvent,
+    response_image_generation_call_generating: ResponseImageGenCallGeneratingEvent,
+    response_image_generation_call_in_progress: ResponseImageGenCallInProgressEvent,
+    response_image_generation_call_partial_image: ResponseImageGenCallPartialImageEvent,
+    response_mcp_call_arguments_delta: ResponseMCPCallArgumentsDeltaEvent,
+    response_mcp_call_arguments_done: ResponseMCPCallArgumentsDoneEvent,
+    response_mcp_call_completed: ResponseMCPCallCompletedEvent,
+    response_mcp_call_failed: ResponseMCPCallFailedEvent,
+    response_mcp_call_in_progress: ResponseMCPCallInProgressEvent,
+    response_mcp_list_tools_completed: ResponseMCPListToolsCompletedEvent,
+    response_mcp_list_tools_failed: ResponseMCPListToolsFailedEvent,
+    response_mcp_list_tools_in_progress: ResponseMCPListToolsInProgressEvent,
+    response_output_text_annotation_added: ResponseOutputTextAnnotationAddedEvent,
+    response_queued: ResponseQueuedEvent,
+    response_custom_tool_call_input_delta: ResponseCustomToolCallInputDeltaEvent,
+    response_custom_tool_call_input_done: ResponseCustomToolCallInputDoneEvent,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (source != .object) return error.UnexpectedToken;
+        const discriminator = source.object.get("type") orelse return .{ .raw = source };
+        if (discriminator != .string) return .{ .raw = source };
+        if (std.mem.eql(u8, discriminator.string, "response.audio.delta")) {
+            return .{ .response_audio_delta = try std.json.parseFromValueLeaky(ResponseAudioDeltaEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.audio.done")) {
+            return .{ .response_audio_done = try std.json.parseFromValueLeaky(ResponseAudioDoneEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.audio.transcript.delta")) {
+            return .{ .response_audio_transcript_delta = try std.json.parseFromValueLeaky(ResponseAudioTranscriptDeltaEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.audio.transcript.done")) {
+            return .{ .response_audio_transcript_done = try std.json.parseFromValueLeaky(ResponseAudioTranscriptDoneEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.code_interpreter_call_code.delta")) {
+            return .{ .response_code_interpreter_call_code_delta = try std.json.parseFromValueLeaky(ResponseCodeInterpreterCallCodeDeltaEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.code_interpreter_call_code.done")) {
+            return .{ .response_code_interpreter_call_code_done = try std.json.parseFromValueLeaky(ResponseCodeInterpreterCallCodeDoneEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.code_interpreter_call.completed")) {
+            return .{ .response_code_interpreter_call_completed = try std.json.parseFromValueLeaky(ResponseCodeInterpreterCallCompletedEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.code_interpreter_call.in_progress")) {
+            return .{ .response_code_interpreter_call_in_progress = try std.json.parseFromValueLeaky(ResponseCodeInterpreterCallInProgressEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.code_interpreter_call.interpreting")) {
+            return .{ .response_code_interpreter_call_interpreting = try std.json.parseFromValueLeaky(ResponseCodeInterpreterCallInterpretingEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.completed")) {
+            return .{ .response_completed = try std.json.parseFromValueLeaky(ResponseCompletedEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.content_part.added")) {
+            return .{ .response_content_part_added = try std.json.parseFromValueLeaky(ResponseContentPartAddedEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.content_part.done")) {
+            return .{ .response_content_part_done = try std.json.parseFromValueLeaky(ResponseContentPartDoneEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.created")) {
+            return .{ .response_created = try std.json.parseFromValueLeaky(ResponseCreatedEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "error")) {
+            return .{ .error_ = try std.json.parseFromValueLeaky(ResponseErrorEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.file_search_call.completed")) {
+            return .{ .response_file_search_call_completed = try std.json.parseFromValueLeaky(ResponseFileSearchCallCompletedEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.file_search_call.in_progress")) {
+            return .{ .response_file_search_call_in_progress = try std.json.parseFromValueLeaky(ResponseFileSearchCallInProgressEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.file_search_call.searching")) {
+            return .{ .response_file_search_call_searching = try std.json.parseFromValueLeaky(ResponseFileSearchCallSearchingEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.function_call_arguments.delta")) {
+            return .{ .response_function_call_arguments_delta = try std.json.parseFromValueLeaky(ResponseFunctionCallArgumentsDeltaEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.function_call_arguments.done")) {
+            return .{ .response_function_call_arguments_done = try std.json.parseFromValueLeaky(ResponseFunctionCallArgumentsDoneEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.in_progress")) {
+            return .{ .response_in_progress = try std.json.parseFromValueLeaky(ResponseInProgressEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.failed")) {
+            return .{ .response_failed = try std.json.parseFromValueLeaky(ResponseFailedEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.incomplete")) {
+            return .{ .response_incomplete = try std.json.parseFromValueLeaky(ResponseIncompleteEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.output_item.added")) {
+            return .{ .response_output_item_added = try std.json.parseFromValueLeaky(ResponseOutputItemAddedEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.output_item.done")) {
+            return .{ .response_output_item_done = try std.json.parseFromValueLeaky(ResponseOutputItemDoneEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.reasoning_summary_part.added")) {
+            return .{ .response_reasoning_summary_part_added = try std.json.parseFromValueLeaky(ResponseReasoningSummaryPartAddedEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.reasoning_summary_part.done")) {
+            return .{ .response_reasoning_summary_part_done = try std.json.parseFromValueLeaky(ResponseReasoningSummaryPartDoneEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.reasoning_summary_text.delta")) {
+            return .{ .response_reasoning_summary_text_delta = try std.json.parseFromValueLeaky(ResponseReasoningSummaryTextDeltaEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.reasoning_summary_text.done")) {
+            return .{ .response_reasoning_summary_text_done = try std.json.parseFromValueLeaky(ResponseReasoningSummaryTextDoneEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.reasoning_text.delta")) {
+            return .{ .response_reasoning_text_delta = try std.json.parseFromValueLeaky(ResponseReasoningTextDeltaEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.reasoning_text.done")) {
+            return .{ .response_reasoning_text_done = try std.json.parseFromValueLeaky(ResponseReasoningTextDoneEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.refusal.delta")) {
+            return .{ .response_refusal_delta = try std.json.parseFromValueLeaky(ResponseRefusalDeltaEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.refusal.done")) {
+            return .{ .response_refusal_done = try std.json.parseFromValueLeaky(ResponseRefusalDoneEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.output_text.delta")) {
+            return .{ .response_output_text_delta = try std.json.parseFromValueLeaky(ResponseTextDeltaEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.output_text.done")) {
+            return .{ .response_output_text_done = try std.json.parseFromValueLeaky(ResponseTextDoneEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.web_search_call.completed")) {
+            return .{ .response_web_search_call_completed = try std.json.parseFromValueLeaky(ResponseWebSearchCallCompletedEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.web_search_call.in_progress")) {
+            return .{ .response_web_search_call_in_progress = try std.json.parseFromValueLeaky(ResponseWebSearchCallInProgressEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.web_search_call.searching")) {
+            return .{ .response_web_search_call_searching = try std.json.parseFromValueLeaky(ResponseWebSearchCallSearchingEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.image_generation_call.completed")) {
+            return .{ .response_image_generation_call_completed = try std.json.parseFromValueLeaky(ResponseImageGenCallCompletedEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.image_generation_call.generating")) {
+            return .{ .response_image_generation_call_generating = try std.json.parseFromValueLeaky(ResponseImageGenCallGeneratingEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.image_generation_call.in_progress")) {
+            return .{ .response_image_generation_call_in_progress = try std.json.parseFromValueLeaky(ResponseImageGenCallInProgressEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.image_generation_call.partial_image")) {
+            return .{ .response_image_generation_call_partial_image = try std.json.parseFromValueLeaky(ResponseImageGenCallPartialImageEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.mcp_call_arguments.delta")) {
+            return .{ .response_mcp_call_arguments_delta = try std.json.parseFromValueLeaky(ResponseMCPCallArgumentsDeltaEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.mcp_call_arguments.done")) {
+            return .{ .response_mcp_call_arguments_done = try std.json.parseFromValueLeaky(ResponseMCPCallArgumentsDoneEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.mcp_call.completed")) {
+            return .{ .response_mcp_call_completed = try std.json.parseFromValueLeaky(ResponseMCPCallCompletedEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.mcp_call.failed")) {
+            return .{ .response_mcp_call_failed = try std.json.parseFromValueLeaky(ResponseMCPCallFailedEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.mcp_call.in_progress")) {
+            return .{ .response_mcp_call_in_progress = try std.json.parseFromValueLeaky(ResponseMCPCallInProgressEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.mcp_list_tools.completed")) {
+            return .{ .response_mcp_list_tools_completed = try std.json.parseFromValueLeaky(ResponseMCPListToolsCompletedEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.mcp_list_tools.failed")) {
+            return .{ .response_mcp_list_tools_failed = try std.json.parseFromValueLeaky(ResponseMCPListToolsFailedEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.mcp_list_tools.in_progress")) {
+            return .{ .response_mcp_list_tools_in_progress = try std.json.parseFromValueLeaky(ResponseMCPListToolsInProgressEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.output_text.annotation.added")) {
+            return .{ .response_output_text_annotation_added = try std.json.parseFromValueLeaky(ResponseOutputTextAnnotationAddedEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.queued")) {
+            return .{ .response_queued = try std.json.parseFromValueLeaky(ResponseQueuedEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.custom_tool_call_input.delta")) {
+            return .{ .response_custom_tool_call_input_delta = try std.json.parseFromValueLeaky(ResponseCustomToolCallInputDeltaEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.custom_tool_call_input.done")) {
+            return .{ .response_custom_tool_call_input_done = try std.json.parseFromValueLeaky(ResponseCustomToolCallInputDoneEvent, allocator, source, options) };
+        }
+
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .response_audio_delta => |value| try jw.write(value),
+            .response_audio_done => |value| try jw.write(value),
+            .response_audio_transcript_delta => |value| try jw.write(value),
+            .response_audio_transcript_done => |value| try jw.write(value),
+            .response_code_interpreter_call_code_delta => |value| try jw.write(value),
+            .response_code_interpreter_call_code_done => |value| try jw.write(value),
+            .response_code_interpreter_call_completed => |value| try jw.write(value),
+            .response_code_interpreter_call_in_progress => |value| try jw.write(value),
+            .response_code_interpreter_call_interpreting => |value| try jw.write(value),
+            .response_completed => |value| try jw.write(value),
+            .response_content_part_added => |value| try jw.write(value),
+            .response_content_part_done => |value| try jw.write(value),
+            .response_created => |value| try jw.write(value),
+            .error_ => |value| try jw.write(value),
+            .response_file_search_call_completed => |value| try jw.write(value),
+            .response_file_search_call_in_progress => |value| try jw.write(value),
+            .response_file_search_call_searching => |value| try jw.write(value),
+            .response_function_call_arguments_delta => |value| try jw.write(value),
+            .response_function_call_arguments_done => |value| try jw.write(value),
+            .response_in_progress => |value| try jw.write(value),
+            .response_failed => |value| try jw.write(value),
+            .response_incomplete => |value| try jw.write(value),
+            .response_output_item_added => |value| try jw.write(value),
+            .response_output_item_done => |value| try jw.write(value),
+            .response_reasoning_summary_part_added => |value| try jw.write(value),
+            .response_reasoning_summary_part_done => |value| try jw.write(value),
+            .response_reasoning_summary_text_delta => |value| try jw.write(value),
+            .response_reasoning_summary_text_done => |value| try jw.write(value),
+            .response_reasoning_text_delta => |value| try jw.write(value),
+            .response_reasoning_text_done => |value| try jw.write(value),
+            .response_refusal_delta => |value| try jw.write(value),
+            .response_refusal_done => |value| try jw.write(value),
+            .response_output_text_delta => |value| try jw.write(value),
+            .response_output_text_done => |value| try jw.write(value),
+            .response_web_search_call_completed => |value| try jw.write(value),
+            .response_web_search_call_in_progress => |value| try jw.write(value),
+            .response_web_search_call_searching => |value| try jw.write(value),
+            .response_image_generation_call_completed => |value| try jw.write(value),
+            .response_image_generation_call_generating => |value| try jw.write(value),
+            .response_image_generation_call_in_progress => |value| try jw.write(value),
+            .response_image_generation_call_partial_image => |value| try jw.write(value),
+            .response_mcp_call_arguments_delta => |value| try jw.write(value),
+            .response_mcp_call_arguments_done => |value| try jw.write(value),
+            .response_mcp_call_completed => |value| try jw.write(value),
+            .response_mcp_call_failed => |value| try jw.write(value),
+            .response_mcp_call_in_progress => |value| try jw.write(value),
+            .response_mcp_list_tools_completed => |value| try jw.write(value),
+            .response_mcp_list_tools_failed => |value| try jw.write(value),
+            .response_mcp_list_tools_in_progress => |value| try jw.write(value),
+            .response_output_text_annotation_added => |value| try jw.write(value),
+            .response_queued => |value| try jw.write(value),
+            .response_custom_tool_call_input_delta => |value| try jw.write(value),
+            .response_custom_tool_call_input_done => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const CompactResource = struct {
     object: []const u8,
@@ -4818,7 +6038,58 @@ pub const MCPListToolsTool = struct {
     name: []const u8,
 };
 
-pub const ThreadItem = std.json.Value;
+pub const ThreadItem = union(enum) {
+    chatkit_user_message: UserMessageItem,
+    chatkit_assistant_message: AssistantMessageItem,
+    chatkit_widget: WidgetMessageItem,
+    chatkit_client_tool_call: ClientToolCallItem,
+    chatkit_task: TaskItem,
+    chatkit_task_group: TaskGroupItem,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (source != .object) return error.UnexpectedToken;
+        const discriminator = source.object.get("type") orelse return .{ .raw = source };
+        if (discriminator != .string) return .{ .raw = source };
+        if (std.mem.eql(u8, discriminator.string, "chatkit.user_message")) {
+            return .{ .chatkit_user_message = try std.json.parseFromValueLeaky(UserMessageItem, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "chatkit.assistant_message")) {
+            return .{ .chatkit_assistant_message = try std.json.parseFromValueLeaky(AssistantMessageItem, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "chatkit.widget")) {
+            return .{ .chatkit_widget = try std.json.parseFromValueLeaky(WidgetMessageItem, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "chatkit.client_tool_call")) {
+            return .{ .chatkit_client_tool_call = try std.json.parseFromValueLeaky(ClientToolCallItem, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "chatkit.task")) {
+            return .{ .chatkit_task = try std.json.parseFromValueLeaky(TaskItem, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "chatkit.task_group")) {
+            return .{ .chatkit_task_group = try std.json.parseFromValueLeaky(TaskGroupItem, allocator, source, options) };
+        }
+
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .chatkit_user_message => |value| try jw.write(value),
+            .chatkit_assistant_message => |value| try jw.write(value),
+            .chatkit_widget => |value| try jw.write(value),
+            .chatkit_client_tool_call => |value| try jw.write(value),
+            .chatkit_task => |value| try jw.write(value),
+            .chatkit_task_group => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const ModelIds = std.json.Value;
 
@@ -5095,7 +6366,153 @@ pub const ToolChoiceCustom = struct {
 
 pub const FunctionParameters = std.json.Value;
 
-pub const ConversationItem = std.json.Value;
+pub const ConversationItem = union(enum) {
+    message: Message,
+    function_call: FunctionToolCallResource,
+    function_call_output: FunctionToolCallOutputResource,
+    file_search_call: FileSearchToolCall,
+    web_search_call: WebSearchToolCall,
+    image_generation_call: ImageGenToolCall,
+    computer_call: ComputerToolCall,
+    computer_call_output: ComputerToolCallOutputResource,
+    tool_search_call: ToolSearchCall,
+    tool_search_output: ToolSearchOutput,
+    reasoning: ReasoningItem,
+    compaction: CompactionBody,
+    code_interpreter_call: CodeInterpreterToolCall,
+    local_shell_call: LocalShellToolCall,
+    local_shell_call_output: LocalShellToolCallOutput,
+    shell_call: FunctionShellCall,
+    shell_call_output: FunctionShellCallOutput,
+    apply_patch_call: ApplyPatchToolCall,
+    apply_patch_call_output: ApplyPatchToolCallOutput,
+    mcp_list_tools: MCPListTools,
+    mcp_approval_request: MCPApprovalRequest,
+    mcp_approval_response: MCPApprovalResponseResource,
+    mcp_call: MCPToolCall,
+    custom_tool_call: CustomToolCall,
+    custom_tool_call_output: CustomToolCallOutput,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (source != .object) return error.UnexpectedToken;
+        const discriminator = source.object.get("type") orelse return .{ .raw = source };
+        if (discriminator != .string) return .{ .raw = source };
+        if (std.mem.eql(u8, discriminator.string, "message")) {
+            return .{ .message = try std.json.parseFromValueLeaky(Message, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "function_call")) {
+            return .{ .function_call = try std.json.parseFromValueLeaky(FunctionToolCallResource, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "function_call_output")) {
+            return .{ .function_call_output = try std.json.parseFromValueLeaky(FunctionToolCallOutputResource, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "file_search_call")) {
+            return .{ .file_search_call = try std.json.parseFromValueLeaky(FileSearchToolCall, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "web_search_call")) {
+            return .{ .web_search_call = try std.json.parseFromValueLeaky(WebSearchToolCall, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "image_generation_call")) {
+            return .{ .image_generation_call = try std.json.parseFromValueLeaky(ImageGenToolCall, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "computer_call")) {
+            return .{ .computer_call = try std.json.parseFromValueLeaky(ComputerToolCall, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "computer_call_output")) {
+            return .{ .computer_call_output = try std.json.parseFromValueLeaky(ComputerToolCallOutputResource, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "tool_search_call")) {
+            return .{ .tool_search_call = try std.json.parseFromValueLeaky(ToolSearchCall, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "tool_search_output")) {
+            return .{ .tool_search_output = try std.json.parseFromValueLeaky(ToolSearchOutput, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "reasoning")) {
+            return .{ .reasoning = try std.json.parseFromValueLeaky(ReasoningItem, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "compaction")) {
+            return .{ .compaction = try std.json.parseFromValueLeaky(CompactionBody, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "code_interpreter_call")) {
+            return .{ .code_interpreter_call = try std.json.parseFromValueLeaky(CodeInterpreterToolCall, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "local_shell_call")) {
+            return .{ .local_shell_call = try std.json.parseFromValueLeaky(LocalShellToolCall, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "local_shell_call_output")) {
+            return .{ .local_shell_call_output = try std.json.parseFromValueLeaky(LocalShellToolCallOutput, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "shell_call")) {
+            return .{ .shell_call = try std.json.parseFromValueLeaky(FunctionShellCall, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "shell_call_output")) {
+            return .{ .shell_call_output = try std.json.parseFromValueLeaky(FunctionShellCallOutput, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "apply_patch_call")) {
+            return .{ .apply_patch_call = try std.json.parseFromValueLeaky(ApplyPatchToolCall, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "apply_patch_call_output")) {
+            return .{ .apply_patch_call_output = try std.json.parseFromValueLeaky(ApplyPatchToolCallOutput, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "mcp_list_tools")) {
+            return .{ .mcp_list_tools = try std.json.parseFromValueLeaky(MCPListTools, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "mcp_approval_request")) {
+            return .{ .mcp_approval_request = try std.json.parseFromValueLeaky(MCPApprovalRequest, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "mcp_approval_response")) {
+            return .{ .mcp_approval_response = try std.json.parseFromValueLeaky(MCPApprovalResponseResource, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "mcp_call")) {
+            return .{ .mcp_call = try std.json.parseFromValueLeaky(MCPToolCall, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "custom_tool_call")) {
+            return .{ .custom_tool_call = try std.json.parseFromValueLeaky(CustomToolCall, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "custom_tool_call_output")) {
+            return .{ .custom_tool_call_output = try std.json.parseFromValueLeaky(CustomToolCallOutput, allocator, source, options) };
+        }
+
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .message => |value| try jw.write(value),
+            .function_call => |value| try jw.write(value),
+            .function_call_output => |value| try jw.write(value),
+            .file_search_call => |value| try jw.write(value),
+            .web_search_call => |value| try jw.write(value),
+            .image_generation_call => |value| try jw.write(value),
+            .computer_call => |value| try jw.write(value),
+            .computer_call_output => |value| try jw.write(value),
+            .tool_search_call => |value| try jw.write(value),
+            .tool_search_output => |value| try jw.write(value),
+            .reasoning => |value| try jw.write(value),
+            .compaction => |value| try jw.write(value),
+            .code_interpreter_call => |value| try jw.write(value),
+            .local_shell_call => |value| try jw.write(value),
+            .local_shell_call_output => |value| try jw.write(value),
+            .shell_call => |value| try jw.write(value),
+            .shell_call_output => |value| try jw.write(value),
+            .apply_patch_call => |value| try jw.write(value),
+            .apply_patch_call_output => |value| try jw.write(value),
+            .mcp_list_tools => |value| try jw.write(value),
+            .mcp_approval_request => |value| try jw.write(value),
+            .mcp_approval_response => |value| try jw.write(value),
+            .mcp_call => |value| try jw.write(value),
+            .custom_tool_call => |value| try jw.write(value),
+            .custom_tool_call_output => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const VectorStoreSearchResultsPage = struct {
     object: []const u8,
@@ -5320,7 +6737,43 @@ pub const CreateFileRequest = struct {
     expires_after: ?FileExpirationAfter = null,
 };
 
-pub const CreateTranscriptionResponseStreamEvent = std.json.Value;
+pub const CreateTranscriptionResponseStreamEvent = union(enum) {
+    transcript_text_segment: TranscriptTextSegmentEvent,
+    transcript_text_delta: TranscriptTextDeltaEvent,
+    transcript_text_done: TranscriptTextDoneEvent,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (source != .object) return error.UnexpectedToken;
+        const discriminator = source.object.get("type") orelse return .{ .raw = source };
+        if (discriminator != .string) return .{ .raw = source };
+        if (std.mem.eql(u8, discriminator.string, "transcript.text.segment")) {
+            return .{ .transcript_text_segment = try std.json.parseFromValueLeaky(TranscriptTextSegmentEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "transcript.text.delta")) {
+            return .{ .transcript_text_delta = try std.json.parseFromValueLeaky(TranscriptTextDeltaEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "transcript.text.done")) {
+            return .{ .transcript_text_done = try std.json.parseFromValueLeaky(TranscriptTextDoneEvent, allocator, source, options) };
+        }
+
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .transcript_text_segment => |value| try jw.write(value),
+            .transcript_text_delta => |value| try jw.write(value),
+            .transcript_text_done => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const RealtimeBetaClientEventConversationItemDelete = struct {
     event_id: ?[]const u8 = null,
@@ -5530,7 +6983,38 @@ pub const DoubleClickAction = struct {
     y: i64,
 };
 
-pub const ImageEditStreamEvent = std.json.Value;
+pub const ImageEditStreamEvent = union(enum) {
+    image_edit_partial_image: ImageEditPartialImageEvent,
+    image_edit_completed: ImageEditCompletedEvent,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (source != .object) return error.UnexpectedToken;
+        const discriminator = source.object.get("type") orelse return .{ .raw = source };
+        if (discriminator != .string) return .{ .raw = source };
+        if (std.mem.eql(u8, discriminator.string, "image_edit.partial_image")) {
+            return .{ .image_edit_partial_image = try std.json.parseFromValueLeaky(ImageEditPartialImageEvent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "image_edit.completed")) {
+            return .{ .image_edit_completed = try std.json.parseFromValueLeaky(ImageEditCompletedEvent, allocator, source, options) };
+        }
+
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .image_edit_partial_image => |value| try jw.write(value),
+            .image_edit_completed => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const PublicRoleListResource = struct {
     object: []const u8,
@@ -6277,7 +7761,48 @@ pub const RateLimitsParam = struct {
 
 pub const EvalItemContentItem = std.json.Value;
 
-pub const Annotation = std.json.Value;
+pub const Annotation = union(enum) {
+    file_citation: FileCitationBody,
+    url_citation: UrlCitationBody,
+    container_file_citation: ContainerFileCitationBody,
+    file_path: FilePath,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (source != .object) return error.UnexpectedToken;
+        const discriminator = source.object.get("type") orelse return .{ .raw = source };
+        if (discriminator != .string) return .{ .raw = source };
+        if (std.mem.eql(u8, discriminator.string, "file_citation")) {
+            return .{ .file_citation = try std.json.parseFromValueLeaky(FileCitationBody, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "url_citation")) {
+            return .{ .url_citation = try std.json.parseFromValueLeaky(UrlCitationBody, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "container_file_citation")) {
+            return .{ .container_file_citation = try std.json.parseFromValueLeaky(ContainerFileCitationBody, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "file_path")) {
+            return .{ .file_path = try std.json.parseFromValueLeaky(FilePath, allocator, source, options) };
+        }
+
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .file_citation => |value| try jw.write(value),
+            .url_citation => |value| try jw.write(value),
+            .container_file_citation => |value| try jw.write(value),
+            .file_path => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const ThreadStreamEvent = std.json.Value;
 
@@ -6483,7 +8008,83 @@ pub const RealtimeBetaServerEventConversationItemRetrieved = struct {
     type: []const u8,
 };
 
-pub const RealtimeClientEvent = std.json.Value;
+pub const RealtimeClientEvent = union(enum) {
+    conversation_item_create: RealtimeClientEventConversationItemCreate,
+    conversation_item_delete: RealtimeClientEventConversationItemDelete,
+    conversation_item_retrieve: RealtimeClientEventConversationItemRetrieve,
+    conversation_item_truncate: RealtimeClientEventConversationItemTruncate,
+    input_audio_buffer_append: RealtimeClientEventInputAudioBufferAppend,
+    input_audio_buffer_clear: RealtimeClientEventInputAudioBufferClear,
+    output_audio_buffer_clear: RealtimeClientEventOutputAudioBufferClear,
+    input_audio_buffer_commit: RealtimeClientEventInputAudioBufferCommit,
+    response_cancel: RealtimeClientEventResponseCancel,
+    response_create: RealtimeClientEventResponseCreate,
+    session_update: RealtimeClientEventSessionUpdate,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (source != .object) return error.UnexpectedToken;
+        const discriminator = source.object.get("type") orelse return .{ .raw = source };
+        if (discriminator != .string) return .{ .raw = source };
+        if (std.mem.eql(u8, discriminator.string, "conversation.item.create")) {
+            return .{ .conversation_item_create = try std.json.parseFromValueLeaky(RealtimeClientEventConversationItemCreate, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "conversation.item.delete")) {
+            return .{ .conversation_item_delete = try std.json.parseFromValueLeaky(RealtimeClientEventConversationItemDelete, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "conversation.item.retrieve")) {
+            return .{ .conversation_item_retrieve = try std.json.parseFromValueLeaky(RealtimeClientEventConversationItemRetrieve, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "conversation.item.truncate")) {
+            return .{ .conversation_item_truncate = try std.json.parseFromValueLeaky(RealtimeClientEventConversationItemTruncate, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "input_audio_buffer.append")) {
+            return .{ .input_audio_buffer_append = try std.json.parseFromValueLeaky(RealtimeClientEventInputAudioBufferAppend, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "input_audio_buffer.clear")) {
+            return .{ .input_audio_buffer_clear = try std.json.parseFromValueLeaky(RealtimeClientEventInputAudioBufferClear, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "output_audio_buffer.clear")) {
+            return .{ .output_audio_buffer_clear = try std.json.parseFromValueLeaky(RealtimeClientEventOutputAudioBufferClear, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "input_audio_buffer.commit")) {
+            return .{ .input_audio_buffer_commit = try std.json.parseFromValueLeaky(RealtimeClientEventInputAudioBufferCommit, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.cancel")) {
+            return .{ .response_cancel = try std.json.parseFromValueLeaky(RealtimeClientEventResponseCancel, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "response.create")) {
+            return .{ .response_create = try std.json.parseFromValueLeaky(RealtimeClientEventResponseCreate, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "session.update")) {
+            return .{ .session_update = try std.json.parseFromValueLeaky(RealtimeClientEventSessionUpdate, allocator, source, options) };
+        }
+
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .conversation_item_create => |value| try jw.write(value),
+            .conversation_item_delete => |value| try jw.write(value),
+            .conversation_item_retrieve => |value| try jw.write(value),
+            .conversation_item_truncate => |value| try jw.write(value),
+            .input_audio_buffer_append => |value| try jw.write(value),
+            .input_audio_buffer_clear => |value| try jw.write(value),
+            .output_audio_buffer_clear => |value| try jw.write(value),
+            .input_audio_buffer_commit => |value| try jw.write(value),
+            .response_cancel => |value| try jw.write(value),
+            .response_create => |value| try jw.write(value),
+            .session_update => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
 
 pub const RealtimeClientEventResponseCancel = struct {
     event_id: ?[]const u8 = null,
@@ -6630,15 +8231,22 @@ pub const RawResponse = struct {
     }
 };
 
+pub const ParseErrorResponse = struct {
+    raw: RawResponse,
+    error_name: []const u8,
+};
+
 pub fn ApiResult(comptime T: type) type {
     return union(enum) {
         ok: Owned(T),
         api_error: RawResponse,
+        parse_error: ParseErrorResponse,
 
         pub fn deinit(self: *@This()) void {
             switch (self.*) {
                 .ok => |*value| value.deinit(),
                 .api_error => |*value| value.deinit(),
+                .parse_error => |*value| value.raw.deinit(),
             }
         }
     };
@@ -6756,8 +8364,9 @@ pub fn postJsonRaw(client: *Client, path: []const u8, payload: anytype) !RawResp
 
 pub fn parseRawResponse(comptime T: type, raw: RawResponse) !ApiResult(T) {
     if (raw.status.class() != .success) return .{ .api_error = raw };
-    errdefer raw.allocator.free(raw.body);
-    const parsed = try std.json.parseFromSlice(T, raw.allocator, raw.body, .{ .ignore_unknown_fields = true });
+    const parsed = std.json.parseFromSlice(T, raw.allocator, raw.body, .{ .ignore_unknown_fields = true }) catch |err| {
+        return .{ .parse_error = .{ .raw = raw, .error_name = @errorName(err) } };
+    };
     return .{ .ok = .{ .allocator = raw.allocator, .body = raw.body, .parsed = parsed } };
 }
 
@@ -6962,44 +8571,21 @@ fn appendClientHeaders(allocator: std.mem.Allocator, headers: *std.ArrayList(std
 //
 //
 pub fn createResponse(client: *Client, requestBody: CreateResponse) !Owned(Response) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/responses", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try createResponseResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(Response, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn createResponseResult(client: *Client, requestBody: CreateResponse) !ApiResult(Response) {
+pub fn createResponseRaw(client: *Client, requestBody: CreateResponse) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -7010,8 +8596,11 @@ pub fn createResponseResult(client: *Client, requestBody: CreateResponse) !ApiRe
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(Response, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn createResponseResult(client: *Client, requestBody: CreateResponse) !ApiResult(Response) {
+    return parseRawResponse(Response, try createResponseRaw(client, requestBody));
 }
 
 pub fn streamResponse(client: *Client, requestBody: CreateResponse, callback: anytype) !void {
@@ -7029,53 +8618,21 @@ pub fn streamResponseEvents(comptime Event: type, client: *Client, requestBody: 
 //
 //
 pub fn listChatCompletions(client: *Client, model: ?[]const u8, metadata: ?[]const u8, after: ?[]const u8, limit: ?i64, order: ?[]const u8) !Owned(ChatCompletionList) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/chat/completions", .{client.base_url});
-    var first_query = true;
-    if (model) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "model", value);
+    var result = try listChatCompletionsResult(client, model, metadata, after, limit, order);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (metadata) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "metadata", value);
-    }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
-    }
-    if (order) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "order", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ChatCompletionList, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn listChatCompletionsResult(client: *Client, model: ?[]const u8, metadata: ?[]const u8, after: ?[]const u8, limit: ?i64, order: ?[]const u8) !ApiResult(ChatCompletionList) {
+pub fn listChatCompletionsRaw(client: *Client, model: ?[]const u8, metadata: ?[]const u8, after: ?[]const u8, limit: ?i64, order: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -7098,8 +8655,11 @@ pub fn listChatCompletionsResult(client: *Client, model: ?[]const u8, metadata: 
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ChatCompletionList, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn listChatCompletionsResult(client: *Client, model: ?[]const u8, metadata: ?[]const u8, after: ?[]const u8, limit: ?i64, order: ?[]const u8) !ApiResult(ChatCompletionList) {
+    return parseRawResponse(ChatCompletionList, try listChatCompletionsRaw(client, model, metadata, after, limit, order));
 }
 
 /////////////////
@@ -7125,44 +8685,21 @@ pub fn listChatCompletionsResult(client: *Client, model: ?[]const u8, metadata: 
 //
 //
 pub fn createChatCompletion(client: *Client, requestBody: CreateChatCompletionRequest) !Owned(CreateChatCompletionResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/chat/completions", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try createChatCompletionResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(CreateChatCompletionResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn createChatCompletionResult(client: *Client, requestBody: CreateChatCompletionRequest) !ApiResult(CreateChatCompletionResponse) {
+pub fn createChatCompletionRaw(client: *Client, requestBody: CreateChatCompletionRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -7173,8 +8710,11 @@ pub fn createChatCompletionResult(client: *Client, requestBody: CreateChatComple
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(CreateChatCompletionResponse, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn createChatCompletionResult(client: *Client, requestBody: CreateChatCompletionRequest) !ApiResult(CreateChatCompletionResponse) {
+    return parseRawResponse(CreateChatCompletionResponse, try createChatCompletionRaw(client, requestBody));
 }
 
 pub fn streamChatCompletion(client: *Client, requestBody: CreateChatCompletionRequest, callback: anytype) !void {
@@ -7191,44 +8731,21 @@ pub fn streamChatCompletionEvents(comptime Event: type, client: *Client, request
 //
 //
 pub fn createImage(client: *Client, requestBody: CreateImageRequest) !Owned(ImagesResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/images/generations", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try createImageResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ImagesResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn createImageResult(client: *Client, requestBody: CreateImageRequest) !ApiResult(ImagesResponse) {
+pub fn createImageRaw(client: *Client, requestBody: CreateImageRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -7239,8 +8756,11 @@ pub fn createImageResult(client: *Client, requestBody: CreateImageRequest) !ApiR
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(ImagesResponse, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn createImageResult(client: *Client, requestBody: CreateImageRequest) !ApiResult(ImagesResponse) {
+    return parseRawResponse(ImagesResponse, try createImageRaw(client, requestBody));
 }
 
 /////////////////
@@ -7248,45 +8768,32 @@ pub fn createImageResult(client: *Client, requestBody: CreateImageRequest) !ApiR
 // Retrieves a vector store file batch.
 //
 pub fn getVectorStoreFileBatch(client: *Client, vector_store_id: []const u8, batch_id: []const u8) !Owned(VectorStoreFileBatchObject) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/vector_stores/{s}/file_batches/{s}", .{ client.base_url, vector_store_id, batch_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try getVectorStoreFileBatchResult(client, vector_store_id, batch_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(VectorStoreFileBatchObject, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn getVectorStoreFileBatchResult(client: *Client, vector_store_id: []const u8, batch_id: []const u8) !ApiResult(VectorStoreFileBatchObject) {
+pub fn getVectorStoreFileBatchRaw(client: *Client, vector_store_id: []const u8, batch_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/vector_stores/{s}/file_batches/{s}", .{ client.base_url, vector_store_id, batch_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(VectorStoreFileBatchObject, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn getVectorStoreFileBatchResult(client: *Client, vector_store_id: []const u8, batch_id: []const u8) !ApiResult(VectorStoreFileBatchObject) {
+    return parseRawResponse(VectorStoreFileBatchObject, try getVectorStoreFileBatchRaw(client, vector_store_id, batch_id));
 }
 
 /////////////////
@@ -7294,45 +8801,32 @@ pub fn getVectorStoreFileBatchResult(client: *Client, vector_store_id: []const u
 // Archives a project in the organization. Archived projects cannot be used or updated.
 //
 pub fn @"archive-project"(client: *Client, project_id: []const u8) !Owned(Project) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/projects/{s}/archive", .{ client.base_url, project_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"archive-projectResult"(client, project_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(Project, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"archive-projectResult"(client: *Client, project_id: []const u8) !ApiResult(Project) {
+pub fn @"archive-projectRaw"(client: *Client, project_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/organization/projects/{s}/archive", .{ client.base_url, project_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(Project, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn @"archive-projectResult"(client: *Client, project_id: []const u8) !ApiResult(Project) {
+    return parseRawResponse(Project, try @"archive-projectRaw"(client, project_id));
 }
 
 /////////////////
@@ -7343,25 +8837,19 @@ pub fn @"archive-projectResult"(client: *Client, project_id: []const u8) !ApiRes
 // Retrieves a container file content.
 //
 pub fn RetrieveContainerFileContent(client: *Client, container_id: []const u8, file_id: []const u8) !void {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
+    var raw = try RetrieveContainerFileContentRaw(client, container_id, file_id);
+    defer raw.deinit();
+    if (raw.status.class() != .success) return error.ResponseError;
+}
 
+pub fn RetrieveContainerFileContentRaw(client: *Client, container_id: []const u8, file_id: []const u8) !RawResponse {
+    const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/containers/{s}/files/{s}/content", .{ client.base_url, container_id, file_id });
-    const uri = try std.Uri.parse(uri_buf.written());
+    const payload: ?[]const u8 = null;
 
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
 }
 
 /////////////////
@@ -7369,47 +8857,21 @@ pub fn RetrieveContainerFileContent(client: *Client, container_id: []const u8, f
 // Lists the roles configured for a project.
 //
 pub fn @"list-project-roles"(client: *Client, project_id: []const u8, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !Owned(PublicRoleListResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/projects/{s}/roles", .{ client.base_url, project_id });
-    var first_query = true;
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
+    var result = try @"list-project-rolesResult"(client, project_id, limit, after, order);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    if (order) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "order", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(PublicRoleListResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"list-project-rolesResult"(client: *Client, project_id: []const u8, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !ApiResult(PublicRoleListResource) {
+pub fn @"list-project-rolesRaw"(client: *Client, project_id: []const u8, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -7426,8 +8888,11 @@ pub fn @"list-project-rolesResult"(client: *Client, project_id: []const u8, limi
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(PublicRoleListResource, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn @"list-project-rolesResult"(client: *Client, project_id: []const u8, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !ApiResult(PublicRoleListResource) {
+    return parseRawResponse(PublicRoleListResource, try @"list-project-rolesRaw"(client, project_id, limit, after, order));
 }
 
 /////////////////
@@ -7435,44 +8900,21 @@ pub fn @"list-project-rolesResult"(client: *Client, project_id: []const u8, limi
 // Creates a custom role for a project.
 //
 pub fn @"create-project-role"(client: *Client, project_id: []const u8, requestBody: PublicCreateOrganizationRoleBody) !Owned(Role) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/projects/{s}/roles", .{ client.base_url, project_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"create-project-roleResult"(client, project_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(Role, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"create-project-roleResult"(client: *Client, project_id: []const u8, requestBody: PublicCreateOrganizationRoleBody) !ApiResult(Role) {
+pub fn @"create-project-roleRaw"(client: *Client, project_id: []const u8, requestBody: PublicCreateOrganizationRoleBody) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -7483,8 +8925,11 @@ pub fn @"create-project-roleResult"(client: *Client, project_id: []const u8, req
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(Role, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn @"create-project-roleResult"(client: *Client, project_id: []const u8, requestBody: PublicCreateOrganizationRoleBody) !ApiResult(Role) {
+    return parseRawResponse(Role, try @"create-project-roleRaw"(client, project_id, requestBody));
 }
 
 /////////////////
@@ -7492,45 +8937,32 @@ pub fn @"create-project-roleResult"(client: *Client, project_id: []const u8, req
 // Cancel a vector store file batch. This attempts to cancel the processing of files in this batch as soon as possible.
 //
 pub fn cancelVectorStoreFileBatch(client: *Client, vector_store_id: []const u8, batch_id: []const u8) !Owned(VectorStoreFileBatchObject) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/vector_stores/{s}/file_batches/{s}/cancel", .{ client.base_url, vector_store_id, batch_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try cancelVectorStoreFileBatchResult(client, vector_store_id, batch_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(VectorStoreFileBatchObject, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn cancelVectorStoreFileBatchResult(client: *Client, vector_store_id: []const u8, batch_id: []const u8) !ApiResult(VectorStoreFileBatchObject) {
+pub fn cancelVectorStoreFileBatchRaw(client: *Client, vector_store_id: []const u8, batch_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/vector_stores/{s}/file_batches/{s}/cancel", .{ client.base_url, vector_store_id, batch_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(VectorStoreFileBatchObject, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn cancelVectorStoreFileBatchResult(client: *Client, vector_store_id: []const u8, batch_id: []const u8) !ApiResult(VectorStoreFileBatchObject) {
+    return parseRawResponse(VectorStoreFileBatchObject, try cancelVectorStoreFileBatchRaw(client, vector_store_id, batch_id));
 }
 
 /////////////////
@@ -7539,25 +8971,19 @@ pub fn cancelVectorStoreFileBatchResult(client: *Client, vector_store_id: []cons
 // WebRTC.
 //
 pub fn @"hangup-realtime-call"(client: *Client, call_id: []const u8) !void {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
+    var raw = try @"hangup-realtime-callRaw"(client, call_id);
+    defer raw.deinit();
+    if (raw.status.class() != .success) return error.ResponseError;
+}
 
+pub fn @"hangup-realtime-callRaw"(client: *Client, call_id: []const u8) !RawResponse {
+    const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/realtime/calls/{s}/hangup", .{ client.base_url, call_id });
-    const uri = try std.Uri.parse(uri_buf.written());
+    const payload: ?[]const u8 = null;
 
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
 }
 
 /////////////////
@@ -7567,45 +8993,32 @@ pub fn @"hangup-realtime-call"(client: *Client, call_id: []const u8) !void {
 // Cancelling prevents new requests from using the issued client secret.
 //
 pub fn CancelChatSessionMethod(client: *Client, session_id: []const u8) !Owned(ChatSessionResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/chatkit/sessions/{s}/cancel", .{ client.base_url, session_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try CancelChatSessionMethodResult(client, session_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ChatSessionResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn CancelChatSessionMethodResult(client: *Client, session_id: []const u8) !ApiResult(ChatSessionResource) {
+pub fn CancelChatSessionMethodRaw(client: *Client, session_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/chatkit/sessions/{s}/cancel", .{ client.base_url, session_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(ChatSessionResource, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn CancelChatSessionMethodResult(client: *Client, session_id: []const u8) !ApiResult(ChatSessionResource) {
+    return parseRawResponse(ChatSessionResource, try CancelChatSessionMethodRaw(client, session_id));
 }
 
 /////////////////
@@ -7616,44 +9029,21 @@ pub fn CancelChatSessionMethodResult(client: *Client, session_id: []const u8) !A
 //
 //
 pub fn activateOrganizationCertificates(client: *Client, requestBody: ToggleCertificatesRequest) !Owned(ListCertificatesResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/certificates/activate", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try activateOrganizationCertificatesResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ListCertificatesResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn activateOrganizationCertificatesResult(client: *Client, requestBody: ToggleCertificatesRequest) !ApiResult(ListCertificatesResponse) {
+pub fn activateOrganizationCertificatesRaw(client: *Client, requestBody: ToggleCertificatesRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -7664,8 +9054,11 @@ pub fn activateOrganizationCertificatesResult(client: *Client, requestBody: Togg
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(ListCertificatesResponse, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn activateOrganizationCertificatesResult(client: *Client, requestBody: ToggleCertificatesRequest) !ApiResult(ListCertificatesResponse) {
+    return parseRawResponse(ListCertificatesResponse, try activateOrganizationCertificatesRaw(client, requestBody));
 }
 
 /////////////////
@@ -7682,44 +9075,21 @@ pub fn activateOrganizationCertificatesResult(client: *Client, requestBody: Togg
 //
 //
 pub fn @"create-realtime-transcription-session"(client: *Client, requestBody: RealtimeTranscriptionSessionCreateRequest) !Owned(RealtimeTranscriptionSessionCreateResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/realtime/transcription_sessions", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"create-realtime-transcription-sessionResult"(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(RealtimeTranscriptionSessionCreateResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"create-realtime-transcription-sessionResult"(client: *Client, requestBody: RealtimeTranscriptionSessionCreateRequest) !ApiResult(RealtimeTranscriptionSessionCreateResponse) {
+pub fn @"create-realtime-transcription-sessionRaw"(client: *Client, requestBody: RealtimeTranscriptionSessionCreateRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -7730,8 +9100,11 @@ pub fn @"create-realtime-transcription-sessionResult"(client: *Client, requestBo
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(RealtimeTranscriptionSessionCreateResponse, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn @"create-realtime-transcription-sessionResult"(client: *Client, requestBody: RealtimeTranscriptionSessionCreateRequest) !ApiResult(RealtimeTranscriptionSessionCreateResponse) {
+    return parseRawResponse(RealtimeTranscriptionSessionCreateResponse, try @"create-realtime-transcription-sessionRaw"(client, requestBody));
 }
 
 /////////////////
@@ -7739,47 +9112,21 @@ pub fn @"create-realtime-transcription-sessionResult"(client: *Client, requestBo
 // Lists the project roles assigned to a user within a project.
 //
 pub fn @"list-project-user-role-assignments"(client: *Client, project_id: []const u8, user_id: []const u8, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !Owned(RoleListResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/projects/{s}/users/{s}/roles", .{ client.base_url, project_id, user_id });
-    var first_query = true;
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
+    var result = try @"list-project-user-role-assignmentsResult"(client, project_id, user_id, limit, after, order);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    if (order) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "order", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(RoleListResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"list-project-user-role-assignmentsResult"(client: *Client, project_id: []const u8, user_id: []const u8, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !ApiResult(RoleListResource) {
+pub fn @"list-project-user-role-assignmentsRaw"(client: *Client, project_id: []const u8, user_id: []const u8, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -7796,8 +9143,11 @@ pub fn @"list-project-user-role-assignmentsResult"(client: *Client, project_id: 
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(RoleListResource, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn @"list-project-user-role-assignmentsResult"(client: *Client, project_id: []const u8, user_id: []const u8, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !ApiResult(RoleListResource) {
+    return parseRawResponse(RoleListResource, try @"list-project-user-role-assignmentsRaw"(client, project_id, user_id, limit, after, order));
 }
 
 /////////////////
@@ -7805,44 +9155,21 @@ pub fn @"list-project-user-role-assignmentsResult"(client: *Client, project_id: 
 // Assigns a project role to a user within a project.
 //
 pub fn @"assign-project-user-role"(client: *Client, project_id: []const u8, user_id: []const u8, requestBody: PublicAssignOrganizationGroupRoleBody) !Owned(UserRoleAssignment) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/projects/{s}/users/{s}/roles", .{ client.base_url, project_id, user_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"assign-project-user-roleResult"(client, project_id, user_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(UserRoleAssignment, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"assign-project-user-roleResult"(client: *Client, project_id: []const u8, user_id: []const u8, requestBody: PublicAssignOrganizationGroupRoleBody) !ApiResult(UserRoleAssignment) {
+pub fn @"assign-project-user-roleRaw"(client: *Client, project_id: []const u8, user_id: []const u8, requestBody: PublicAssignOrganizationGroupRoleBody) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -7853,8 +9180,11 @@ pub fn @"assign-project-user-roleResult"(client: *Client, project_id: []const u8
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(UserRoleAssignment, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn @"assign-project-user-roleResult"(client: *Client, project_id: []const u8, user_id: []const u8, requestBody: PublicAssignOrganizationGroupRoleBody) !ApiResult(UserRoleAssignment) {
+    return parseRawResponse(UserRoleAssignment, try @"assign-project-user-roleRaw"(client, project_id, user_id, requestBody));
 }
 
 /////////////////
@@ -7865,44 +9195,21 @@ pub fn @"assign-project-user-roleResult"(client: *Client, project_id: []const u8
 //
 //
 pub fn createCompletion(client: *Client, requestBody: CreateCompletionRequest) !Owned(CreateCompletionResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/completions", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try createCompletionResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(CreateCompletionResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn createCompletionResult(client: *Client, requestBody: CreateCompletionRequest) !ApiResult(CreateCompletionResponse) {
+pub fn createCompletionRaw(client: *Client, requestBody: CreateCompletionRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -7913,8 +9220,11 @@ pub fn createCompletionResult(client: *Client, requestBody: CreateCompletionRequ
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(CreateCompletionResponse, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn createCompletionResult(client: *Client, requestBody: CreateCompletionRequest) !ApiResult(CreateCompletionResponse) {
+    return parseRawResponse(CreateCompletionResponse, try createCompletionRaw(client, requestBody));
 }
 
 /////////////////
@@ -7925,47 +9235,21 @@ pub fn createCompletionResult(client: *Client, requestBody: CreateCompletionRequ
 // Retrieve a paginated list of organization admin API keys.
 //
 pub fn @"admin-api-keys-list"(client: *Client, after: ?[]const u8, order: ?[]const u8, limit: ?i64) !Owned(ApiKeyList) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/admin_api_keys", .{client.base_url});
-    var first_query = true;
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
+    var result = try @"admin-api-keys-listResult"(client, after, order, limit);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (order) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "order", value);
-    }
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ApiKeyList, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"admin-api-keys-listResult"(client: *Client, after: ?[]const u8, order: ?[]const u8, limit: ?i64) !ApiResult(ApiKeyList) {
+pub fn @"admin-api-keys-listRaw"(client: *Client, after: ?[]const u8, order: ?[]const u8, limit: ?i64) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -7982,8 +9266,11 @@ pub fn @"admin-api-keys-listResult"(client: *Client, after: ?[]const u8, order: 
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ApiKeyList, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn @"admin-api-keys-listResult"(client: *Client, after: ?[]const u8, order: ?[]const u8, limit: ?i64) !ApiResult(ApiKeyList) {
+    return parseRawResponse(ApiKeyList, try @"admin-api-keys-listRaw"(client, after, order, limit));
 }
 
 /////////////////
@@ -7994,44 +9281,21 @@ pub fn @"admin-api-keys-listResult"(client: *Client, after: ?[]const u8, order: 
 // Create a new admin-level API key for the organization.
 //
 pub fn @"admin-api-keys-create"(client: *Client, requestBody: std.json.Value) !Owned(AdminApiKey) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/admin_api_keys", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"admin-api-keys-createResult"(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(AdminApiKey, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"admin-api-keys-createResult"(client: *Client, requestBody: std.json.Value) !ApiResult(AdminApiKey) {
+pub fn @"admin-api-keys-createRaw"(client: *Client, requestBody: std.json.Value) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -8042,8 +9306,11 @@ pub fn @"admin-api-keys-createResult"(client: *Client, requestBody: std.json.Val
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(AdminApiKey, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn @"admin-api-keys-createResult"(client: *Client, requestBody: std.json.Value) !ApiResult(AdminApiKey) {
+    return parseRawResponse(AdminApiKey, try @"admin-api-keys-createRaw"(client, requestBody));
 }
 
 /////////////////
@@ -8051,50 +9318,21 @@ pub fn @"admin-api-keys-createResult"(client: *Client, requestBody: std.json.Val
 // Returns a list of input items for a given response.
 //
 pub fn listInputItems(client: *Client, response_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8, include: ?[]const u8) !Owned(ResponseItemList) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/responses/{s}/input_items", .{ client.base_url, response_id });
-    var first_query = true;
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
+    var result = try listInputItemsResult(client, response_id, limit, order, after, include);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (order) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "order", value);
-    }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    if (include) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "include", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ResponseItemList, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn listInputItemsResult(client: *Client, response_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8, include: ?[]const u8) !ApiResult(ResponseItemList) {
+pub fn listInputItemsRaw(client: *Client, response_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8, include: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -8114,8 +9352,11 @@ pub fn listInputItemsResult(client: *Client, response_id: []const u8, limit: ?i6
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ResponseItemList, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn listInputItemsResult(client: *Client, response_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8, include: ?[]const u8) !ApiResult(ResponseItemList) {
+    return parseRawResponse(ResponseItemList, try listInputItemsRaw(client, response_id, limit, order, after, include));
 }
 
 /////////////////
@@ -8123,44 +9364,21 @@ pub fn listInputItemsResult(client: *Client, response_id: []const u8, limit: ?i6
 // Search a vector store for relevant chunks based on a query and file attributes filter.
 //
 pub fn searchVectorStore(client: *Client, vector_store_id: []const u8, requestBody: VectorStoreSearchRequest) !Owned(VectorStoreSearchResultsPage) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/vector_stores/{s}/search", .{ client.base_url, vector_store_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try searchVectorStoreResult(client, vector_store_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(VectorStoreSearchResultsPage, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn searchVectorStoreResult(client: *Client, vector_store_id: []const u8, requestBody: VectorStoreSearchRequest) !ApiResult(VectorStoreSearchResultsPage) {
+pub fn searchVectorStoreRaw(client: *Client, vector_store_id: []const u8, requestBody: VectorStoreSearchRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -8171,8 +9389,11 @@ pub fn searchVectorStoreResult(client: *Client, vector_store_id: []const u8, req
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(VectorStoreSearchResultsPage, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn searchVectorStoreResult(client: *Client, vector_store_id: []const u8, requestBody: VectorStoreSearchRequest) !ApiResult(VectorStoreSearchResultsPage) {
+    return parseRawResponse(VectorStoreSearchResultsPage, try searchVectorStoreRaw(client, vector_store_id, requestBody));
 }
 
 /////////////////
@@ -8180,45 +9401,32 @@ pub fn searchVectorStoreResult(client: *Client, vector_store_id: []const u8, req
 // Download a skill zip bundle by its ID.
 //
 pub fn GetSkillContent(client: *Client, skill_id: []const u8) !Owned([]const u8) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/skills/{s}/content", .{ client.base_url, skill_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try GetSkillContentResult(client, skill_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice([]const u8, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn GetSkillContentResult(client: *Client, skill_id: []const u8) !ApiResult([]const u8) {
+pub fn GetSkillContentRaw(client: *Client, skill_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/skills/{s}/content", .{ client.base_url, skill_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse([]const u8, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn GetSkillContentResult(client: *Client, skill_id: []const u8) !ApiResult([]const u8) {
+    return parseRawResponse([]const u8, try GetSkillContentRaw(client, skill_id));
 }
 
 /////////////////
@@ -8226,45 +9434,32 @@ pub fn GetSkillContentResult(client: *Client, skill_id: []const u8) !ApiResult([
 // Cancels an in-progress batch. The batch will be in status `cancelling` for up to 10 minutes, before changing to `cancelled`, where it will have partial results (if any) available in the output file.
 //
 pub fn cancelBatch(client: *Client, batch_id: []const u8) !Owned(Batch) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/batches/{s}/cancel", .{ client.base_url, batch_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try cancelBatchResult(client, batch_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(Batch, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn cancelBatchResult(client: *Client, batch_id: []const u8) !ApiResult(Batch) {
+pub fn cancelBatchRaw(client: *Client, batch_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/batches/{s}/cancel", .{ client.base_url, batch_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(Batch, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn cancelBatchResult(client: *Client, batch_id: []const u8) !ApiResult(Batch) {
+    return parseRawResponse(Batch, try cancelBatchRaw(client, batch_id));
 }
 
 /////////////////
@@ -8272,53 +9467,21 @@ pub fn cancelBatchResult(client: *Client, batch_id: []const u8) !ApiResult(Batch
 // Returns a list of vector store files.
 //
 pub fn listVectorStoreFiles(client: *Client, vector_store_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8, before: ?[]const u8, filter: ?[]const u8) !Owned(ListVectorStoreFilesResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/vector_stores/{s}/files", .{ client.base_url, vector_store_id });
-    var first_query = true;
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
+    var result = try listVectorStoreFilesResult(client, vector_store_id, limit, order, after, before, filter);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (order) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "order", value);
-    }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    if (before) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "before", value);
-    }
-    if (filter) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "filter", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ListVectorStoreFilesResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn listVectorStoreFilesResult(client: *Client, vector_store_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8, before: ?[]const u8, filter: ?[]const u8) !ApiResult(ListVectorStoreFilesResponse) {
+pub fn listVectorStoreFilesRaw(client: *Client, vector_store_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8, before: ?[]const u8, filter: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -8341,8 +9504,11 @@ pub fn listVectorStoreFilesResult(client: *Client, vector_store_id: []const u8, 
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ListVectorStoreFilesResponse, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn listVectorStoreFilesResult(client: *Client, vector_store_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8, before: ?[]const u8, filter: ?[]const u8) !ApiResult(ListVectorStoreFilesResponse) {
+    return parseRawResponse(ListVectorStoreFilesResponse, try listVectorStoreFilesRaw(client, vector_store_id, limit, order, after, before, filter));
 }
 
 /////////////////
@@ -8354,44 +9520,21 @@ pub fn listVectorStoreFilesResult(client: *Client, vector_store_id: []const u8, 
 // For uploading multiple files to the same vector store, use the file batches endpoint to reduce request volume.
 //
 pub fn createVectorStoreFile(client: *Client, vector_store_id: []const u8, requestBody: CreateVectorStoreFileRequest) !Owned(VectorStoreFileObject) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/vector_stores/{s}/files", .{ client.base_url, vector_store_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try createVectorStoreFileResult(client, vector_store_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(VectorStoreFileObject, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn createVectorStoreFileResult(client: *Client, vector_store_id: []const u8, requestBody: CreateVectorStoreFileRequest) !ApiResult(VectorStoreFileObject) {
+pub fn createVectorStoreFileRaw(client: *Client, vector_store_id: []const u8, requestBody: CreateVectorStoreFileRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -8402,8 +9545,11 @@ pub fn createVectorStoreFileResult(client: *Client, vector_store_id: []const u8,
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(VectorStoreFileObject, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn createVectorStoreFileResult(client: *Client, vector_store_id: []const u8, requestBody: CreateVectorStoreFileRequest) !ApiResult(VectorStoreFileObject) {
+    return parseRawResponse(VectorStoreFileObject, try createVectorStoreFileRaw(client, vector_store_id, requestBody));
 }
 
 /////////////////
@@ -8411,65 +9557,21 @@ pub fn createVectorStoreFileResult(client: *Client, vector_store_id: []const u8,
 // List user actions and configuration changes within this organization.
 //
 pub fn @"list-audit-logs"(client: *Client, effective_at: ?[]const u8, @"project_ids[]": ?[]const u8, @"event_types[]": ?[]const u8, @"actor_ids[]": ?[]const u8, @"actor_emails[]": ?[]const u8, @"resource_ids[]": ?[]const u8, limit: ?i64, after: ?[]const u8, before: ?[]const u8) !Owned(ListAuditLogsResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/audit_logs", .{client.base_url});
-    var first_query = true;
-    if (effective_at) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "effective_at", value);
+    var result = try @"list-audit-logsResult"(client, effective_at, @"project_ids[]", @"event_types[]", @"actor_ids[]", @"actor_emails[]", @"resource_ids[]", limit, after, before);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (@"project_ids[]") |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "project_ids[]", value);
-    }
-    if (@"event_types[]") |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "event_types[]", value);
-    }
-    if (@"actor_ids[]") |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "actor_ids[]", value);
-    }
-    if (@"actor_emails[]") |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "actor_emails[]", value);
-    }
-    if (@"resource_ids[]") |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "resource_ids[]", value);
-    }
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
-    }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    if (before) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "before", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ListAuditLogsResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"list-audit-logsResult"(client: *Client, effective_at: ?[]const u8, @"project_ids[]": ?[]const u8, @"event_types[]": ?[]const u8, @"actor_ids[]": ?[]const u8, @"actor_emails[]": ?[]const u8, @"resource_ids[]": ?[]const u8, limit: ?i64, after: ?[]const u8, before: ?[]const u8) !ApiResult(ListAuditLogsResponse) {
+pub fn @"list-audit-logsRaw"(client: *Client, effective_at: ?[]const u8, @"project_ids[]": ?[]const u8, @"event_types[]": ?[]const u8, @"actor_ids[]": ?[]const u8, @"actor_emails[]": ?[]const u8, @"resource_ids[]": ?[]const u8, limit: ?i64, after: ?[]const u8, before: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -8504,8 +9606,11 @@ pub fn @"list-audit-logsResult"(client: *Client, effective_at: ?[]const u8, @"pr
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ListAuditLogsResponse, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn @"list-audit-logsResult"(client: *Client, effective_at: ?[]const u8, @"project_ids[]": ?[]const u8, @"event_types[]": ?[]const u8, @"actor_ids[]": ?[]const u8, @"actor_emails[]": ?[]const u8, @"resource_ids[]": ?[]const u8, limit: ?i64, after: ?[]const u8, before: ?[]const u8) !ApiResult(ListAuditLogsResponse) {
+    return parseRawResponse(ListAuditLogsResponse, try @"list-audit-logsRaw"(client, effective_at, @"project_ids[]", @"event_types[]", @"actor_ids[]", @"actor_emails[]", @"resource_ids[]", limit, after, before));
 }
 
 /////////////////
@@ -8515,41 +9620,21 @@ pub fn @"list-audit-logsResult"(client: *Client, effective_at: ?[]const u8, @"pr
 // Streams the rendered video content for the specified video job.
 //
 pub fn RetrieveVideoContent(client: *Client, video_id: []const u8, variant: ?[]const u8) !Owned([]const u8) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/videos/{s}/content", .{ client.base_url, video_id });
-    var first_query = true;
-    if (variant) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "variant", value);
+    var result = try RetrieveVideoContentResult(client, video_id, variant);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice([]const u8, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn RetrieveVideoContentResult(client: *Client, video_id: []const u8, variant: ?[]const u8) !ApiResult([]const u8) {
+pub fn RetrieveVideoContentRaw(client: *Client, video_id: []const u8, variant: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -8560,8 +9645,11 @@ pub fn RetrieveVideoContentResult(client: *Client, video_id: []const u8, variant
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse([]const u8, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn RetrieveVideoContentResult(client: *Client, video_id: []const u8, variant: ?[]const u8) !ApiResult([]const u8) {
+    return parseRawResponse([]const u8, try RetrieveVideoContentRaw(client, video_id, variant));
 }
 
 /////////////////
@@ -8570,44 +9658,21 @@ pub fn RetrieveVideoContentResult(client: *Client, video_id: []const u8, variant
 //
 //
 pub fn listFineTuningJobCheckpoints(client: *Client, fine_tuning_job_id: []const u8, after: ?[]const u8, limit: ?i64) !Owned(ListFineTuningJobCheckpointsResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/fine_tuning/jobs/{s}/checkpoints", .{ client.base_url, fine_tuning_job_id });
-    var first_query = true;
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
+    var result = try listFineTuningJobCheckpointsResult(client, fine_tuning_job_id, after, limit);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ListFineTuningJobCheckpointsResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn listFineTuningJobCheckpointsResult(client: *Client, fine_tuning_job_id: []const u8, after: ?[]const u8, limit: ?i64) !ApiResult(ListFineTuningJobCheckpointsResponse) {
+pub fn listFineTuningJobCheckpointsRaw(client: *Client, fine_tuning_job_id: []const u8, after: ?[]const u8, limit: ?i64) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -8621,8 +9686,11 @@ pub fn listFineTuningJobCheckpointsResult(client: *Client, fine_tuning_job_id: [
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ListFineTuningJobCheckpointsResponse, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn listFineTuningJobCheckpointsResult(client: *Client, fine_tuning_job_id: []const u8, after: ?[]const u8, limit: ?i64) !ApiResult(ListFineTuningJobCheckpointsResponse) {
+    return parseRawResponse(ListFineTuningJobCheckpointsResponse, try listFineTuningJobCheckpointsRaw(client, fine_tuning_job_id, after, limit));
 }
 
 /////////////////
@@ -8630,66 +9698,21 @@ pub fn listFineTuningJobCheckpointsResult(client: *Client, fine_tuning_job_id: [
 // Get moderations usage details for the organization.
 //
 pub fn @"usage-moderations"(client: *Client, start_time: i64, end_time: ?i64, bucket_width: ?[]const u8, project_ids: ?[]const u8, user_ids: ?[]const u8, api_key_ids: ?[]const u8, models: ?[]const u8, group_by: ?[]const u8, limit: ?i64, page: ?[]const u8) !Owned(UsageResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/usage/moderations", .{client.base_url});
-    var first_query = true;
-    try appendQueryParam(&uri_buf.writer, &first_query, "start_time", start_time);
-    if (end_time) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "end_time", value);
+    var result = try @"usage-moderationsResult"(client, start_time, end_time, bucket_width, project_ids, user_ids, api_key_ids, models, group_by, limit, page);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (bucket_width) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "bucket_width", value);
-    }
-    if (project_ids) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "project_ids", value);
-    }
-    if (user_ids) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "user_ids", value);
-    }
-    if (api_key_ids) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "api_key_ids", value);
-    }
-    if (models) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "models", value);
-    }
-    if (group_by) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "group_by", value);
-    }
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
-    }
-    if (page) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "page", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(UsageResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"usage-moderationsResult"(client: *Client, start_time: i64, end_time: ?i64, bucket_width: ?[]const u8, project_ids: ?[]const u8, user_ids: ?[]const u8, api_key_ids: ?[]const u8, models: ?[]const u8, group_by: ?[]const u8, limit: ?i64, page: ?[]const u8) !ApiResult(UsageResponse) {
+pub fn @"usage-moderationsRaw"(client: *Client, start_time: i64, end_time: ?i64, bucket_width: ?[]const u8, project_ids: ?[]const u8, user_ids: ?[]const u8, api_key_ids: ?[]const u8, models: ?[]const u8, group_by: ?[]const u8, limit: ?i64, page: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -8725,8 +9748,11 @@ pub fn @"usage-moderationsResult"(client: *Client, start_time: i64, end_time: ?i
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(UsageResponse, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn @"usage-moderationsResult"(client: *Client, start_time: i64, end_time: ?i64, bucket_width: ?[]const u8, project_ids: ?[]const u8, user_ids: ?[]const u8, api_key_ids: ?[]const u8, models: ?[]const u8, group_by: ?[]const u8, limit: ?i64, page: ?[]const u8) !ApiResult(UsageResponse) {
+    return parseRawResponse(UsageResponse, try @"usage-moderationsRaw"(client, start_time, end_time, bucket_width, project_ids, user_ids, api_key_ids, models, group_by, limit, page));
 }
 
 /////////////////
@@ -8734,45 +9760,32 @@ pub fn @"usage-moderationsResult"(client: *Client, start_time: i64, end_time: ?i
 // Cancels a run that is `in_progress`.
 //
 pub fn cancelRun(client: *Client, thread_id: []const u8, run_id: []const u8) !Owned(RunObject) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/threads/{s}/runs/{s}/cancel", .{ client.base_url, thread_id, run_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try cancelRunResult(client, thread_id, run_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(RunObject, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn cancelRunResult(client: *Client, thread_id: []const u8, run_id: []const u8) !ApiResult(RunObject) {
+pub fn cancelRunRaw(client: *Client, thread_id: []const u8, run_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/threads/{s}/runs/{s}/cancel", .{ client.base_url, thread_id, run_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(RunObject, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn cancelRunResult(client: *Client, thread_id: []const u8, run_id: []const u8) !ApiResult(RunObject) {
+    return parseRawResponse(RunObject, try cancelRunRaw(client, thread_id, run_id));
 }
 
 /////////////////
@@ -8780,47 +9793,21 @@ pub fn cancelRunResult(client: *Client, thread_id: []const u8, run_id: []const u
 // List certificates for this project.
 //
 pub fn listProjectCertificates(client: *Client, project_id: []const u8, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !Owned(ListCertificatesResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/projects/{s}/certificates", .{ client.base_url, project_id });
-    var first_query = true;
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
+    var result = try listProjectCertificatesResult(client, project_id, limit, after, order);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    if (order) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "order", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ListCertificatesResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn listProjectCertificatesResult(client: *Client, project_id: []const u8, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !ApiResult(ListCertificatesResponse) {
+pub fn listProjectCertificatesRaw(client: *Client, project_id: []const u8, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -8837,8 +9824,11 @@ pub fn listProjectCertificatesResult(client: *Client, project_id: []const u8, li
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ListCertificatesResponse, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn listProjectCertificatesResult(client: *Client, project_id: []const u8, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !ApiResult(ListCertificatesResponse) {
+    return parseRawResponse(ListCertificatesResponse, try listProjectCertificatesRaw(client, project_id, limit, after, order));
 }
 
 /////////////////
@@ -8846,44 +9836,21 @@ pub fn listProjectCertificatesResult(client: *Client, project_id: []const u8, li
 // Create a conversation.
 //
 pub fn createConversation(client: *Client, requestBody: CreateConversationBody) !Owned(ConversationResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/conversations", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try createConversationResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ConversationResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn createConversationResult(client: *Client, requestBody: CreateConversationBody) !ApiResult(ConversationResource) {
+pub fn createConversationRaw(client: *Client, requestBody: CreateConversationBody) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -8894,8 +9861,11 @@ pub fn createConversationResult(client: *Client, requestBody: CreateConversation
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(ConversationResource, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn createConversationResult(client: *Client, requestBody: CreateConversationBody) !ApiResult(ConversationResource) {
+    return parseRawResponse(ConversationResource, try createConversationRaw(client, requestBody));
 }
 
 /////////////////
@@ -8903,45 +9873,32 @@ pub fn createConversationResult(client: *Client, requestBody: CreateConversation
 // Retrieves a vector store.
 //
 pub fn getVectorStore(client: *Client, vector_store_id: []const u8) !Owned(VectorStoreObject) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/vector_stores/{s}", .{ client.base_url, vector_store_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try getVectorStoreResult(client, vector_store_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(VectorStoreObject, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn getVectorStoreResult(client: *Client, vector_store_id: []const u8) !ApiResult(VectorStoreObject) {
+pub fn getVectorStoreRaw(client: *Client, vector_store_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/vector_stores/{s}", .{ client.base_url, vector_store_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(VectorStoreObject, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn getVectorStoreResult(client: *Client, vector_store_id: []const u8) !ApiResult(VectorStoreObject) {
+    return parseRawResponse(VectorStoreObject, try getVectorStoreRaw(client, vector_store_id));
 }
 
 /////////////////
@@ -8949,44 +9906,21 @@ pub fn getVectorStoreResult(client: *Client, vector_store_id: []const u8) !ApiRe
 // Modifies a vector store.
 //
 pub fn modifyVectorStore(client: *Client, vector_store_id: []const u8, requestBody: UpdateVectorStoreRequest) !Owned(VectorStoreObject) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/vector_stores/{s}", .{ client.base_url, vector_store_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try modifyVectorStoreResult(client, vector_store_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(VectorStoreObject, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn modifyVectorStoreResult(client: *Client, vector_store_id: []const u8, requestBody: UpdateVectorStoreRequest) !ApiResult(VectorStoreObject) {
+pub fn modifyVectorStoreRaw(client: *Client, vector_store_id: []const u8, requestBody: UpdateVectorStoreRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -8997,8 +9931,11 @@ pub fn modifyVectorStoreResult(client: *Client, vector_store_id: []const u8, req
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(VectorStoreObject, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn modifyVectorStoreResult(client: *Client, vector_store_id: []const u8, requestBody: UpdateVectorStoreRequest) !ApiResult(VectorStoreObject) {
+    return parseRawResponse(VectorStoreObject, try modifyVectorStoreRaw(client, vector_store_id, requestBody));
 }
 
 /////////////////
@@ -9006,45 +9943,32 @@ pub fn modifyVectorStoreResult(client: *Client, vector_store_id: []const u8, req
 // Delete a vector store.
 //
 pub fn deleteVectorStore(client: *Client, vector_store_id: []const u8) !Owned(DeleteVectorStoreResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/vector_stores/{s}", .{ client.base_url, vector_store_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.DELETE,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try deleteVectorStoreResult(client, vector_store_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(DeleteVectorStoreResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn deleteVectorStoreResult(client: *Client, vector_store_id: []const u8) !ApiResult(DeleteVectorStoreResponse) {
+pub fn deleteVectorStoreRaw(client: *Client, vector_store_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/vector_stores/{s}", .{ client.base_url, vector_store_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
-    return parseRawResponse(DeleteVectorStoreResponse, raw);
+    return requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
+}
+
+pub fn deleteVectorStoreResult(client: *Client, vector_store_id: []const u8) !ApiResult(DeleteVectorStoreResponse) {
+    return parseRawResponse(DeleteVectorStoreResponse, try deleteVectorStoreRaw(client, vector_store_id));
 }
 
 /////////////////
@@ -9052,41 +9976,21 @@ pub fn deleteVectorStoreResult(client: *Client, vector_store_id: []const u8) !Ap
 // Retrieves a run step.
 //
 pub fn getRunStep(client: *Client, thread_id: []const u8, run_id: []const u8, step_id: []const u8, @"include[]": ?[]const u8) !Owned(RunStepObject) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/threads/{s}/runs/{s}/steps/{s}", .{ client.base_url, thread_id, run_id, step_id });
-    var first_query = true;
-    if (@"include[]") |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "include[]", value);
+    var result = try getRunStepResult(client, thread_id, run_id, step_id, @"include[]");
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(RunStepObject, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn getRunStepResult(client: *Client, thread_id: []const u8, run_id: []const u8, step_id: []const u8, @"include[]": ?[]const u8) !ApiResult(RunStepObject) {
+pub fn getRunStepRaw(client: *Client, thread_id: []const u8, run_id: []const u8, step_id: []const u8, @"include[]": ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -9097,8 +10001,11 @@ pub fn getRunStepResult(client: *Client, thread_id: []const u8, run_id: []const 
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(RunStepObject, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn getRunStepResult(client: *Client, thread_id: []const u8, run_id: []const u8, step_id: []const u8, @"include[]": ?[]const u8) !ApiResult(RunStepObject) {
+    return parseRawResponse(RunStepObject, try getRunStepRaw(client, thread_id, run_id, step_id, @"include[]"));
 }
 
 /////////////////
@@ -9106,45 +10013,32 @@ pub fn getRunStepResult(client: *Client, thread_id: []const u8, run_id: []const 
 // Retrieve a ChatKit thread by its identifier.
 //
 pub fn GetThreadMethod(client: *Client, thread_id: []const u8) !Owned(ThreadResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/chatkit/threads/{s}", .{ client.base_url, thread_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try GetThreadMethodResult(client, thread_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ThreadResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn GetThreadMethodResult(client: *Client, thread_id: []const u8) !ApiResult(ThreadResource) {
+pub fn GetThreadMethodRaw(client: *Client, thread_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/chatkit/threads/{s}", .{ client.base_url, thread_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ThreadResource, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn GetThreadMethodResult(client: *Client, thread_id: []const u8) !ApiResult(ThreadResource) {
+    return parseRawResponse(ThreadResource, try GetThreadMethodRaw(client, thread_id));
 }
 
 /////////////////
@@ -9152,45 +10046,32 @@ pub fn GetThreadMethodResult(client: *Client, thread_id: []const u8) !ApiResult(
 // Delete a ChatKit thread along with its items and stored attachments.
 //
 pub fn DeleteThreadMethod(client: *Client, thread_id: []const u8) !Owned(DeletedThreadResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/chatkit/threads/{s}", .{ client.base_url, thread_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.DELETE,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try DeleteThreadMethodResult(client, thread_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(DeletedThreadResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn DeleteThreadMethodResult(client: *Client, thread_id: []const u8) !ApiResult(DeletedThreadResource) {
+pub fn DeleteThreadMethodRaw(client: *Client, thread_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/chatkit/threads/{s}", .{ client.base_url, thread_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
-    return parseRawResponse(DeletedThreadResource, raw);
+    return requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
+}
+
+pub fn DeleteThreadMethodResult(client: *Client, thread_id: []const u8) !ApiResult(DeletedThreadResource) {
+    return parseRawResponse(DeletedThreadResource, try DeleteThreadMethodRaw(client, thread_id));
 }
 
 /////////////////
@@ -9200,44 +10081,21 @@ pub fn DeleteThreadMethodResult(client: *Client, thread_id: []const u8) !ApiResu
 //
 //
 pub fn createModeration(client: *Client, requestBody: CreateModerationRequest) !Owned(CreateModerationResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/moderations", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try createModerationResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(CreateModerationResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn createModerationResult(client: *Client, requestBody: CreateModerationRequest) !ApiResult(CreateModerationResponse) {
+pub fn createModerationRaw(client: *Client, requestBody: CreateModerationRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -9248,8 +10106,11 @@ pub fn createModerationResult(client: *Client, requestBody: CreateModerationRequ
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(CreateModerationResponse, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn createModerationResult(client: *Client, requestBody: CreateModerationRequest) !ApiResult(CreateModerationResponse) {
+    return parseRawResponse(CreateModerationResponse, try createModerationRaw(client, requestBody));
 }
 
 /////////////////
@@ -9257,66 +10118,21 @@ pub fn createModerationResult(client: *Client, requestBody: CreateModerationRequ
 // Get audio speeches usage details for the organization.
 //
 pub fn @"usage-audio-speeches"(client: *Client, start_time: i64, end_time: ?i64, bucket_width: ?[]const u8, project_ids: ?[]const u8, user_ids: ?[]const u8, api_key_ids: ?[]const u8, models: ?[]const u8, group_by: ?[]const u8, limit: ?i64, page: ?[]const u8) !Owned(UsageResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/usage/audio_speeches", .{client.base_url});
-    var first_query = true;
-    try appendQueryParam(&uri_buf.writer, &first_query, "start_time", start_time);
-    if (end_time) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "end_time", value);
+    var result = try @"usage-audio-speechesResult"(client, start_time, end_time, bucket_width, project_ids, user_ids, api_key_ids, models, group_by, limit, page);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (bucket_width) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "bucket_width", value);
-    }
-    if (project_ids) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "project_ids", value);
-    }
-    if (user_ids) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "user_ids", value);
-    }
-    if (api_key_ids) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "api_key_ids", value);
-    }
-    if (models) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "models", value);
-    }
-    if (group_by) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "group_by", value);
-    }
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
-    }
-    if (page) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "page", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(UsageResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"usage-audio-speechesResult"(client: *Client, start_time: i64, end_time: ?i64, bucket_width: ?[]const u8, project_ids: ?[]const u8, user_ids: ?[]const u8, api_key_ids: ?[]const u8, models: ?[]const u8, group_by: ?[]const u8, limit: ?i64, page: ?[]const u8) !ApiResult(UsageResponse) {
+pub fn @"usage-audio-speechesRaw"(client: *Client, start_time: i64, end_time: ?i64, bucket_width: ?[]const u8, project_ids: ?[]const u8, user_ids: ?[]const u8, api_key_ids: ?[]const u8, models: ?[]const u8, group_by: ?[]const u8, limit: ?i64, page: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -9352,8 +10168,11 @@ pub fn @"usage-audio-speechesResult"(client: *Client, start_time: i64, end_time:
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(UsageResponse, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn @"usage-audio-speechesResult"(client: *Client, start_time: i64, end_time: ?i64, bucket_width: ?[]const u8, project_ids: ?[]const u8, user_ids: ?[]const u8, api_key_ids: ?[]const u8, models: ?[]const u8, group_by: ?[]const u8, limit: ?i64, page: ?[]const u8) !ApiResult(UsageResponse) {
+    return parseRawResponse(UsageResponse, try @"usage-audio-speechesRaw"(client, start_time, end_time, bucket_width, project_ids, user_ids, api_key_ids, models, group_by, limit, page));
 }
 
 /////////////////
@@ -9361,47 +10180,21 @@ pub fn @"usage-audio-speechesResult"(client: *Client, start_time: i64, end_time:
 // Lists the users assigned to a group.
 //
 pub fn @"list-group-users"(client: *Client, group_id: []const u8, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !Owned(UserListResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/groups/{s}/users", .{ client.base_url, group_id });
-    var first_query = true;
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
+    var result = try @"list-group-usersResult"(client, group_id, limit, after, order);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    if (order) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "order", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(UserListResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"list-group-usersResult"(client: *Client, group_id: []const u8, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !ApiResult(UserListResource) {
+pub fn @"list-group-usersRaw"(client: *Client, group_id: []const u8, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -9418,8 +10211,11 @@ pub fn @"list-group-usersResult"(client: *Client, group_id: []const u8, limit: ?
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(UserListResource, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn @"list-group-usersResult"(client: *Client, group_id: []const u8, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !ApiResult(UserListResource) {
+    return parseRawResponse(UserListResource, try @"list-group-usersRaw"(client, group_id, limit, after, order));
 }
 
 /////////////////
@@ -9427,44 +10223,21 @@ pub fn @"list-group-usersResult"(client: *Client, group_id: []const u8, limit: ?
 // Adds a user to a group.
 //
 pub fn @"add-group-user"(client: *Client, group_id: []const u8, requestBody: CreateGroupUserBody) !Owned(GroupUserAssignment) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/groups/{s}/users", .{ client.base_url, group_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"add-group-userResult"(client, group_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(GroupUserAssignment, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"add-group-userResult"(client: *Client, group_id: []const u8, requestBody: CreateGroupUserBody) !ApiResult(GroupUserAssignment) {
+pub fn @"add-group-userRaw"(client: *Client, group_id: []const u8, requestBody: CreateGroupUserBody) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -9475,8 +10248,11 @@ pub fn @"add-group-userResult"(client: *Client, group_id: []const u8, requestBod
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(GroupUserAssignment, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn @"add-group-userResult"(client: *Client, group_id: []const u8, requestBody: CreateGroupUserBody) !ApiResult(GroupUserAssignment) {
+    return parseRawResponse(GroupUserAssignment, try @"add-group-userRaw"(client, group_id, requestBody));
 }
 
 /////////////////
@@ -9484,66 +10260,21 @@ pub fn @"add-group-userResult"(client: *Client, group_id: []const u8, requestBod
 // Get embeddings usage details for the organization.
 //
 pub fn @"usage-embeddings"(client: *Client, start_time: i64, end_time: ?i64, bucket_width: ?[]const u8, project_ids: ?[]const u8, user_ids: ?[]const u8, api_key_ids: ?[]const u8, models: ?[]const u8, group_by: ?[]const u8, limit: ?i64, page: ?[]const u8) !Owned(UsageResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/usage/embeddings", .{client.base_url});
-    var first_query = true;
-    try appendQueryParam(&uri_buf.writer, &first_query, "start_time", start_time);
-    if (end_time) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "end_time", value);
+    var result = try @"usage-embeddingsResult"(client, start_time, end_time, bucket_width, project_ids, user_ids, api_key_ids, models, group_by, limit, page);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (bucket_width) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "bucket_width", value);
-    }
-    if (project_ids) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "project_ids", value);
-    }
-    if (user_ids) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "user_ids", value);
-    }
-    if (api_key_ids) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "api_key_ids", value);
-    }
-    if (models) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "models", value);
-    }
-    if (group_by) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "group_by", value);
-    }
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
-    }
-    if (page) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "page", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(UsageResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"usage-embeddingsResult"(client: *Client, start_time: i64, end_time: ?i64, bucket_width: ?[]const u8, project_ids: ?[]const u8, user_ids: ?[]const u8, api_key_ids: ?[]const u8, models: ?[]const u8, group_by: ?[]const u8, limit: ?i64, page: ?[]const u8) !ApiResult(UsageResponse) {
+pub fn @"usage-embeddingsRaw"(client: *Client, start_time: i64, end_time: ?i64, bucket_width: ?[]const u8, project_ids: ?[]const u8, user_ids: ?[]const u8, api_key_ids: ?[]const u8, models: ?[]const u8, group_by: ?[]const u8, limit: ?i64, page: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -9579,8 +10310,11 @@ pub fn @"usage-embeddingsResult"(client: *Client, start_time: i64, end_time: ?i6
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(UsageResponse, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn @"usage-embeddingsResult"(client: *Client, start_time: i64, end_time: ?i64, bucket_width: ?[]const u8, project_ids: ?[]const u8, user_ids: ?[]const u8, api_key_ids: ?[]const u8, models: ?[]const u8, group_by: ?[]const u8, limit: ?i64, page: ?[]const u8) !ApiResult(UsageResponse) {
+    return parseRawResponse(UsageResponse, try @"usage-embeddingsRaw"(client, start_time, end_time, bucket_width, project_ids, user_ids, api_key_ids, models, group_by, limit, page));
 }
 
 /////////////////
@@ -9588,47 +10322,21 @@ pub fn @"usage-embeddingsResult"(client: *Client, start_time: i64, end_time: ?i6
 // Lists the organization roles assigned to a user within the organization.
 //
 pub fn @"list-user-role-assignments"(client: *Client, user_id: []const u8, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !Owned(RoleListResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/users/{s}/roles", .{ client.base_url, user_id });
-    var first_query = true;
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
+    var result = try @"list-user-role-assignmentsResult"(client, user_id, limit, after, order);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    if (order) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "order", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(RoleListResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"list-user-role-assignmentsResult"(client: *Client, user_id: []const u8, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !ApiResult(RoleListResource) {
+pub fn @"list-user-role-assignmentsRaw"(client: *Client, user_id: []const u8, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -9645,8 +10353,11 @@ pub fn @"list-user-role-assignmentsResult"(client: *Client, user_id: []const u8,
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(RoleListResource, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn @"list-user-role-assignmentsResult"(client: *Client, user_id: []const u8, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !ApiResult(RoleListResource) {
+    return parseRawResponse(RoleListResource, try @"list-user-role-assignmentsRaw"(client, user_id, limit, after, order));
 }
 
 /////////////////
@@ -9654,44 +10365,21 @@ pub fn @"list-user-role-assignmentsResult"(client: *Client, user_id: []const u8,
 // Assigns an organization role to a user within the organization.
 //
 pub fn @"assign-user-role"(client: *Client, user_id: []const u8, requestBody: PublicAssignOrganizationGroupRoleBody) !Owned(UserRoleAssignment) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/users/{s}/roles", .{ client.base_url, user_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"assign-user-roleResult"(client, user_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(UserRoleAssignment, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"assign-user-roleResult"(client: *Client, user_id: []const u8, requestBody: PublicAssignOrganizationGroupRoleBody) !ApiResult(UserRoleAssignment) {
+pub fn @"assign-user-roleRaw"(client: *Client, user_id: []const u8, requestBody: PublicAssignOrganizationGroupRoleBody) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -9702,8 +10390,11 @@ pub fn @"assign-user-roleResult"(client: *Client, user_id: []const u8, requestBo
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(UserRoleAssignment, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn @"assign-user-roleResult"(client: *Client, user_id: []const u8, requestBody: PublicAssignOrganizationGroupRoleBody) !ApiResult(UserRoleAssignment) {
+    return parseRawResponse(UserRoleAssignment, try @"assign-user-roleRaw"(client, user_id, requestBody));
 }
 
 /////////////////
@@ -9711,45 +10402,32 @@ pub fn @"assign-user-roleResult"(client: *Client, user_id: []const u8, requestBo
 // Retrieves a user by their identifier.
 //
 pub fn @"retrieve-user"(client: *Client, user_id: []const u8) !Owned(User) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/users/{s}", .{ client.base_url, user_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"retrieve-userResult"(client, user_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(User, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"retrieve-userResult"(client: *Client, user_id: []const u8) !ApiResult(User) {
+pub fn @"retrieve-userRaw"(client: *Client, user_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/organization/users/{s}", .{ client.base_url, user_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(User, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn @"retrieve-userResult"(client: *Client, user_id: []const u8) !ApiResult(User) {
+    return parseRawResponse(User, try @"retrieve-userRaw"(client, user_id));
 }
 
 /////////////////
@@ -9757,44 +10435,21 @@ pub fn @"retrieve-userResult"(client: *Client, user_id: []const u8) !ApiResult(U
 // Modifies a user's role in the organization.
 //
 pub fn @"modify-user"(client: *Client, user_id: []const u8, requestBody: UserRoleUpdateRequest) !Owned(User) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/users/{s}", .{ client.base_url, user_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"modify-userResult"(client, user_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(User, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"modify-userResult"(client: *Client, user_id: []const u8, requestBody: UserRoleUpdateRequest) !ApiResult(User) {
+pub fn @"modify-userRaw"(client: *Client, user_id: []const u8, requestBody: UserRoleUpdateRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -9805,8 +10460,11 @@ pub fn @"modify-userResult"(client: *Client, user_id: []const u8, requestBody: U
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(User, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn @"modify-userResult"(client: *Client, user_id: []const u8, requestBody: UserRoleUpdateRequest) !ApiResult(User) {
+    return parseRawResponse(User, try @"modify-userRaw"(client, user_id, requestBody));
 }
 
 /////////////////
@@ -9814,45 +10472,32 @@ pub fn @"modify-userResult"(client: *Client, user_id: []const u8, requestBody: U
 // Deletes a user from the organization.
 //
 pub fn @"delete-user"(client: *Client, user_id: []const u8) !Owned(UserDeleteResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/users/{s}", .{ client.base_url, user_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.DELETE,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"delete-userResult"(client, user_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(UserDeleteResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"delete-userResult"(client: *Client, user_id: []const u8) !ApiResult(UserDeleteResponse) {
+pub fn @"delete-userRaw"(client: *Client, user_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/organization/users/{s}", .{ client.base_url, user_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
-    return parseRawResponse(UserDeleteResponse, raw);
+    return requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
+}
+
+pub fn @"delete-userResult"(client: *Client, user_id: []const u8) !ApiResult(UserDeleteResponse) {
+    return parseRawResponse(UserDeleteResponse, try @"delete-userRaw"(client, user_id));
 }
 
 /////////////////
@@ -9860,32 +10505,23 @@ pub fn @"delete-userResult"(client: *Client, user_id: []const u8) !ApiResult(Use
 // Transfer an active SIP call to a new destination using the SIP REFER verb.
 //
 pub fn @"refer-realtime-call"(client: *Client, call_id: []const u8, requestBody: RealtimeCallReferRequest) !void {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
+    var raw = try @"refer-realtime-callRaw"(client, call_id, requestBody);
+    defer raw.deinit();
+    if (raw.status.class() != .success) return error.ResponseError;
+}
 
+pub fn @"refer-realtime-callRaw"(client: *Client, call_id: []const u8, requestBody: RealtimeCallReferRequest) !RawResponse {
+    const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/realtime/calls/{s}/refer", .{ client.base_url, call_id });
-    const uri = try std.Uri.parse(uri_buf.written());
 
     var str: std.Io.Writer.Allocating = .init(allocator);
     defer str.deinit();
-
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
+    const payload: ?[]const u8 = str.written();
 
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
 }
 
 /////////////////
@@ -9893,45 +10529,32 @@ pub fn @"refer-realtime-call"(client: *Client, call_id: []const u8, requestBody:
 // Unassigns a project role from a user within a project.
 //
 pub fn @"unassign-project-user-role"(client: *Client, project_id: []const u8, user_id: []const u8, role_id: []const u8) !Owned(DeletedRoleAssignmentResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/projects/{s}/users/{s}/roles/{s}", .{ client.base_url, project_id, user_id, role_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.DELETE,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"unassign-project-user-roleResult"(client, project_id, user_id, role_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(DeletedRoleAssignmentResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"unassign-project-user-roleResult"(client: *Client, project_id: []const u8, user_id: []const u8, role_id: []const u8) !ApiResult(DeletedRoleAssignmentResource) {
+pub fn @"unassign-project-user-roleRaw"(client: *Client, project_id: []const u8, user_id: []const u8, role_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/projects/{s}/users/{s}/roles/{s}", .{ client.base_url, project_id, user_id, role_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
-    return parseRawResponse(DeletedRoleAssignmentResource, raw);
+    return requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
+}
+
+pub fn @"unassign-project-user-roleResult"(client: *Client, project_id: []const u8, user_id: []const u8, role_id: []const u8) !ApiResult(DeletedRoleAssignmentResource) {
+    return parseRawResponse(DeletedRoleAssignmentResource, try @"unassign-project-user-roleRaw"(client, project_id, user_id, role_id));
 }
 
 /////////////////
@@ -9939,47 +10562,21 @@ pub fn @"unassign-project-user-roleResult"(client: *Client, project_id: []const 
 // Lists the project roles assigned to a group within a project.
 //
 pub fn @"list-project-group-role-assignments"(client: *Client, project_id: []const u8, group_id: []const u8, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !Owned(RoleListResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/projects/{s}/groups/{s}/roles", .{ client.base_url, project_id, group_id });
-    var first_query = true;
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
+    var result = try @"list-project-group-role-assignmentsResult"(client, project_id, group_id, limit, after, order);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    if (order) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "order", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(RoleListResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"list-project-group-role-assignmentsResult"(client: *Client, project_id: []const u8, group_id: []const u8, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !ApiResult(RoleListResource) {
+pub fn @"list-project-group-role-assignmentsRaw"(client: *Client, project_id: []const u8, group_id: []const u8, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -9996,8 +10593,11 @@ pub fn @"list-project-group-role-assignmentsResult"(client: *Client, project_id:
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(RoleListResource, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn @"list-project-group-role-assignmentsResult"(client: *Client, project_id: []const u8, group_id: []const u8, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !ApiResult(RoleListResource) {
+    return parseRawResponse(RoleListResource, try @"list-project-group-role-assignmentsRaw"(client, project_id, group_id, limit, after, order));
 }
 
 /////////////////
@@ -10005,44 +10605,21 @@ pub fn @"list-project-group-role-assignmentsResult"(client: *Client, project_id:
 // Assigns a project role to a group within a project.
 //
 pub fn @"assign-project-group-role"(client: *Client, project_id: []const u8, group_id: []const u8, requestBody: PublicAssignOrganizationGroupRoleBody) !Owned(GroupRoleAssignment) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/projects/{s}/groups/{s}/roles", .{ client.base_url, project_id, group_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"assign-project-group-roleResult"(client, project_id, group_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(GroupRoleAssignment, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"assign-project-group-roleResult"(client: *Client, project_id: []const u8, group_id: []const u8, requestBody: PublicAssignOrganizationGroupRoleBody) !ApiResult(GroupRoleAssignment) {
+pub fn @"assign-project-group-roleRaw"(client: *Client, project_id: []const u8, group_id: []const u8, requestBody: PublicAssignOrganizationGroupRoleBody) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -10053,8 +10630,11 @@ pub fn @"assign-project-group-roleResult"(client: *Client, project_id: []const u
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(GroupRoleAssignment, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn @"assign-project-group-roleResult"(client: *Client, project_id: []const u8, group_id: []const u8, requestBody: PublicAssignOrganizationGroupRoleBody) !ApiResult(GroupRoleAssignment) {
+    return parseRawResponse(GroupRoleAssignment, try @"assign-project-group-roleRaw"(client, project_id, group_id, requestBody));
 }
 
 /////////////////
@@ -10062,44 +10642,21 @@ pub fn @"assign-project-group-roleResult"(client: *Client, project_id: []const u
 // Returns a list of users in the project.
 //
 pub fn @"list-project-users"(client: *Client, project_id: []const u8, limit: ?i64, after: ?[]const u8) !Owned(ProjectUserListResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/projects/{s}/users", .{ client.base_url, project_id });
-    var first_query = true;
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
+    var result = try @"list-project-usersResult"(client, project_id, limit, after);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ProjectUserListResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"list-project-usersResult"(client: *Client, project_id: []const u8, limit: ?i64, after: ?[]const u8) !ApiResult(ProjectUserListResponse) {
+pub fn @"list-project-usersRaw"(client: *Client, project_id: []const u8, limit: ?i64, after: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -10113,8 +10670,11 @@ pub fn @"list-project-usersResult"(client: *Client, project_id: []const u8, limi
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ProjectUserListResponse, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn @"list-project-usersResult"(client: *Client, project_id: []const u8, limit: ?i64, after: ?[]const u8) !ApiResult(ProjectUserListResponse) {
+    return parseRawResponse(ProjectUserListResponse, try @"list-project-usersRaw"(client, project_id, limit, after));
 }
 
 /////////////////
@@ -10122,44 +10682,21 @@ pub fn @"list-project-usersResult"(client: *Client, project_id: []const u8, limi
 // Adds a user to the project. Users must already be members of the organization to be added to a project.
 //
 pub fn @"create-project-user"(client: *Client, project_id: []const u8, requestBody: ProjectUserCreateRequest) !Owned(ProjectUser) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/projects/{s}/users", .{ client.base_url, project_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"create-project-userResult"(client, project_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ProjectUser, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"create-project-userResult"(client: *Client, project_id: []const u8, requestBody: ProjectUserCreateRequest) !ApiResult(ProjectUser) {
+pub fn @"create-project-userRaw"(client: *Client, project_id: []const u8, requestBody: ProjectUserCreateRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -10170,8 +10707,11 @@ pub fn @"create-project-userResult"(client: *Client, project_id: []const u8, req
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(ProjectUser, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn @"create-project-userResult"(client: *Client, project_id: []const u8, requestBody: ProjectUserCreateRequest) !ApiResult(ProjectUser) {
+    return parseRawResponse(ProjectUser, try @"create-project-userRaw"(client, project_id, requestBody));
 }
 
 /////////////////
@@ -10179,44 +10719,21 @@ pub fn @"create-project-userResult"(client: *Client, project_id: []const u8, req
 // Updates a group's information.
 //
 pub fn @"update-group"(client: *Client, group_id: []const u8, requestBody: UpdateGroupBody) !Owned(GroupResourceWithSuccess) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/groups/{s}", .{ client.base_url, group_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"update-groupResult"(client, group_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(GroupResourceWithSuccess, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"update-groupResult"(client: *Client, group_id: []const u8, requestBody: UpdateGroupBody) !ApiResult(GroupResourceWithSuccess) {
+pub fn @"update-groupRaw"(client: *Client, group_id: []const u8, requestBody: UpdateGroupBody) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -10227,8 +10744,11 @@ pub fn @"update-groupResult"(client: *Client, group_id: []const u8, requestBody:
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(GroupResourceWithSuccess, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn @"update-groupResult"(client: *Client, group_id: []const u8, requestBody: UpdateGroupBody) !ApiResult(GroupResourceWithSuccess) {
+    return parseRawResponse(GroupResourceWithSuccess, try @"update-groupRaw"(client, group_id, requestBody));
 }
 
 /////////////////
@@ -10236,45 +10756,32 @@ pub fn @"update-groupResult"(client: *Client, group_id: []const u8, requestBody:
 // Deletes a group from the organization.
 //
 pub fn @"delete-group"(client: *Client, group_id: []const u8) !Owned(GroupDeletedResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/groups/{s}", .{ client.base_url, group_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.DELETE,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"delete-groupResult"(client, group_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(GroupDeletedResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"delete-groupResult"(client: *Client, group_id: []const u8) !ApiResult(GroupDeletedResource) {
+pub fn @"delete-groupRaw"(client: *Client, group_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/organization/groups/{s}", .{ client.base_url, group_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
-    return parseRawResponse(GroupDeletedResource, raw);
+    return requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
+}
+
+pub fn @"delete-groupResult"(client: *Client, group_id: []const u8) !ApiResult(GroupDeletedResource) {
+    return parseRawResponse(GroupDeletedResource, try @"delete-groupRaw"(client, group_id));
 }
 
 /////////////////
@@ -10282,57 +10789,21 @@ pub fn @"delete-groupResult"(client: *Client, group_id: []const u8) !ApiResult(G
 // Get costs details for the organization.
 //
 pub fn @"usage-costs"(client: *Client, start_time: i64, end_time: ?i64, bucket_width: ?[]const u8, project_ids: ?[]const u8, group_by: ?[]const u8, limit: ?i64, page: ?[]const u8) !Owned(UsageResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/costs", .{client.base_url});
-    var first_query = true;
-    try appendQueryParam(&uri_buf.writer, &first_query, "start_time", start_time);
-    if (end_time) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "end_time", value);
+    var result = try @"usage-costsResult"(client, start_time, end_time, bucket_width, project_ids, group_by, limit, page);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (bucket_width) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "bucket_width", value);
-    }
-    if (project_ids) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "project_ids", value);
-    }
-    if (group_by) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "group_by", value);
-    }
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
-    }
-    if (page) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "page", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(UsageResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"usage-costsResult"(client: *Client, start_time: i64, end_time: ?i64, bucket_width: ?[]const u8, project_ids: ?[]const u8, group_by: ?[]const u8, limit: ?i64, page: ?[]const u8) !ApiResult(UsageResponse) {
+pub fn @"usage-costsRaw"(client: *Client, start_time: i64, end_time: ?i64, bucket_width: ?[]const u8, project_ids: ?[]const u8, group_by: ?[]const u8, limit: ?i64, page: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -10359,8 +10830,11 @@ pub fn @"usage-costsResult"(client: *Client, start_time: i64, end_time: ?i64, bu
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(UsageResponse, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn @"usage-costsResult"(client: *Client, start_time: i64, end_time: ?i64, bucket_width: ?[]const u8, project_ids: ?[]const u8, group_by: ?[]const u8, limit: ?i64, page: ?[]const u8) !ApiResult(UsageResponse) {
+    return parseRawResponse(UsageResponse, try @"usage-costsRaw"(client, start_time, end_time, bucket_width, project_ids, group_by, limit, page));
 }
 
 /////////////////
@@ -10368,44 +10842,21 @@ pub fn @"usage-costsResult"(client: *Client, start_time: i64, end_time: ?i64, bu
 // Returns a list of API keys in the project.
 //
 pub fn @"list-project-api-keys"(client: *Client, project_id: []const u8, limit: ?i64, after: ?[]const u8) !Owned(ProjectApiKeyListResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/projects/{s}/api_keys", .{ client.base_url, project_id });
-    var first_query = true;
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
+    var result = try @"list-project-api-keysResult"(client, project_id, limit, after);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ProjectApiKeyListResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"list-project-api-keysResult"(client: *Client, project_id: []const u8, limit: ?i64, after: ?[]const u8) !ApiResult(ProjectApiKeyListResponse) {
+pub fn @"list-project-api-keysRaw"(client: *Client, project_id: []const u8, limit: ?i64, after: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -10419,8 +10870,11 @@ pub fn @"list-project-api-keysResult"(client: *Client, project_id: []const u8, l
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ProjectApiKeyListResponse, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn @"list-project-api-keysResult"(client: *Client, project_id: []const u8, limit: ?i64, after: ?[]const u8) !ApiResult(ProjectApiKeyListResponse) {
+    return parseRawResponse(ProjectApiKeyListResponse, try @"list-project-api-keysRaw"(client, project_id, limit, after));
 }
 
 /////////////////
@@ -10431,44 +10885,21 @@ pub fn @"list-project-api-keysResult"(client: *Client, project_id: []const u8, l
 //
 //
 pub fn activateProjectCertificates(client: *Client, project_id: []const u8, requestBody: ToggleCertificatesRequest) !Owned(ListCertificatesResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/projects/{s}/certificates/activate", .{ client.base_url, project_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try activateProjectCertificatesResult(client, project_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ListCertificatesResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn activateProjectCertificatesResult(client: *Client, project_id: []const u8, requestBody: ToggleCertificatesRequest) !ApiResult(ListCertificatesResponse) {
+pub fn activateProjectCertificatesRaw(client: *Client, project_id: []const u8, requestBody: ToggleCertificatesRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -10479,8 +10910,11 @@ pub fn activateProjectCertificatesResult(client: *Client, project_id: []const u8
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(ListCertificatesResponse, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn activateProjectCertificatesResult(client: *Client, project_id: []const u8, requestBody: ToggleCertificatesRequest) !ApiResult(ListCertificatesResponse) {
+    return parseRawResponse(ListCertificatesResponse, try activateProjectCertificatesRaw(client, project_id, requestBody));
 }
 
 /////////////////
@@ -10489,50 +10923,21 @@ pub fn activateProjectCertificatesResult(client: *Client, project_id: []const u8
 //
 //
 pub fn getResponse(client: *Client, response_id: []const u8, include: ?[]const u8, stream: ?bool, starting_after: ?i64, include_obfuscation: ?bool) !Owned(Response) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/responses/{s}", .{ client.base_url, response_id });
-    var first_query = true;
-    if (include) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "include", value);
+    var result = try getResponseResult(client, response_id, include, stream, starting_after, include_obfuscation);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (stream) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "stream", value);
-    }
-    if (starting_after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "starting_after", value);
-    }
-    if (include_obfuscation) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "include_obfuscation", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(Response, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn getResponseResult(client: *Client, response_id: []const u8, include: ?[]const u8, stream: ?bool, starting_after: ?i64, include_obfuscation: ?bool) !ApiResult(Response) {
+pub fn getResponseRaw(client: *Client, response_id: []const u8, include: ?[]const u8, stream: ?bool, starting_after: ?i64, include_obfuscation: ?bool) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -10552,8 +10957,11 @@ pub fn getResponseResult(client: *Client, response_id: []const u8, include: ?[]c
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(Response, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn getResponseResult(client: *Client, response_id: []const u8, include: ?[]const u8, stream: ?bool, starting_after: ?i64, include_obfuscation: ?bool) !ApiResult(Response) {
+    return parseRawResponse(Response, try getResponseRaw(client, response_id, include, stream, starting_after, include_obfuscation));
 }
 
 /////////////////
@@ -10562,25 +10970,19 @@ pub fn getResponseResult(client: *Client, response_id: []const u8, include: ?[]c
 //
 //
 pub fn deleteResponse(client: *Client, response_id: []const u8) !void {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
+    var raw = try deleteResponseRaw(client, response_id);
+    defer raw.deinit();
+    if (raw.status.class() != .success) return error.ResponseError;
+}
 
+pub fn deleteResponseRaw(client: *Client, response_id: []const u8) !RawResponse {
+    const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/responses/{s}", .{ client.base_url, response_id });
-    const uri = try std.Uri.parse(uri_buf.written());
+    const payload: ?[]const u8 = null;
 
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.DELETE,
-        .extra_headers = headers.items,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
+    return requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
 }
 
 /////////////////
@@ -10589,45 +10991,32 @@ pub fn deleteResponse(client: *Client, response_id: []const u8) !void {
 //
 //
 pub fn pauseFineTuningJob(client: *Client, fine_tuning_job_id: []const u8) !Owned(FineTuningJob) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/fine_tuning/jobs/{s}/pause", .{ client.base_url, fine_tuning_job_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try pauseFineTuningJobResult(client, fine_tuning_job_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(FineTuningJob, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn pauseFineTuningJobResult(client: *Client, fine_tuning_job_id: []const u8) !ApiResult(FineTuningJob) {
+pub fn pauseFineTuningJobRaw(client: *Client, fine_tuning_job_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/fine_tuning/jobs/{s}/pause", .{ client.base_url, fine_tuning_job_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(FineTuningJob, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn pauseFineTuningJobResult(client: *Client, fine_tuning_job_id: []const u8) !ApiResult(FineTuningJob) {
+    return parseRawResponse(FineTuningJob, try pauseFineTuningJobRaw(client, fine_tuning_job_id));
 }
 
 /////////////////
@@ -10635,47 +11024,21 @@ pub fn pauseFineTuningJobResult(client: *Client, fine_tuning_job_id: []const u8)
 // Returns a list of projects.
 //
 pub fn @"list-projects"(client: *Client, limit: ?i64, after: ?[]const u8, include_archived: ?bool) !Owned(ProjectListResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/projects", .{client.base_url});
-    var first_query = true;
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
+    var result = try @"list-projectsResult"(client, limit, after, include_archived);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    if (include_archived) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "include_archived", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ProjectListResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"list-projectsResult"(client: *Client, limit: ?i64, after: ?[]const u8, include_archived: ?bool) !ApiResult(ProjectListResponse) {
+pub fn @"list-projectsRaw"(client: *Client, limit: ?i64, after: ?[]const u8, include_archived: ?bool) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -10692,8 +11055,11 @@ pub fn @"list-projectsResult"(client: *Client, limit: ?i64, after: ?[]const u8, 
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ProjectListResponse, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn @"list-projectsResult"(client: *Client, limit: ?i64, after: ?[]const u8, include_archived: ?bool) !ApiResult(ProjectListResponse) {
+    return parseRawResponse(ProjectListResponse, try @"list-projectsRaw"(client, limit, after, include_archived));
 }
 
 /////////////////
@@ -10701,44 +11067,21 @@ pub fn @"list-projectsResult"(client: *Client, limit: ?i64, after: ?[]const u8, 
 // Create a new project in the organization. Projects can be created and archived, but cannot be deleted.
 //
 pub fn @"create-project"(client: *Client, requestBody: ProjectCreateRequest) !Owned(Project) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/projects", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"create-projectResult"(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(Project, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"create-projectResult"(client: *Client, requestBody: ProjectCreateRequest) !ApiResult(Project) {
+pub fn @"create-projectRaw"(client: *Client, requestBody: ProjectCreateRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -10749,8 +11092,11 @@ pub fn @"create-projectResult"(client: *Client, requestBody: ProjectCreateReques
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(Project, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn @"create-projectResult"(client: *Client, requestBody: ProjectCreateRequest) !ApiResult(Project) {
+    return parseRawResponse(Project, try @"create-projectRaw"(client, requestBody));
 }
 
 /////////////////
@@ -10758,53 +11104,21 @@ pub fn @"create-projectResult"(client: *Client, requestBody: ProjectCreateReques
 // List ChatKit threads with optional pagination and user filters.
 //
 pub fn ListThreadsMethod(client: *Client, limit: ?i64, order: ?[]const u8, after: ?[]const u8, before: ?[]const u8, user: ?[]const u8) !Owned(ThreadListResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/chatkit/threads", .{client.base_url});
-    var first_query = true;
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
+    var result = try ListThreadsMethodResult(client, limit, order, after, before, user);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (order) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "order", value);
-    }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    if (before) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "before", value);
-    }
-    if (user) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "user", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ThreadListResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn ListThreadsMethodResult(client: *Client, limit: ?i64, order: ?[]const u8, after: ?[]const u8, before: ?[]const u8, user: ?[]const u8) !ApiResult(ThreadListResource) {
+pub fn ListThreadsMethodRaw(client: *Client, limit: ?i64, order: ?[]const u8, after: ?[]const u8, before: ?[]const u8, user: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -10827,8 +11141,11 @@ pub fn ListThreadsMethodResult(client: *Client, limit: ?i64, order: ?[]const u8,
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ThreadListResource, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn ListThreadsMethodResult(client: *Client, limit: ?i64, order: ?[]const u8, after: ?[]const u8, before: ?[]const u8, user: ?[]const u8) !ApiResult(ThreadListResource) {
+    return parseRawResponse(ThreadListResource, try ListThreadsMethodRaw(client, limit, order, after, before, user));
 }
 
 /////////////////
@@ -10836,45 +11153,32 @@ pub fn ListThreadsMethodResult(client: *Client, limit: ?i64, order: ?[]const u8,
 // Get a conversation
 //
 pub fn getConversation(client: *Client, conversation_id: []const u8) !Owned(ConversationResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/conversations/{s}", .{ client.base_url, conversation_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try getConversationResult(client, conversation_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ConversationResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn getConversationResult(client: *Client, conversation_id: []const u8) !ApiResult(ConversationResource) {
+pub fn getConversationRaw(client: *Client, conversation_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/conversations/{s}", .{ client.base_url, conversation_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ConversationResource, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn getConversationResult(client: *Client, conversation_id: []const u8) !ApiResult(ConversationResource) {
+    return parseRawResponse(ConversationResource, try getConversationRaw(client, conversation_id));
 }
 
 /////////////////
@@ -10882,44 +11186,21 @@ pub fn getConversationResult(client: *Client, conversation_id: []const u8) !ApiR
 // Update a conversation
 //
 pub fn updateConversation(client: *Client, conversation_id: []const u8, requestBody: UpdateConversationBody) !Owned(ConversationResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/conversations/{s}", .{ client.base_url, conversation_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try updateConversationResult(client, conversation_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ConversationResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn updateConversationResult(client: *Client, conversation_id: []const u8, requestBody: UpdateConversationBody) !ApiResult(ConversationResource) {
+pub fn updateConversationRaw(client: *Client, conversation_id: []const u8, requestBody: UpdateConversationBody) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -10930,8 +11211,11 @@ pub fn updateConversationResult(client: *Client, conversation_id: []const u8, re
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(ConversationResource, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn updateConversationResult(client: *Client, conversation_id: []const u8, requestBody: UpdateConversationBody) !ApiResult(ConversationResource) {
+    return parseRawResponse(ConversationResource, try updateConversationRaw(client, conversation_id, requestBody));
 }
 
 /////////////////
@@ -10939,45 +11223,32 @@ pub fn updateConversationResult(client: *Client, conversation_id: []const u8, re
 // Delete a conversation. Items in the conversation will not be deleted.
 //
 pub fn deleteConversation(client: *Client, conversation_id: []const u8) !Owned(DeletedConversationResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/conversations/{s}", .{ client.base_url, conversation_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.DELETE,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try deleteConversationResult(client, conversation_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(DeletedConversationResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn deleteConversationResult(client: *Client, conversation_id: []const u8) !ApiResult(DeletedConversationResource) {
+pub fn deleteConversationRaw(client: *Client, conversation_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/conversations/{s}", .{ client.base_url, conversation_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
-    return parseRawResponse(DeletedConversationResource, raw);
+    return requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
+}
+
+pub fn deleteConversationResult(client: *Client, conversation_id: []const u8) !ApiResult(DeletedConversationResource) {
+    return parseRawResponse(DeletedConversationResource, try deleteConversationRaw(client, conversation_id));
 }
 
 /////////////////
@@ -10988,44 +11259,21 @@ pub fn deleteConversationResult(client: *Client, conversation_id: []const u8) !A
 //
 //
 pub fn deactivateOrganizationCertificates(client: *Client, requestBody: ToggleCertificatesRequest) !Owned(ListCertificatesResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/certificates/deactivate", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try deactivateOrganizationCertificatesResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ListCertificatesResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn deactivateOrganizationCertificatesResult(client: *Client, requestBody: ToggleCertificatesRequest) !ApiResult(ListCertificatesResponse) {
+pub fn deactivateOrganizationCertificatesRaw(client: *Client, requestBody: ToggleCertificatesRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -11036,8 +11284,11 @@ pub fn deactivateOrganizationCertificatesResult(client: *Client, requestBody: To
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(ListCertificatesResponse, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn deactivateOrganizationCertificatesResult(client: *Client, requestBody: ToggleCertificatesRequest) !ApiResult(ListCertificatesResponse) {
+    return parseRawResponse(ListCertificatesResponse, try deactivateOrganizationCertificatesRaw(client, requestBody));
 }
 
 /////////////////
@@ -11046,50 +11297,21 @@ pub fn deactivateOrganizationCertificatesResult(client: *Client, requestBody: To
 //
 //
 pub fn listEvals(client: *Client, after: ?[]const u8, limit: ?i64, order: ?[]const u8, order_by: ?[]const u8) !Owned(EvalList) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/evals", .{client.base_url});
-    var first_query = true;
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
+    var result = try listEvalsResult(client, after, limit, order, order_by);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
-    }
-    if (order) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "order", value);
-    }
-    if (order_by) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "order_by", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(EvalList, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn listEvalsResult(client: *Client, after: ?[]const u8, limit: ?i64, order: ?[]const u8, order_by: ?[]const u8) !ApiResult(EvalList) {
+pub fn listEvalsRaw(client: *Client, after: ?[]const u8, limit: ?i64, order: ?[]const u8, order_by: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -11109,8 +11331,11 @@ pub fn listEvalsResult(client: *Client, after: ?[]const u8, limit: ?i64, order: 
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(EvalList, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn listEvalsResult(client: *Client, after: ?[]const u8, limit: ?i64, order: ?[]const u8, order_by: ?[]const u8) !ApiResult(EvalList) {
+    return parseRawResponse(EvalList, try listEvalsRaw(client, after, limit, order, order_by));
 }
 
 /////////////////
@@ -11121,44 +11346,21 @@ pub fn listEvalsResult(client: *Client, after: ?[]const u8, limit: ?i64, order: 
 //
 //
 pub fn createEval(client: *Client, requestBody: CreateEvalRequest) !Owned(Eval) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/evals", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try createEvalResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(Eval, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn createEvalResult(client: *Client, requestBody: CreateEvalRequest) !ApiResult(Eval) {
+pub fn createEvalRaw(client: *Client, requestBody: CreateEvalRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -11169,8 +11371,11 @@ pub fn createEvalResult(client: *Client, requestBody: CreateEvalRequest) !ApiRes
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(Eval, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn createEvalResult(client: *Client, requestBody: CreateEvalRequest) !ApiResult(Eval) {
+    return parseRawResponse(Eval, try createEvalRaw(client, requestBody));
 }
 
 /////////////////
@@ -11187,44 +11392,21 @@ pub fn createEvalResult(client: *Client, requestBody: CreateEvalRequest) !ApiRes
 //
 //
 pub fn @"create-realtime-session"(client: *Client, requestBody: RealtimeSessionCreateRequest) !Owned(RealtimeSessionCreateResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/realtime/sessions", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"create-realtime-sessionResult"(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(RealtimeSessionCreateResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"create-realtime-sessionResult"(client: *Client, requestBody: RealtimeSessionCreateRequest) !ApiResult(RealtimeSessionCreateResponse) {
+pub fn @"create-realtime-sessionRaw"(client: *Client, requestBody: RealtimeSessionCreateRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -11235,8 +11417,11 @@ pub fn @"create-realtime-sessionResult"(client: *Client, requestBody: RealtimeSe
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(RealtimeSessionCreateResponse, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn @"create-realtime-sessionResult"(client: *Client, requestBody: RealtimeSessionCreateRequest) !ApiResult(RealtimeSessionCreateResponse) {
+    return parseRawResponse(RealtimeSessionCreateResponse, try @"create-realtime-sessionRaw"(client, requestBody));
 }
 
 /////////////////
@@ -11244,45 +11429,32 @@ pub fn @"create-realtime-sessionResult"(client: *Client, requestBody: RealtimeSe
 // Retrieves a thread.
 //
 pub fn getThread(client: *Client, thread_id: []const u8) !Owned(ThreadObject) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/threads/{s}", .{ client.base_url, thread_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try getThreadResult(client, thread_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ThreadObject, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn getThreadResult(client: *Client, thread_id: []const u8) !ApiResult(ThreadObject) {
+pub fn getThreadRaw(client: *Client, thread_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/threads/{s}", .{ client.base_url, thread_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ThreadObject, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn getThreadResult(client: *Client, thread_id: []const u8) !ApiResult(ThreadObject) {
+    return parseRawResponse(ThreadObject, try getThreadRaw(client, thread_id));
 }
 
 /////////////////
@@ -11290,44 +11462,21 @@ pub fn getThreadResult(client: *Client, thread_id: []const u8) !ApiResult(Thread
 // Modifies a thread.
 //
 pub fn modifyThread(client: *Client, thread_id: []const u8, requestBody: ModifyThreadRequest) !Owned(ThreadObject) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/threads/{s}", .{ client.base_url, thread_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try modifyThreadResult(client, thread_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ThreadObject, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn modifyThreadResult(client: *Client, thread_id: []const u8, requestBody: ModifyThreadRequest) !ApiResult(ThreadObject) {
+pub fn modifyThreadRaw(client: *Client, thread_id: []const u8, requestBody: ModifyThreadRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -11338,8 +11487,11 @@ pub fn modifyThreadResult(client: *Client, thread_id: []const u8, requestBody: M
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(ThreadObject, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn modifyThreadResult(client: *Client, thread_id: []const u8, requestBody: ModifyThreadRequest) !ApiResult(ThreadObject) {
+    return parseRawResponse(ThreadObject, try modifyThreadRaw(client, thread_id, requestBody));
 }
 
 /////////////////
@@ -11347,45 +11499,32 @@ pub fn modifyThreadResult(client: *Client, thread_id: []const u8, requestBody: M
 // Delete a thread.
 //
 pub fn deleteThread(client: *Client, thread_id: []const u8) !Owned(DeleteThreadResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/threads/{s}", .{ client.base_url, thread_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.DELETE,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try deleteThreadResult(client, thread_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(DeleteThreadResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn deleteThreadResult(client: *Client, thread_id: []const u8) !ApiResult(DeleteThreadResponse) {
+pub fn deleteThreadRaw(client: *Client, thread_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/threads/{s}", .{ client.base_url, thread_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
-    return parseRawResponse(DeleteThreadResponse, raw);
+    return requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
+}
+
+pub fn deleteThreadResult(client: *Client, thread_id: []const u8) !ApiResult(DeleteThreadResponse) {
+    return parseRawResponse(DeleteThreadResponse, try deleteThreadRaw(client, thread_id));
 }
 
 /////////////////
@@ -11393,72 +11532,21 @@ pub fn deleteThreadResult(client: *Client, thread_id: []const u8) !ApiResult(Del
 // Get images usage details for the organization.
 //
 pub fn @"usage-images"(client: *Client, start_time: i64, end_time: ?i64, bucket_width: ?[]const u8, sources: ?[]const u8, sizes: ?[]const u8, project_ids: ?[]const u8, user_ids: ?[]const u8, api_key_ids: ?[]const u8, models: ?[]const u8, group_by: ?[]const u8, limit: ?i64, page: ?[]const u8) !Owned(UsageResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/usage/images", .{client.base_url});
-    var first_query = true;
-    try appendQueryParam(&uri_buf.writer, &first_query, "start_time", start_time);
-    if (end_time) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "end_time", value);
+    var result = try @"usage-imagesResult"(client, start_time, end_time, bucket_width, sources, sizes, project_ids, user_ids, api_key_ids, models, group_by, limit, page);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (bucket_width) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "bucket_width", value);
-    }
-    if (sources) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "sources", value);
-    }
-    if (sizes) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "sizes", value);
-    }
-    if (project_ids) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "project_ids", value);
-    }
-    if (user_ids) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "user_ids", value);
-    }
-    if (api_key_ids) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "api_key_ids", value);
-    }
-    if (models) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "models", value);
-    }
-    if (group_by) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "group_by", value);
-    }
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
-    }
-    if (page) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "page", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(UsageResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"usage-imagesResult"(client: *Client, start_time: i64, end_time: ?i64, bucket_width: ?[]const u8, sources: ?[]const u8, sizes: ?[]const u8, project_ids: ?[]const u8, user_ids: ?[]const u8, api_key_ids: ?[]const u8, models: ?[]const u8, group_by: ?[]const u8, limit: ?i64, page: ?[]const u8) !ApiResult(UsageResponse) {
+pub fn @"usage-imagesRaw"(client: *Client, start_time: i64, end_time: ?i64, bucket_width: ?[]const u8, sources: ?[]const u8, sizes: ?[]const u8, project_ids: ?[]const u8, user_ids: ?[]const u8, api_key_ids: ?[]const u8, models: ?[]const u8, group_by: ?[]const u8, limit: ?i64, page: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -11500,8 +11588,11 @@ pub fn @"usage-imagesResult"(client: *Client, start_time: i64, end_time: ?i64, b
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(UsageResponse, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn @"usage-imagesResult"(client: *Client, start_time: i64, end_time: ?i64, bucket_width: ?[]const u8, sources: ?[]const u8, sizes: ?[]const u8, project_ids: ?[]const u8, user_ids: ?[]const u8, api_key_ids: ?[]const u8, models: ?[]const u8, group_by: ?[]const u8, limit: ?i64, page: ?[]const u8) !ApiResult(UsageResponse) {
+    return parseRawResponse(UsageResponse, try @"usage-imagesRaw"(client, start_time, end_time, bucket_width, sources, sizes, project_ids, user_ids, api_key_ids, models, group_by, limit, page));
 }
 
 /////////////////
@@ -11522,44 +11613,21 @@ pub fn @"usage-imagesResult"(client: *Client, start_time: i64, end_time: ?i64, b
 //
 //
 pub fn @"create-realtime-client-secret"(client: *Client, requestBody: RealtimeCreateClientSecretRequest) !Owned(RealtimeCreateClientSecretResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/realtime/client_secrets", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"create-realtime-client-secretResult"(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(RealtimeCreateClientSecretResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"create-realtime-client-secretResult"(client: *Client, requestBody: RealtimeCreateClientSecretRequest) !ApiResult(RealtimeCreateClientSecretResponse) {
+pub fn @"create-realtime-client-secretRaw"(client: *Client, requestBody: RealtimeCreateClientSecretRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -11570,8 +11638,11 @@ pub fn @"create-realtime-client-secretResult"(client: *Client, requestBody: Real
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(RealtimeCreateClientSecretResponse, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn @"create-realtime-client-secretResult"(client: *Client, requestBody: RealtimeCreateClientSecretRequest) !ApiResult(RealtimeCreateClientSecretResponse) {
+    return parseRawResponse(RealtimeCreateClientSecretResponse, try @"create-realtime-client-secretRaw"(client, requestBody));
 }
 
 /////////////////
@@ -11579,41 +11650,21 @@ pub fn @"create-realtime-client-secretResult"(client: *Client, requestBody: Real
 // Get a single item from a conversation with the given IDs.
 //
 pub fn getConversationItem(client: *Client, conversation_id: []const u8, item_id: []const u8, include: ?[]const u8) !Owned(ConversationItem) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/conversations/{s}/items/{s}", .{ client.base_url, conversation_id, item_id });
-    var first_query = true;
-    if (include) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "include", value);
+    var result = try getConversationItemResult(client, conversation_id, item_id, include);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ConversationItem, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn getConversationItemResult(client: *Client, conversation_id: []const u8, item_id: []const u8, include: ?[]const u8) !ApiResult(ConversationItem) {
+pub fn getConversationItemRaw(client: *Client, conversation_id: []const u8, item_id: []const u8, include: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -11624,8 +11675,11 @@ pub fn getConversationItemResult(client: *Client, conversation_id: []const u8, i
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ConversationItem, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn getConversationItemResult(client: *Client, conversation_id: []const u8, item_id: []const u8, include: ?[]const u8) !ApiResult(ConversationItem) {
+    return parseRawResponse(ConversationItem, try getConversationItemRaw(client, conversation_id, item_id, include));
 }
 
 /////////////////
@@ -11633,45 +11687,32 @@ pub fn getConversationItemResult(client: *Client, conversation_id: []const u8, i
 // Delete an item from a conversation with the given IDs.
 //
 pub fn deleteConversationItem(client: *Client, conversation_id: []const u8, item_id: []const u8) !Owned(ConversationResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/conversations/{s}/items/{s}", .{ client.base_url, conversation_id, item_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.DELETE,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try deleteConversationItemResult(client, conversation_id, item_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ConversationResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn deleteConversationItemResult(client: *Client, conversation_id: []const u8, item_id: []const u8) !ApiResult(ConversationResource) {
+pub fn deleteConversationItemRaw(client: *Client, conversation_id: []const u8, item_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/conversations/{s}/items/{s}", .{ client.base_url, conversation_id, item_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
-    return parseRawResponse(ConversationResource, raw);
+    return requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
+}
+
+pub fn deleteConversationItemResult(client: *Client, conversation_id: []const u8, item_id: []const u8) !ApiResult(ConversationResource) {
+    return parseRawResponse(ConversationResource, try deleteConversationItemRaw(client, conversation_id, item_id));
 }
 
 /////////////////
@@ -11679,50 +11720,21 @@ pub fn deleteConversationItemResult(client: *Client, conversation_id: []const u8
 // Returns a list of files.
 //
 pub fn listFiles(client: *Client, purpose: ?[]const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8) !Owned(ListFilesResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/files", .{client.base_url});
-    var first_query = true;
-    if (purpose) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "purpose", value);
+    var result = try listFilesResult(client, purpose, limit, order, after);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
-    }
-    if (order) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "order", value);
-    }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ListFilesResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn listFilesResult(client: *Client, purpose: ?[]const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8) !ApiResult(ListFilesResponse) {
+pub fn listFilesRaw(client: *Client, purpose: ?[]const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -11742,8 +11754,11 @@ pub fn listFilesResult(client: *Client, purpose: ?[]const u8, limit: ?i64, order
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ListFilesResponse, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn listFilesResult(client: *Client, purpose: ?[]const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8) !ApiResult(ListFilesResponse) {
+    return parseRawResponse(ListFilesResponse, try listFilesRaw(client, purpose, limit, order, after));
 }
 
 /////////////////
@@ -11768,44 +11783,21 @@ pub fn listFilesResult(client: *Client, purpose: ?[]const u8, limit: ?i64, order
 //
 //
 pub fn createFile(client: *Client, requestBody: CreateFileRequest) !Owned(OpenAIFile) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/files", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try createFileResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(OpenAIFile, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn createFileResult(client: *Client, requestBody: CreateFileRequest) !ApiResult(OpenAIFile) {
+pub fn createFileRaw(client: *Client, requestBody: CreateFileRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -11816,8 +11808,11 @@ pub fn createFileResult(client: *Client, requestBody: CreateFileRequest) !ApiRes
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(OpenAIFile, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn createFileResult(client: *Client, requestBody: CreateFileRequest) !ApiResult(OpenAIFile) {
+    return parseRawResponse(OpenAIFile, try createFileRaw(client, requestBody));
 }
 
 /////////////////
@@ -11831,45 +11826,32 @@ pub fn createFileResult(client: *Client, requestBody: CreateFileRequest) !ApiRes
 //
 //
 pub fn getVoiceConsent(client: *Client, consent_id: []const u8) !Owned(VoiceConsentResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/audio/voice_consents/{s}", .{ client.base_url, consent_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try getVoiceConsentResult(client, consent_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(VoiceConsentResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn getVoiceConsentResult(client: *Client, consent_id: []const u8) !ApiResult(VoiceConsentResource) {
+pub fn getVoiceConsentRaw(client: *Client, consent_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/audio/voice_consents/{s}", .{ client.base_url, consent_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(VoiceConsentResource, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn getVoiceConsentResult(client: *Client, consent_id: []const u8) !ApiResult(VoiceConsentResource) {
+    return parseRawResponse(VoiceConsentResource, try getVoiceConsentRaw(client, consent_id));
 }
 
 /////////////////
@@ -11883,44 +11865,21 @@ pub fn getVoiceConsentResult(client: *Client, consent_id: []const u8) !ApiResult
 //
 //
 pub fn updateVoiceConsent(client: *Client, consent_id: []const u8, requestBody: UpdateVoiceConsentRequest) !Owned(VoiceConsentResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/audio/voice_consents/{s}", .{ client.base_url, consent_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try updateVoiceConsentResult(client, consent_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(VoiceConsentResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn updateVoiceConsentResult(client: *Client, consent_id: []const u8, requestBody: UpdateVoiceConsentRequest) !ApiResult(VoiceConsentResource) {
+pub fn updateVoiceConsentRaw(client: *Client, consent_id: []const u8, requestBody: UpdateVoiceConsentRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -11931,8 +11890,11 @@ pub fn updateVoiceConsentResult(client: *Client, consent_id: []const u8, request
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(VoiceConsentResource, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn updateVoiceConsentResult(client: *Client, consent_id: []const u8, requestBody: UpdateVoiceConsentRequest) !ApiResult(VoiceConsentResource) {
+    return parseRawResponse(VoiceConsentResource, try updateVoiceConsentRaw(client, consent_id, requestBody));
 }
 
 /////////////////
@@ -11946,45 +11908,32 @@ pub fn updateVoiceConsentResult(client: *Client, consent_id: []const u8, request
 //
 //
 pub fn deleteVoiceConsent(client: *Client, consent_id: []const u8) !Owned(VoiceConsentDeletedResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/audio/voice_consents/{s}", .{ client.base_url, consent_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.DELETE,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try deleteVoiceConsentResult(client, consent_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(VoiceConsentDeletedResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn deleteVoiceConsentResult(client: *Client, consent_id: []const u8) !ApiResult(VoiceConsentDeletedResource) {
+pub fn deleteVoiceConsentRaw(client: *Client, consent_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/audio/voice_consents/{s}", .{ client.base_url, consent_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
-    return parseRawResponse(VoiceConsentDeletedResource, raw);
+    return requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
+}
+
+pub fn deleteVoiceConsentResult(client: *Client, consent_id: []const u8) !ApiResult(VoiceConsentDeletedResource) {
+    return parseRawResponse(VoiceConsentDeletedResource, try deleteVoiceConsentRaw(client, consent_id));
 }
 
 /////////////////
@@ -11992,50 +11941,21 @@ pub fn deleteVoiceConsentResult(client: *Client, consent_id: []const u8) !ApiRes
 // List all items for a conversation with the given ID.
 //
 pub fn listConversationItems(client: *Client, conversation_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8, include: ?[]const u8) !Owned(ConversationItemList) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/conversations/{s}/items", .{ client.base_url, conversation_id });
-    var first_query = true;
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
+    var result = try listConversationItemsResult(client, conversation_id, limit, order, after, include);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (order) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "order", value);
-    }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    if (include) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "include", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ConversationItemList, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn listConversationItemsResult(client: *Client, conversation_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8, include: ?[]const u8) !ApiResult(ConversationItemList) {
+pub fn listConversationItemsRaw(client: *Client, conversation_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8, include: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -12055,8 +11975,11 @@ pub fn listConversationItemsResult(client: *Client, conversation_id: []const u8,
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ConversationItemList, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn listConversationItemsResult(client: *Client, conversation_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8, include: ?[]const u8) !ApiResult(ConversationItemList) {
+    return parseRawResponse(ConversationItemList, try listConversationItemsRaw(client, conversation_id, limit, order, after, include));
 }
 
 /////////////////
@@ -12064,48 +11987,21 @@ pub fn listConversationItemsResult(client: *Client, conversation_id: []const u8,
 // Create items in a conversation with the given ID.
 //
 pub fn createConversationItems(client: *Client, conversation_id: []const u8, include: ?[]const u8, requestBody: std.json.Value) !Owned(ConversationItemList) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/conversations/{s}/items", .{ client.base_url, conversation_id });
-    var first_query = true;
-    if (include) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "include", value);
+    var result = try createConversationItemsResult(client, conversation_id, include, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ConversationItemList, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn createConversationItemsResult(client: *Client, conversation_id: []const u8, include: ?[]const u8, requestBody: std.json.Value) !ApiResult(ConversationItemList) {
+pub fn createConversationItemsRaw(client: *Client, conversation_id: []const u8, include: ?[]const u8, requestBody: std.json.Value) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -12120,8 +12016,11 @@ pub fn createConversationItemsResult(client: *Client, conversation_id: []const u
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(ConversationItemList, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn createConversationItemsResult(client: *Client, conversation_id: []const u8, include: ?[]const u8, requestBody: std.json.Value) !ApiResult(ConversationItemList) {
+    return parseRawResponse(ConversationItemList, try createConversationItemsRaw(client, conversation_id, include, requestBody));
 }
 
 /////////////////
@@ -12130,47 +12029,21 @@ pub fn createConversationItemsResult(client: *Client, conversation_id: []const u
 //
 //
 pub fn listPaginatedFineTuningJobs(client: *Client, after: ?[]const u8, limit: ?i64, metadata: ?[]const u8) !Owned(ListPaginatedFineTuningJobsResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/fine_tuning/jobs", .{client.base_url});
-    var first_query = true;
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
+    var result = try listPaginatedFineTuningJobsResult(client, after, limit, metadata);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
-    }
-    if (metadata) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "metadata", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ListPaginatedFineTuningJobsResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn listPaginatedFineTuningJobsResult(client: *Client, after: ?[]const u8, limit: ?i64, metadata: ?[]const u8) !ApiResult(ListPaginatedFineTuningJobsResponse) {
+pub fn listPaginatedFineTuningJobsRaw(client: *Client, after: ?[]const u8, limit: ?i64, metadata: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -12187,8 +12060,11 @@ pub fn listPaginatedFineTuningJobsResult(client: *Client, after: ?[]const u8, li
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ListPaginatedFineTuningJobsResponse, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn listPaginatedFineTuningJobsResult(client: *Client, after: ?[]const u8, limit: ?i64, metadata: ?[]const u8) !ApiResult(ListPaginatedFineTuningJobsResponse) {
+    return parseRawResponse(ListPaginatedFineTuningJobsResponse, try listPaginatedFineTuningJobsRaw(client, after, limit, metadata));
 }
 
 /////////////////
@@ -12201,44 +12077,21 @@ pub fn listPaginatedFineTuningJobsResult(client: *Client, after: ?[]const u8, li
 //
 //
 pub fn createFineTuningJob(client: *Client, requestBody: CreateFineTuningJobRequest) !Owned(FineTuningJob) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/fine_tuning/jobs", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try createFineTuningJobResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(FineTuningJob, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn createFineTuningJobResult(client: *Client, requestBody: CreateFineTuningJobRequest) !ApiResult(FineTuningJob) {
+pub fn createFineTuningJobRaw(client: *Client, requestBody: CreateFineTuningJobRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -12249,8 +12102,11 @@ pub fn createFineTuningJobResult(client: *Client, requestBody: CreateFineTuningJ
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(FineTuningJob, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn createFineTuningJobResult(client: *Client, requestBody: CreateFineTuningJobRequest) !ApiResult(FineTuningJob) {
+    return parseRawResponse(FineTuningJob, try createFineTuningJobRaw(client, requestBody));
 }
 
 /////////////////
@@ -12258,44 +12114,21 @@ pub fn createFineTuningJobResult(client: *Client, requestBody: CreateFineTuningJ
 // Create a ChatKit session.
 //
 pub fn CreateChatSessionMethod(client: *Client, requestBody: CreateChatSessionBody) !Owned(ChatSessionResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/chatkit/sessions", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try CreateChatSessionMethodResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ChatSessionResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn CreateChatSessionMethodResult(client: *Client, requestBody: CreateChatSessionBody) !ApiResult(ChatSessionResource) {
+pub fn CreateChatSessionMethodRaw(client: *Client, requestBody: CreateChatSessionBody) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -12306,8 +12139,11 @@ pub fn CreateChatSessionMethodResult(client: *Client, requestBody: CreateChatSes
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(ChatSessionResource, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn CreateChatSessionMethodResult(client: *Client, requestBody: CreateChatSessionBody) !ApiResult(ChatSessionResource) {
+    return parseRawResponse(ChatSessionResource, try CreateChatSessionMethodRaw(client, requestBody));
 }
 
 /////////////////
@@ -12315,44 +12151,21 @@ pub fn CreateChatSessionMethodResult(client: *Client, requestBody: CreateChatSes
 // Returns a list of service accounts in the project.
 //
 pub fn @"list-project-service-accounts"(client: *Client, project_id: []const u8, limit: ?i64, after: ?[]const u8) !Owned(ProjectServiceAccountListResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/projects/{s}/service_accounts", .{ client.base_url, project_id });
-    var first_query = true;
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
+    var result = try @"list-project-service-accountsResult"(client, project_id, limit, after);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ProjectServiceAccountListResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"list-project-service-accountsResult"(client: *Client, project_id: []const u8, limit: ?i64, after: ?[]const u8) !ApiResult(ProjectServiceAccountListResponse) {
+pub fn @"list-project-service-accountsRaw"(client: *Client, project_id: []const u8, limit: ?i64, after: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -12366,8 +12179,11 @@ pub fn @"list-project-service-accountsResult"(client: *Client, project_id: []con
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ProjectServiceAccountListResponse, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn @"list-project-service-accountsResult"(client: *Client, project_id: []const u8, limit: ?i64, after: ?[]const u8) !ApiResult(ProjectServiceAccountListResponse) {
+    return parseRawResponse(ProjectServiceAccountListResponse, try @"list-project-service-accountsRaw"(client, project_id, limit, after));
 }
 
 /////////////////
@@ -12375,44 +12191,21 @@ pub fn @"list-project-service-accountsResult"(client: *Client, project_id: []con
 // Creates a new service account in the project. This also returns an unredacted API key for the service account.
 //
 pub fn @"create-project-service-account"(client: *Client, project_id: []const u8, requestBody: ProjectServiceAccountCreateRequest) !Owned(ProjectServiceAccountCreateResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/projects/{s}/service_accounts", .{ client.base_url, project_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"create-project-service-accountResult"(client, project_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ProjectServiceAccountCreateResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"create-project-service-accountResult"(client: *Client, project_id: []const u8, requestBody: ProjectServiceAccountCreateRequest) !ApiResult(ProjectServiceAccountCreateResponse) {
+pub fn @"create-project-service-accountRaw"(client: *Client, project_id: []const u8, requestBody: ProjectServiceAccountCreateRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -12423,8 +12216,11 @@ pub fn @"create-project-service-accountResult"(client: *Client, project_id: []co
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(ProjectServiceAccountCreateResponse, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn @"create-project-service-accountResult"(client: *Client, project_id: []const u8, requestBody: ProjectServiceAccountCreateRequest) !ApiResult(ProjectServiceAccountCreateResponse) {
+    return parseRawResponse(ProjectServiceAccountCreateResponse, try @"create-project-service-accountRaw"(client, project_id, requestBody));
 }
 
 /////////////////
@@ -12432,44 +12228,21 @@ pub fn @"create-project-service-accountResult"(client: *Client, project_id: []co
 // Translates audio into English.
 //
 pub fn createTranslation(client: *Client, requestBody: CreateTranslationRequest) !Owned(std.json.Value) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/audio/translations", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try createTranslationResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(std.json.Value, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn createTranslationResult(client: *Client, requestBody: CreateTranslationRequest) !ApiResult(std.json.Value) {
+pub fn createTranslationRaw(client: *Client, requestBody: CreateTranslationRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -12480,8 +12253,11 @@ pub fn createTranslationResult(client: *Client, requestBody: CreateTranslationRe
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(std.json.Value, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn createTranslationResult(client: *Client, requestBody: CreateTranslationRequest) !ApiResult(std.json.Value) {
+    return parseRawResponse(std.json.Value, try createTranslationRaw(client, requestBody));
 }
 
 /////////////////
@@ -12489,45 +12265,32 @@ pub fn createTranslationResult(client: *Client, requestBody: CreateTranslationRe
 // Revokes a group's access to a project.
 //
 pub fn @"remove-project-group"(client: *Client, project_id: []const u8, group_id: []const u8) !Owned(ProjectGroupDeletedResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/projects/{s}/groups/{s}", .{ client.base_url, project_id, group_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.DELETE,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"remove-project-groupResult"(client, project_id, group_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ProjectGroupDeletedResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"remove-project-groupResult"(client: *Client, project_id: []const u8, group_id: []const u8) !ApiResult(ProjectGroupDeletedResource) {
+pub fn @"remove-project-groupRaw"(client: *Client, project_id: []const u8, group_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/organization/projects/{s}/groups/{s}", .{ client.base_url, project_id, group_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
-    return parseRawResponse(ProjectGroupDeletedResource, raw);
+    return requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
+}
+
+pub fn @"remove-project-groupResult"(client: *Client, project_id: []const u8, group_id: []const u8) !ApiResult(ProjectGroupDeletedResource) {
+    return parseRawResponse(ProjectGroupDeletedResource, try @"remove-project-groupRaw"(client, project_id, group_id));
 }
 
 /////////////////
@@ -12535,57 +12298,21 @@ pub fn @"remove-project-groupResult"(client: *Client, project_id: []const u8, gr
 // Get code interpreter sessions usage details for the organization.
 //
 pub fn @"usage-code-interpreter-sessions"(client: *Client, start_time: i64, end_time: ?i64, bucket_width: ?[]const u8, project_ids: ?[]const u8, group_by: ?[]const u8, limit: ?i64, page: ?[]const u8) !Owned(UsageResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/usage/code_interpreter_sessions", .{client.base_url});
-    var first_query = true;
-    try appendQueryParam(&uri_buf.writer, &first_query, "start_time", start_time);
-    if (end_time) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "end_time", value);
+    var result = try @"usage-code-interpreter-sessionsResult"(client, start_time, end_time, bucket_width, project_ids, group_by, limit, page);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (bucket_width) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "bucket_width", value);
-    }
-    if (project_ids) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "project_ids", value);
-    }
-    if (group_by) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "group_by", value);
-    }
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
-    }
-    if (page) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "page", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(UsageResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"usage-code-interpreter-sessionsResult"(client: *Client, start_time: i64, end_time: ?i64, bucket_width: ?[]const u8, project_ids: ?[]const u8, group_by: ?[]const u8, limit: ?i64, page: ?[]const u8) !ApiResult(UsageResponse) {
+pub fn @"usage-code-interpreter-sessionsRaw"(client: *Client, start_time: i64, end_time: ?i64, bucket_width: ?[]const u8, project_ids: ?[]const u8, group_by: ?[]const u8, limit: ?i64, page: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -12612,8 +12339,11 @@ pub fn @"usage-code-interpreter-sessionsResult"(client: *Client, start_time: i64
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(UsageResponse, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn @"usage-code-interpreter-sessionsResult"(client: *Client, start_time: i64, end_time: ?i64, bucket_width: ?[]const u8, project_ids: ?[]const u8, group_by: ?[]const u8, limit: ?i64, page: ?[]const u8) !ApiResult(UsageResponse) {
+    return parseRawResponse(UsageResponse, try @"usage-code-interpreter-sessionsRaw"(client, start_time, end_time, bucket_width, project_ids, group_by, limit, page));
 }
 
 /////////////////
@@ -12624,47 +12354,21 @@ pub fn @"usage-code-interpreter-sessionsResult"(client: *Client, start_time: i64
 // Lists container files.
 //
 pub fn ListContainerFiles(client: *Client, container_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8) !Owned(ContainerFileListResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/containers/{s}/files", .{ client.base_url, container_id });
-    var first_query = true;
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
+    var result = try ListContainerFilesResult(client, container_id, limit, order, after);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (order) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "order", value);
-    }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ContainerFileListResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn ListContainerFilesResult(client: *Client, container_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8) !ApiResult(ContainerFileListResource) {
+pub fn ListContainerFilesRaw(client: *Client, container_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -12681,8 +12385,11 @@ pub fn ListContainerFilesResult(client: *Client, container_id: []const u8, limit
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ContainerFileListResource, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn ListContainerFilesResult(client: *Client, container_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8) !ApiResult(ContainerFileListResource) {
+    return parseRawResponse(ContainerFileListResource, try ListContainerFilesRaw(client, container_id, limit, order, after));
 }
 
 /////////////////
@@ -12697,44 +12404,21 @@ pub fn ListContainerFilesResult(client: *Client, container_id: []const u8, limit
 //
 //
 pub fn CreateContainerFile(client: *Client, container_id: []const u8, requestBody: CreateContainerFileBody) !Owned(ContainerFileResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/containers/{s}/files", .{ client.base_url, container_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try CreateContainerFileResult(client, container_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ContainerFileResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn CreateContainerFileResult(client: *Client, container_id: []const u8, requestBody: CreateContainerFileBody) !ApiResult(ContainerFileResource) {
+pub fn CreateContainerFileRaw(client: *Client, container_id: []const u8, requestBody: CreateContainerFileBody) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -12745,8 +12429,11 @@ pub fn CreateContainerFileResult(client: *Client, container_id: []const u8, requ
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(ContainerFileResource, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn CreateContainerFileResult(client: *Client, container_id: []const u8, requestBody: CreateContainerFileBody) !ApiResult(ContainerFileResource) {
+    return parseRawResponse(ContainerFileResource, try CreateContainerFileRaw(client, container_id, requestBody));
 }
 
 /////////////////
@@ -12763,44 +12450,21 @@ pub fn CreateContainerFileResult(client: *Client, container_id: []const u8, requ
 //
 //
 pub fn createImageEdit(client: *Client, requestBody: EditImageBodyJsonParam) !Owned(ImagesResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/images/edits", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try createImageEditResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ImagesResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn createImageEditResult(client: *Client, requestBody: EditImageBodyJsonParam) !ApiResult(ImagesResponse) {
+pub fn createImageEditRaw(client: *Client, requestBody: EditImageBodyJsonParam) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -12811,8 +12475,11 @@ pub fn createImageEditResult(client: *Client, requestBody: EditImageBodyJsonPara
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(ImagesResponse, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn createImageEditResult(client: *Client, requestBody: EditImageBodyJsonParam) !ApiResult(ImagesResponse) {
+    return parseRawResponse(ImagesResponse, try createImageEditRaw(client, requestBody));
 }
 
 /////////////////
@@ -12820,47 +12487,21 @@ pub fn createImageEditResult(client: *Client, requestBody: EditImageBodyJsonPara
 // List recently generated videos for the current project.
 //
 pub fn ListVideos(client: *Client, limit: ?i64, order: ?[]const u8, after: ?[]const u8) !Owned(VideoListResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/videos", .{client.base_url});
-    var first_query = true;
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
+    var result = try ListVideosResult(client, limit, order, after);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (order) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "order", value);
-    }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(VideoListResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn ListVideosResult(client: *Client, limit: ?i64, order: ?[]const u8, after: ?[]const u8) !ApiResult(VideoListResource) {
+pub fn ListVideosRaw(client: *Client, limit: ?i64, order: ?[]const u8, after: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -12877,8 +12518,11 @@ pub fn ListVideosResult(client: *Client, limit: ?i64, order: ?[]const u8, after:
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(VideoListResource, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn ListVideosResult(client: *Client, limit: ?i64, order: ?[]const u8, after: ?[]const u8) !ApiResult(VideoListResource) {
+    return parseRawResponse(VideoListResource, try ListVideosRaw(client, limit, order, after));
 }
 
 /////////////////
@@ -12886,44 +12530,21 @@ pub fn ListVideosResult(client: *Client, limit: ?i64, order: ?[]const u8, after:
 // Create a new video generation job from a prompt and optional reference assets.
 //
 pub fn createVideo(client: *Client, requestBody: CreateVideoJsonBody) !Owned(VideoResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/videos", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try createVideoResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(VideoResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn createVideoResult(client: *Client, requestBody: CreateVideoJsonBody) !ApiResult(VideoResource) {
+pub fn createVideoRaw(client: *Client, requestBody: CreateVideoJsonBody) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -12934,8 +12555,11 @@ pub fn createVideoResult(client: *Client, requestBody: CreateVideoJsonBody) !Api
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(VideoResource, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn createVideoResult(client: *Client, requestBody: CreateVideoJsonBody) !ApiResult(VideoResource) {
+    return parseRawResponse(VideoResource, try createVideoRaw(client, requestBody));
 }
 
 /////////////////
@@ -12943,50 +12567,21 @@ pub fn createVideoResult(client: *Client, requestBody: CreateVideoJsonBody) !Api
 // Returns a list of runs belonging to a thread.
 //
 pub fn listRuns(client: *Client, thread_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8, before: ?[]const u8) !Owned(ListRunsResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/threads/{s}/runs", .{ client.base_url, thread_id });
-    var first_query = true;
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
+    var result = try listRunsResult(client, thread_id, limit, order, after, before);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (order) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "order", value);
-    }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    if (before) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "before", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ListRunsResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn listRunsResult(client: *Client, thread_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8, before: ?[]const u8) !ApiResult(ListRunsResponse) {
+pub fn listRunsRaw(client: *Client, thread_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8, before: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -13006,8 +12601,11 @@ pub fn listRunsResult(client: *Client, thread_id: []const u8, limit: ?i64, order
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ListRunsResponse, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn listRunsResult(client: *Client, thread_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8, before: ?[]const u8) !ApiResult(ListRunsResponse) {
+    return parseRawResponse(ListRunsResponse, try listRunsRaw(client, thread_id, limit, order, after, before));
 }
 
 /////////////////
@@ -13015,48 +12613,21 @@ pub fn listRunsResult(client: *Client, thread_id: []const u8, limit: ?i64, order
 // Create a run.
 //
 pub fn createRun(client: *Client, thread_id: []const u8, @"include[]": ?[]const u8, requestBody: CreateRunRequest) !Owned(RunObject) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/threads/{s}/runs", .{ client.base_url, thread_id });
-    var first_query = true;
-    if (@"include[]") |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "include[]", value);
+    var result = try createRunResult(client, thread_id, @"include[]", requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(RunObject, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn createRunResult(client: *Client, thread_id: []const u8, @"include[]": ?[]const u8, requestBody: CreateRunRequest) !ApiResult(RunObject) {
+pub fn createRunRaw(client: *Client, thread_id: []const u8, @"include[]": ?[]const u8, requestBody: CreateRunRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -13071,8 +12642,11 @@ pub fn createRunResult(client: *Client, thread_id: []const u8, @"include[]": ?[]
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(RunObject, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn createRunResult(client: *Client, thread_id: []const u8, @"include[]": ?[]const u8, requestBody: CreateRunRequest) !ApiResult(RunObject) {
+    return parseRawResponse(RunObject, try createRunRaw(client, thread_id, @"include[]", requestBody));
 }
 
 /////////////////
@@ -13080,47 +12654,21 @@ pub fn createRunResult(client: *Client, thread_id: []const u8, @"include[]": ?[]
 // Lists all groups in the organization.
 //
 pub fn @"list-groups"(client: *Client, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !Owned(GroupListResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/groups", .{client.base_url});
-    var first_query = true;
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
+    var result = try @"list-groupsResult"(client, limit, after, order);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    if (order) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "order", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(GroupListResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"list-groupsResult"(client: *Client, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !ApiResult(GroupListResource) {
+pub fn @"list-groupsRaw"(client: *Client, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -13137,8 +12685,11 @@ pub fn @"list-groupsResult"(client: *Client, limit: ?i64, after: ?[]const u8, or
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(GroupListResource, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn @"list-groupsResult"(client: *Client, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !ApiResult(GroupListResource) {
+    return parseRawResponse(GroupListResource, try @"list-groupsRaw"(client, limit, after, order));
 }
 
 /////////////////
@@ -13146,44 +12697,21 @@ pub fn @"list-groupsResult"(client: *Client, limit: ?i64, after: ?[]const u8, or
 // Creates a new group in the organization.
 //
 pub fn @"create-group"(client: *Client, requestBody: CreateGroupBody) !Owned(GroupResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/groups", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"create-groupResult"(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(GroupResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"create-groupResult"(client: *Client, requestBody: CreateGroupBody) !ApiResult(GroupResponse) {
+pub fn @"create-groupRaw"(client: *Client, requestBody: CreateGroupBody) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -13194,8 +12722,11 @@ pub fn @"create-groupResult"(client: *Client, requestBody: CreateGroupBody) !Api
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(GroupResponse, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn @"create-groupResult"(client: *Client, requestBody: CreateGroupBody) !ApiResult(GroupResponse) {
+    return parseRawResponse(GroupResponse, try @"create-groupRaw"(client, requestBody));
 }
 
 /////////////////
@@ -13204,50 +12735,21 @@ pub fn @"create-groupResult"(client: *Client, requestBody: CreateGroupBody) !Api
 //
 //
 pub fn getEvalRuns(client: *Client, eval_id: []const u8, after: ?[]const u8, limit: ?i64, order: ?[]const u8, status: ?[]const u8) !Owned(EvalRunList) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/evals/{s}/runs", .{ client.base_url, eval_id });
-    var first_query = true;
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
+    var result = try getEvalRunsResult(client, eval_id, after, limit, order, status);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
-    }
-    if (order) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "order", value);
-    }
-    if (status) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "status", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(EvalRunList, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn getEvalRunsResult(client: *Client, eval_id: []const u8, after: ?[]const u8, limit: ?i64, order: ?[]const u8, status: ?[]const u8) !ApiResult(EvalRunList) {
+pub fn getEvalRunsRaw(client: *Client, eval_id: []const u8, after: ?[]const u8, limit: ?i64, order: ?[]const u8, status: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -13267,8 +12769,11 @@ pub fn getEvalRunsResult(client: *Client, eval_id: []const u8, after: ?[]const u
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(EvalRunList, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn getEvalRunsResult(client: *Client, eval_id: []const u8, after: ?[]const u8, limit: ?i64, order: ?[]const u8, status: ?[]const u8) !ApiResult(EvalRunList) {
+    return parseRawResponse(EvalRunList, try getEvalRunsRaw(client, eval_id, after, limit, order, status));
 }
 
 /////////////////
@@ -13277,44 +12782,21 @@ pub fn getEvalRunsResult(client: *Client, eval_id: []const u8, after: ?[]const u
 //
 //
 pub fn createEvalRun(client: *Client, eval_id: []const u8, requestBody: CreateEvalRunRequest) !Owned(EvalRun) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/evals/{s}/runs", .{ client.base_url, eval_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try createEvalRunResult(client, eval_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(EvalRun, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn createEvalRunResult(client: *Client, eval_id: []const u8, requestBody: CreateEvalRunRequest) !ApiResult(EvalRun) {
+pub fn createEvalRunRaw(client: *Client, eval_id: []const u8, requestBody: CreateEvalRunRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -13325,8 +12807,11 @@ pub fn createEvalRunResult(client: *Client, eval_id: []const u8, requestBody: Cr
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(EvalRun, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn createEvalRunResult(client: *Client, eval_id: []const u8, requestBody: CreateEvalRunRequest) !ApiResult(EvalRun) {
+    return parseRawResponse(EvalRun, try createEvalRunRaw(client, eval_id, requestBody));
 }
 
 /////////////////
@@ -13337,41 +12822,21 @@ pub fn createEvalRunResult(client: *Client, eval_id: []const u8, requestBody: Cr
 //
 //
 pub fn getCertificate(client: *Client, certificate_id: []const u8, include: ?[]const u8) !Owned(Certificate) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/certificates/{s}", .{ client.base_url, certificate_id });
-    var first_query = true;
-    if (include) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "include", value);
+    var result = try getCertificateResult(client, certificate_id, include);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(Certificate, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn getCertificateResult(client: *Client, certificate_id: []const u8, include: ?[]const u8) !ApiResult(Certificate) {
+pub fn getCertificateRaw(client: *Client, certificate_id: []const u8, include: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -13382,8 +12847,11 @@ pub fn getCertificateResult(client: *Client, certificate_id: []const u8, include
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(Certificate, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn getCertificateResult(client: *Client, certificate_id: []const u8, include: ?[]const u8) !ApiResult(Certificate) {
+    return parseRawResponse(Certificate, try getCertificateRaw(client, certificate_id, include));
 }
 
 /////////////////
@@ -13392,44 +12860,21 @@ pub fn getCertificateResult(client: *Client, certificate_id: []const u8, include
 //
 //
 pub fn modifyCertificate(client: *Client, certificate_id: []const u8, requestBody: ModifyCertificateRequest) !Owned(Certificate) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/certificates/{s}", .{ client.base_url, certificate_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try modifyCertificateResult(client, certificate_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(Certificate, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn modifyCertificateResult(client: *Client, certificate_id: []const u8, requestBody: ModifyCertificateRequest) !ApiResult(Certificate) {
+pub fn modifyCertificateRaw(client: *Client, certificate_id: []const u8, requestBody: ModifyCertificateRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -13440,8 +12885,11 @@ pub fn modifyCertificateResult(client: *Client, certificate_id: []const u8, requ
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(Certificate, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn modifyCertificateResult(client: *Client, certificate_id: []const u8, requestBody: ModifyCertificateRequest) !ApiResult(Certificate) {
+    return parseRawResponse(Certificate, try modifyCertificateRaw(client, certificate_id, requestBody));
 }
 
 /////////////////
@@ -13452,45 +12900,32 @@ pub fn modifyCertificateResult(client: *Client, certificate_id: []const u8, requ
 //
 //
 pub fn deleteCertificate(client: *Client, certificate_id: []const u8) !Owned(DeleteCertificateResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/certificates/{s}", .{ client.base_url, certificate_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.DELETE,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try deleteCertificateResult(client, certificate_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(DeleteCertificateResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn deleteCertificateResult(client: *Client, certificate_id: []const u8) !ApiResult(DeleteCertificateResponse) {
+pub fn deleteCertificateRaw(client: *Client, certificate_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/organization/certificates/{s}", .{ client.base_url, certificate_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
-    return parseRawResponse(DeleteCertificateResponse, raw);
+    return requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
+}
+
+pub fn deleteCertificateResult(client: *Client, certificate_id: []const u8) !ApiResult(DeleteCertificateResponse) {
+    return parseRawResponse(DeleteCertificateResponse, try deleteCertificateRaw(client, certificate_id));
 }
 
 /////////////////
@@ -13501,44 +12936,21 @@ pub fn deleteCertificateResult(client: *Client, certificate_id: []const u8) !Api
 //
 //
 pub fn createSpeech(client: *Client, requestBody: CreateSpeechRequest) !Owned(CreateSpeechResponseStreamEvent) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/audio/speech", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try createSpeechResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(CreateSpeechResponseStreamEvent, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn createSpeechResult(client: *Client, requestBody: CreateSpeechRequest) !ApiResult(CreateSpeechResponseStreamEvent) {
+pub fn createSpeechRaw(client: *Client, requestBody: CreateSpeechRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -13549,8 +12961,11 @@ pub fn createSpeechResult(client: *Client, requestBody: CreateSpeechRequest) !Ap
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(CreateSpeechResponseStreamEvent, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn createSpeechResult(client: *Client, requestBody: CreateSpeechRequest) !ApiResult(CreateSpeechResponseStreamEvent) {
+    return parseRawResponse(CreateSpeechResponseStreamEvent, try createSpeechRaw(client, requestBody));
 }
 
 /////////////////
@@ -13558,45 +12973,32 @@ pub fn createSpeechResult(client: *Client, requestBody: CreateSpeechRequest) !Ap
 // Retrieve a message.
 //
 pub fn getMessage(client: *Client, thread_id: []const u8, message_id: []const u8) !Owned(MessageObject) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/threads/{s}/messages/{s}", .{ client.base_url, thread_id, message_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try getMessageResult(client, thread_id, message_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(MessageObject, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn getMessageResult(client: *Client, thread_id: []const u8, message_id: []const u8) !ApiResult(MessageObject) {
+pub fn getMessageRaw(client: *Client, thread_id: []const u8, message_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/threads/{s}/messages/{s}", .{ client.base_url, thread_id, message_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(MessageObject, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn getMessageResult(client: *Client, thread_id: []const u8, message_id: []const u8) !ApiResult(MessageObject) {
+    return parseRawResponse(MessageObject, try getMessageRaw(client, thread_id, message_id));
 }
 
 /////////////////
@@ -13604,44 +13006,21 @@ pub fn getMessageResult(client: *Client, thread_id: []const u8, message_id: []co
 // Modifies a message.
 //
 pub fn modifyMessage(client: *Client, thread_id: []const u8, message_id: []const u8, requestBody: ModifyMessageRequest) !Owned(MessageObject) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/threads/{s}/messages/{s}", .{ client.base_url, thread_id, message_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try modifyMessageResult(client, thread_id, message_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(MessageObject, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn modifyMessageResult(client: *Client, thread_id: []const u8, message_id: []const u8, requestBody: ModifyMessageRequest) !ApiResult(MessageObject) {
+pub fn modifyMessageRaw(client: *Client, thread_id: []const u8, message_id: []const u8, requestBody: ModifyMessageRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -13652,8 +13031,11 @@ pub fn modifyMessageResult(client: *Client, thread_id: []const u8, message_id: [
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(MessageObject, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn modifyMessageResult(client: *Client, thread_id: []const u8, message_id: []const u8, requestBody: ModifyMessageRequest) !ApiResult(MessageObject) {
+    return parseRawResponse(MessageObject, try modifyMessageRaw(client, thread_id, message_id, requestBody));
 }
 
 /////////////////
@@ -13661,45 +13043,32 @@ pub fn modifyMessageResult(client: *Client, thread_id: []const u8, message_id: [
 // Deletes a message.
 //
 pub fn deleteMessage(client: *Client, thread_id: []const u8, message_id: []const u8) !Owned(DeleteMessageResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/threads/{s}/messages/{s}", .{ client.base_url, thread_id, message_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.DELETE,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try deleteMessageResult(client, thread_id, message_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(DeleteMessageResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn deleteMessageResult(client: *Client, thread_id: []const u8, message_id: []const u8) !ApiResult(DeleteMessageResponse) {
+pub fn deleteMessageRaw(client: *Client, thread_id: []const u8, message_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/threads/{s}/messages/{s}", .{ client.base_url, thread_id, message_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
-    return parseRawResponse(DeleteMessageResponse, raw);
+    return requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
+}
+
+pub fn deleteMessageResult(client: *Client, thread_id: []const u8, message_id: []const u8) !ApiResult(DeleteMessageResponse) {
+    return parseRawResponse(DeleteMessageResponse, try deleteMessageRaw(client, thread_id, message_id));
 }
 
 /////////////////
@@ -13709,44 +13078,21 @@ pub fn deleteMessageResult(client: *Client, thread_id: []const u8, message_id: [
 // Learn when and how to compact long-running conversations in the [conversation state guide](/docs/guides/conversation-state#managing-the-context-window). For ZDR-compatible compaction details, see [Compaction (advanced)](/docs/guides/conversation-state#compaction-advanced).
 //
 pub fn Compactconversation(client: *Client, requestBody: CompactResponseMethodPublicBody) !Owned(CompactResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/responses/compact", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try CompactconversationResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(CompactResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn CompactconversationResult(client: *Client, requestBody: CompactResponseMethodPublicBody) !ApiResult(CompactResource) {
+pub fn CompactconversationRaw(client: *Client, requestBody: CompactResponseMethodPublicBody) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -13757,8 +13103,11 @@ pub fn CompactconversationResult(client: *Client, requestBody: CompactResponseMe
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(CompactResource, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn CompactconversationResult(client: *Client, requestBody: CompactResponseMethodPublicBody) !ApiResult(CompactResource) {
+    return parseRawResponse(CompactResource, try CompactconversationRaw(client, requestBody));
 }
 
 /////////////////
@@ -13772,44 +13121,21 @@ pub fn CompactconversationResult(client: *Client, requestBody: CompactResponseMe
 //
 //
 pub fn createVectorStoreFileBatch(client: *Client, vector_store_id: []const u8, requestBody: CreateVectorStoreFileBatchRequest) !Owned(VectorStoreFileBatchObject) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/vector_stores/{s}/file_batches", .{ client.base_url, vector_store_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try createVectorStoreFileBatchResult(client, vector_store_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(VectorStoreFileBatchObject, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn createVectorStoreFileBatchResult(client: *Client, vector_store_id: []const u8, requestBody: CreateVectorStoreFileBatchRequest) !ApiResult(VectorStoreFileBatchObject) {
+pub fn createVectorStoreFileBatchRaw(client: *Client, vector_store_id: []const u8, requestBody: CreateVectorStoreFileBatchRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -13820,8 +13146,11 @@ pub fn createVectorStoreFileBatchResult(client: *Client, vector_store_id: []cons
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(VectorStoreFileBatchObject, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn createVectorStoreFileBatchResult(client: *Client, vector_store_id: []const u8, requestBody: CreateVectorStoreFileBatchRequest) !ApiResult(VectorStoreFileBatchObject) {
+    return parseRawResponse(VectorStoreFileBatchObject, try createVectorStoreFileBatchRaw(client, vector_store_id, requestBody));
 }
 
 /////////////////
@@ -13829,47 +13158,21 @@ pub fn createVectorStoreFileBatchResult(client: *Client, vector_store_id: []cons
 // Lists the organization roles assigned to a group within the organization.
 //
 pub fn @"list-group-role-assignments"(client: *Client, group_id: []const u8, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !Owned(RoleListResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/groups/{s}/roles", .{ client.base_url, group_id });
-    var first_query = true;
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
+    var result = try @"list-group-role-assignmentsResult"(client, group_id, limit, after, order);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    if (order) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "order", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(RoleListResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"list-group-role-assignmentsResult"(client: *Client, group_id: []const u8, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !ApiResult(RoleListResource) {
+pub fn @"list-group-role-assignmentsRaw"(client: *Client, group_id: []const u8, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -13886,8 +13189,11 @@ pub fn @"list-group-role-assignmentsResult"(client: *Client, group_id: []const u
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(RoleListResource, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn @"list-group-role-assignmentsResult"(client: *Client, group_id: []const u8, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !ApiResult(RoleListResource) {
+    return parseRawResponse(RoleListResource, try @"list-group-role-assignmentsRaw"(client, group_id, limit, after, order));
 }
 
 /////////////////
@@ -13895,44 +13201,21 @@ pub fn @"list-group-role-assignmentsResult"(client: *Client, group_id: []const u
 // Assigns an organization role to a group within the organization.
 //
 pub fn @"assign-group-role"(client: *Client, group_id: []const u8, requestBody: PublicAssignOrganizationGroupRoleBody) !Owned(GroupRoleAssignment) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/groups/{s}/roles", .{ client.base_url, group_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"assign-group-roleResult"(client, group_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(GroupRoleAssignment, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"assign-group-roleResult"(client: *Client, group_id: []const u8, requestBody: PublicAssignOrganizationGroupRoleBody) !ApiResult(GroupRoleAssignment) {
+pub fn @"assign-group-roleRaw"(client: *Client, group_id: []const u8, requestBody: PublicAssignOrganizationGroupRoleBody) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -13943,8 +13226,11 @@ pub fn @"assign-group-roleResult"(client: *Client, group_id: []const u8, request
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(GroupRoleAssignment, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn @"assign-group-roleResult"(client: *Client, group_id: []const u8, requestBody: PublicAssignOrganizationGroupRoleBody) !ApiResult(GroupRoleAssignment) {
+    return parseRawResponse(GroupRoleAssignment, try @"assign-group-roleRaw"(client, group_id, requestBody));
 }
 
 /////////////////
@@ -13952,44 +13238,21 @@ pub fn @"assign-group-roleResult"(client: *Client, group_id: []const u8, request
 // Create a character from an uploaded video.
 //
 pub fn CreateVideoCharacter(client: *Client, requestBody: CreateVideoCharacterBody) !Owned(VideoCharacterResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/videos/characters", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try CreateVideoCharacterResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(VideoCharacterResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn CreateVideoCharacterResult(client: *Client, requestBody: CreateVideoCharacterBody) !ApiResult(VideoCharacterResource) {
+pub fn CreateVideoCharacterRaw(client: *Client, requestBody: CreateVideoCharacterBody) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -14000,8 +13263,11 @@ pub fn CreateVideoCharacterResult(client: *Client, requestBody: CreateVideoChara
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(VideoCharacterResource, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn CreateVideoCharacterResult(client: *Client, requestBody: CreateVideoCharacterBody) !ApiResult(VideoCharacterResource) {
+    return parseRawResponse(VideoCharacterResource, try CreateVideoCharacterRaw(client, requestBody));
 }
 
 /////////////////
@@ -14009,44 +13275,21 @@ pub fn CreateVideoCharacterResult(client: *Client, requestBody: CreateVideoChara
 // Create a remix of a completed video using a refreshed prompt.
 //
 pub fn CreateVideoRemix(client: *Client, video_id: []const u8, requestBody: CreateVideoRemixBody) !Owned(VideoResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/videos/{s}/remix", .{ client.base_url, video_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try CreateVideoRemixResult(client, video_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(VideoResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn CreateVideoRemixResult(client: *Client, video_id: []const u8, requestBody: CreateVideoRemixBody) !ApiResult(VideoResource) {
+pub fn CreateVideoRemixRaw(client: *Client, video_id: []const u8, requestBody: CreateVideoRemixBody) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -14057,8 +13300,11 @@ pub fn CreateVideoRemixResult(client: *Client, video_id: []const u8, requestBody
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(VideoResource, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn CreateVideoRemixResult(client: *Client, video_id: []const u8, requestBody: CreateVideoRemixBody) !ApiResult(VideoResource) {
+    return parseRawResponse(VideoResource, try CreateVideoRemixRaw(client, video_id, requestBody));
 }
 
 /////////////////
@@ -14066,47 +13312,21 @@ pub fn CreateVideoRemixResult(client: *Client, video_id: []const u8, requestBody
 // List uploaded certificates for this organization.
 //
 pub fn listOrganizationCertificates(client: *Client, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !Owned(ListCertificatesResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/certificates", .{client.base_url});
-    var first_query = true;
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
+    var result = try listOrganizationCertificatesResult(client, limit, after, order);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    if (order) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "order", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ListCertificatesResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn listOrganizationCertificatesResult(client: *Client, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !ApiResult(ListCertificatesResponse) {
+pub fn listOrganizationCertificatesRaw(client: *Client, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -14123,8 +13343,11 @@ pub fn listOrganizationCertificatesResult(client: *Client, limit: ?i64, after: ?
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ListCertificatesResponse, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn listOrganizationCertificatesResult(client: *Client, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !ApiResult(ListCertificatesResponse) {
+    return parseRawResponse(ListCertificatesResponse, try listOrganizationCertificatesRaw(client, limit, after, order));
 }
 
 /////////////////
@@ -14135,44 +13358,21 @@ pub fn listOrganizationCertificatesResult(client: *Client, limit: ?i64, after: ?
 //
 //
 pub fn uploadCertificate(client: *Client, requestBody: UploadCertificateRequest) !Owned(Certificate) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/certificates", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try uploadCertificateResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(Certificate, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn uploadCertificateResult(client: *Client, requestBody: UploadCertificateRequest) !ApiResult(Certificate) {
+pub fn uploadCertificateRaw(client: *Client, requestBody: UploadCertificateRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -14183,8 +13383,11 @@ pub fn uploadCertificateResult(client: *Client, requestBody: UploadCertificateRe
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(Certificate, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn uploadCertificateResult(client: *Client, requestBody: UploadCertificateRequest) !ApiResult(Certificate) {
+    return parseRawResponse(Certificate, try uploadCertificateRaw(client, requestBody));
 }
 
 /////////////////
@@ -14192,32 +13395,23 @@ pub fn uploadCertificateResult(client: *Client, requestBody: UploadCertificateRe
 // Decline an incoming SIP call by returning a SIP status code to the caller.
 //
 pub fn @"reject-realtime-call"(client: *Client, call_id: []const u8, requestBody: RealtimeCallRejectRequest) !void {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
+    var raw = try @"reject-realtime-callRaw"(client, call_id, requestBody);
+    defer raw.deinit();
+    if (raw.status.class() != .success) return error.ResponseError;
+}
 
+pub fn @"reject-realtime-callRaw"(client: *Client, call_id: []const u8, requestBody: RealtimeCallRejectRequest) !RawResponse {
+    const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/realtime/calls/{s}/reject", .{ client.base_url, call_id });
-    const uri = try std.Uri.parse(uri_buf.written());
 
     var str: std.Io.Writer.Allocating = .init(allocator);
     defer str.deinit();
-
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
+    const payload: ?[]const u8 = str.written();
 
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
 }
 
 /////////////////
@@ -14225,47 +13419,21 @@ pub fn @"reject-realtime-call"(client: *Client, call_id: []const u8, requestBody
 // List skill versions for a skill.
 //
 pub fn ListSkillVersions(client: *Client, skill_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8) !Owned(SkillVersionListResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/skills/{s}/versions", .{ client.base_url, skill_id });
-    var first_query = true;
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
+    var result = try ListSkillVersionsResult(client, skill_id, limit, order, after);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (order) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "order", value);
-    }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(SkillVersionListResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn ListSkillVersionsResult(client: *Client, skill_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8) !ApiResult(SkillVersionListResource) {
+pub fn ListSkillVersionsRaw(client: *Client, skill_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -14282,8 +13450,11 @@ pub fn ListSkillVersionsResult(client: *Client, skill_id: []const u8, limit: ?i6
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(SkillVersionListResource, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn ListSkillVersionsResult(client: *Client, skill_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8) !ApiResult(SkillVersionListResource) {
+    return parseRawResponse(SkillVersionListResource, try ListSkillVersionsRaw(client, skill_id, limit, order, after));
 }
 
 /////////////////
@@ -14291,44 +13462,21 @@ pub fn ListSkillVersionsResult(client: *Client, skill_id: []const u8, limit: ?i6
 // Create a new immutable skill version.
 //
 pub fn CreateSkillVersion(client: *Client, skill_id: []const u8, requestBody: CreateSkillVersionBody) !Owned(SkillVersionResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/skills/{s}/versions", .{ client.base_url, skill_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try CreateSkillVersionResult(client, skill_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(SkillVersionResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn CreateSkillVersionResult(client: *Client, skill_id: []const u8, requestBody: CreateSkillVersionBody) !ApiResult(SkillVersionResource) {
+pub fn CreateSkillVersionRaw(client: *Client, skill_id: []const u8, requestBody: CreateSkillVersionBody) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -14339,8 +13487,11 @@ pub fn CreateSkillVersionResult(client: *Client, skill_id: []const u8, requestBo
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(SkillVersionResource, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn CreateSkillVersionResult(client: *Client, skill_id: []const u8, requestBody: CreateSkillVersionBody) !ApiResult(SkillVersionResource) {
+    return parseRawResponse(SkillVersionResource, try CreateSkillVersionRaw(client, skill_id, requestBody));
 }
 
 /////////////////
@@ -14348,45 +13499,32 @@ pub fn CreateSkillVersionResult(client: *Client, skill_id: []const u8, requestBo
 // Retrieves an API key in the project.
 //
 pub fn @"retrieve-project-api-key"(client: *Client, project_id: []const u8, key_id: []const u8) !Owned(ProjectApiKey) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/projects/{s}/api_keys/{s}", .{ client.base_url, project_id, key_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"retrieve-project-api-keyResult"(client, project_id, key_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ProjectApiKey, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"retrieve-project-api-keyResult"(client: *Client, project_id: []const u8, key_id: []const u8) !ApiResult(ProjectApiKey) {
+pub fn @"retrieve-project-api-keyRaw"(client: *Client, project_id: []const u8, key_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/organization/projects/{s}/api_keys/{s}", .{ client.base_url, project_id, key_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ProjectApiKey, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn @"retrieve-project-api-keyResult"(client: *Client, project_id: []const u8, key_id: []const u8) !ApiResult(ProjectApiKey) {
+    return parseRawResponse(ProjectApiKey, try @"retrieve-project-api-keyRaw"(client, project_id, key_id));
 }
 
 /////////////////
@@ -14398,45 +13536,32 @@ pub fn @"retrieve-project-api-keyResult"(client: *Client, project_id: []const u8
 //
 //
 pub fn @"delete-project-api-key"(client: *Client, project_id: []const u8, key_id: []const u8) !Owned(ProjectApiKeyDeleteResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/projects/{s}/api_keys/{s}", .{ client.base_url, project_id, key_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.DELETE,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"delete-project-api-keyResult"(client, project_id, key_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ProjectApiKeyDeleteResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"delete-project-api-keyResult"(client: *Client, project_id: []const u8, key_id: []const u8) !ApiResult(ProjectApiKeyDeleteResponse) {
+pub fn @"delete-project-api-keyRaw"(client: *Client, project_id: []const u8, key_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/organization/projects/{s}/api_keys/{s}", .{ client.base_url, project_id, key_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
-    return parseRawResponse(ProjectApiKeyDeleteResponse, raw);
+    return requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
+}
+
+pub fn @"delete-project-api-keyResult"(client: *Client, project_id: []const u8, key_id: []const u8) !ApiResult(ProjectApiKeyDeleteResponse) {
+    return parseRawResponse(ProjectApiKeyDeleteResponse, try @"delete-project-api-keyRaw"(client, project_id, key_id));
 }
 
 /////////////////
@@ -14450,44 +13575,21 @@ pub fn @"delete-project-api-keyResult"(client: *Client, project_id: []const u8, 
 //
 //
 pub fn createVoice(client: *Client, requestBody: CreateVoiceRequest) !Owned(VoiceResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/audio/voices", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try createVoiceResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(VoiceResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn createVoiceResult(client: *Client, requestBody: CreateVoiceRequest) !ApiResult(VoiceResource) {
+pub fn createVoiceRaw(client: *Client, requestBody: CreateVoiceRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -14498,8 +13600,11 @@ pub fn createVoiceResult(client: *Client, requestBody: CreateVoiceRequest) !ApiR
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(VoiceResource, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn createVoiceResult(client: *Client, requestBody: CreateVoiceRequest) !ApiResult(VoiceResource) {
+    return parseRawResponse(VoiceResource, try createVoiceRaw(client, requestBody));
 }
 
 /////////////////
@@ -14508,44 +13613,21 @@ pub fn createVoiceResult(client: *Client, requestBody: CreateVoiceRequest) !ApiR
 //
 //
 pub fn listFineTuningEvents(client: *Client, fine_tuning_job_id: []const u8, after: ?[]const u8, limit: ?i64) !Owned(ListFineTuningJobEventsResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/fine_tuning/jobs/{s}/events", .{ client.base_url, fine_tuning_job_id });
-    var first_query = true;
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
+    var result = try listFineTuningEventsResult(client, fine_tuning_job_id, after, limit);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ListFineTuningJobEventsResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn listFineTuningEventsResult(client: *Client, fine_tuning_job_id: []const u8, after: ?[]const u8, limit: ?i64) !ApiResult(ListFineTuningJobEventsResponse) {
+pub fn listFineTuningEventsRaw(client: *Client, fine_tuning_job_id: []const u8, after: ?[]const u8, limit: ?i64) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -14559,8 +13641,11 @@ pub fn listFineTuningEventsResult(client: *Client, fine_tuning_job_id: []const u
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ListFineTuningJobEventsResponse, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn listFineTuningEventsResult(client: *Client, fine_tuning_job_id: []const u8, after: ?[]const u8, limit: ?i64) !ApiResult(ListFineTuningJobEventsResponse) {
+    return parseRawResponse(ListFineTuningJobEventsResponse, try listFineTuningEventsRaw(client, fine_tuning_job_id, after, limit));
 }
 
 /////////////////
@@ -14568,45 +13653,32 @@ pub fn listFineTuningEventsResult(client: *Client, fine_tuning_job_id: []const u
 // Unassigns an organization role from a group within the organization.
 //
 pub fn @"unassign-group-role"(client: *Client, group_id: []const u8, role_id: []const u8) !Owned(DeletedRoleAssignmentResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/groups/{s}/roles/{s}", .{ client.base_url, group_id, role_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.DELETE,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"unassign-group-roleResult"(client, group_id, role_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(DeletedRoleAssignmentResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"unassign-group-roleResult"(client: *Client, group_id: []const u8, role_id: []const u8) !ApiResult(DeletedRoleAssignmentResource) {
+pub fn @"unassign-group-roleRaw"(client: *Client, group_id: []const u8, role_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/organization/groups/{s}/roles/{s}", .{ client.base_url, group_id, role_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
-    return parseRawResponse(DeletedRoleAssignmentResource, raw);
+    return requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
+}
+
+pub fn @"unassign-group-roleResult"(client: *Client, group_id: []const u8, role_id: []const u8) !ApiResult(DeletedRoleAssignmentResource) {
+    return parseRawResponse(DeletedRoleAssignmentResource, try @"unassign-group-roleRaw"(client, group_id, role_id));
 }
 
 /////////////////
@@ -14614,45 +13686,32 @@ pub fn @"unassign-group-roleResult"(client: *Client, group_id: []const u8, role_
 // Fetch a character.
 //
 pub fn GetVideoCharacter(client: *Client, character_id: []const u8) !Owned(VideoCharacterResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/videos/characters/{s}", .{ client.base_url, character_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try GetVideoCharacterResult(client, character_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(VideoCharacterResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn GetVideoCharacterResult(client: *Client, character_id: []const u8) !ApiResult(VideoCharacterResource) {
+pub fn GetVideoCharacterRaw(client: *Client, character_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/videos/characters/{s}", .{ client.base_url, character_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(VideoCharacterResource, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn GetVideoCharacterResult(client: *Client, character_id: []const u8) !ApiResult(VideoCharacterResource) {
+    return parseRawResponse(VideoCharacterResource, try GetVideoCharacterRaw(client, character_id));
 }
 
 /////////////////
@@ -14660,44 +13719,21 @@ pub fn GetVideoCharacterResult(client: *Client, character_id: []const u8) !ApiRe
 // Creates an embedding vector representing the input text.
 //
 pub fn createEmbedding(client: *Client, requestBody: CreateEmbeddingRequest) !Owned(CreateEmbeddingResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/embeddings", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try createEmbeddingResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(CreateEmbeddingResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn createEmbeddingResult(client: *Client, requestBody: CreateEmbeddingRequest) !ApiResult(CreateEmbeddingResponse) {
+pub fn createEmbeddingRaw(client: *Client, requestBody: CreateEmbeddingRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -14708,8 +13744,11 @@ pub fn createEmbeddingResult(client: *Client, requestBody: CreateEmbeddingReques
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(CreateEmbeddingResponse, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn createEmbeddingResult(client: *Client, requestBody: CreateEmbeddingRequest) !ApiResult(CreateEmbeddingResponse) {
+    return parseRawResponse(CreateEmbeddingResponse, try createEmbeddingRaw(client, requestBody));
 }
 
 /////////////////
@@ -14719,44 +13758,21 @@ pub fn createEmbeddingResult(client: *Client, requestBody: CreateEmbeddingReques
 // Returns an object with `object` set to `response.input_tokens` and an `input_tokens` count.
 //
 pub fn Getinputtokencounts(client: *Client, requestBody: TokenCountsBody) !Owned(TokenCountsResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/responses/input_tokens", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try GetinputtokencountsResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(TokenCountsResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn GetinputtokencountsResult(client: *Client, requestBody: TokenCountsBody) !ApiResult(TokenCountsResource) {
+pub fn GetinputtokencountsRaw(client: *Client, requestBody: TokenCountsBody) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -14767,8 +13783,11 @@ pub fn GetinputtokencountsResult(client: *Client, requestBody: TokenCountsBody) 
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(TokenCountsResource, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn GetinputtokencountsResult(client: *Client, requestBody: TokenCountsBody) !ApiResult(TokenCountsResource) {
+    return parseRawResponse(TokenCountsResource, try GetinputtokencountsRaw(client, requestBody));
 }
 
 /////////////////
@@ -14776,47 +13795,21 @@ pub fn GetinputtokencountsResult(client: *Client, requestBody: TokenCountsBody) 
 // Lists the roles configured for the organization.
 //
 pub fn @"list-roles"(client: *Client, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !Owned(PublicRoleListResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/roles", .{client.base_url});
-    var first_query = true;
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
+    var result = try @"list-rolesResult"(client, limit, after, order);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    if (order) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "order", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(PublicRoleListResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"list-rolesResult"(client: *Client, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !ApiResult(PublicRoleListResource) {
+pub fn @"list-rolesRaw"(client: *Client, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -14833,8 +13826,11 @@ pub fn @"list-rolesResult"(client: *Client, limit: ?i64, after: ?[]const u8, ord
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(PublicRoleListResource, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn @"list-rolesResult"(client: *Client, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !ApiResult(PublicRoleListResource) {
+    return parseRawResponse(PublicRoleListResource, try @"list-rolesRaw"(client, limit, after, order));
 }
 
 /////////////////
@@ -14842,44 +13838,21 @@ pub fn @"list-rolesResult"(client: *Client, limit: ?i64, after: ?[]const u8, ord
 // Creates a custom role for the organization.
 //
 pub fn @"create-role"(client: *Client, requestBody: PublicCreateOrganizationRoleBody) !Owned(Role) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/roles", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"create-roleResult"(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(Role, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"create-roleResult"(client: *Client, requestBody: PublicCreateOrganizationRoleBody) !ApiResult(Role) {
+pub fn @"create-roleRaw"(client: *Client, requestBody: PublicCreateOrganizationRoleBody) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -14890,8 +13863,11 @@ pub fn @"create-roleResult"(client: *Client, requestBody: PublicCreateOrganizati
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(Role, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn @"create-roleResult"(client: *Client, requestBody: PublicCreateOrganizationRoleBody) !ApiResult(Role) {
+    return parseRawResponse(Role, try @"create-roleRaw"(client, requestBody));
 }
 
 /////////////////
@@ -14899,44 +13875,21 @@ pub fn @"create-roleResult"(client: *Client, requestBody: PublicCreateOrganizati
 // Updates an existing organization role.
 //
 pub fn @"update-role"(client: *Client, role_id: []const u8, requestBody: PublicUpdateOrganizationRoleBody) !Owned(Role) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/roles/{s}", .{ client.base_url, role_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"update-roleResult"(client, role_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(Role, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"update-roleResult"(client: *Client, role_id: []const u8, requestBody: PublicUpdateOrganizationRoleBody) !ApiResult(Role) {
+pub fn @"update-roleRaw"(client: *Client, role_id: []const u8, requestBody: PublicUpdateOrganizationRoleBody) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -14947,8 +13900,11 @@ pub fn @"update-roleResult"(client: *Client, role_id: []const u8, requestBody: P
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(Role, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn @"update-roleResult"(client: *Client, role_id: []const u8, requestBody: PublicUpdateOrganizationRoleBody) !ApiResult(Role) {
+    return parseRawResponse(Role, try @"update-roleRaw"(client, role_id, requestBody));
 }
 
 /////////////////
@@ -14956,45 +13912,32 @@ pub fn @"update-roleResult"(client: *Client, role_id: []const u8, requestBody: P
 // Deletes a custom role from the organization.
 //
 pub fn @"delete-role"(client: *Client, role_id: []const u8) !Owned(RoleDeletedResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/roles/{s}", .{ client.base_url, role_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.DELETE,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"delete-roleResult"(client, role_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(RoleDeletedResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"delete-roleResult"(client: *Client, role_id: []const u8) !ApiResult(RoleDeletedResource) {
+pub fn @"delete-roleRaw"(client: *Client, role_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/organization/roles/{s}", .{ client.base_url, role_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
-    return parseRawResponse(RoleDeletedResource, raw);
+    return requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
+}
+
+pub fn @"delete-roleResult"(client: *Client, role_id: []const u8) !ApiResult(RoleDeletedResource) {
+    return parseRawResponse(RoleDeletedResource, try @"delete-roleRaw"(client, role_id));
 }
 
 /////////////////
@@ -15002,44 +13945,21 @@ pub fn @"delete-roleResult"(client: *Client, role_id: []const u8) !ApiResult(Rol
 // Create a thread and run it in one request.
 //
 pub fn createThreadAndRun(client: *Client, requestBody: CreateThreadAndRunRequest) !Owned(RunObject) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/threads/runs", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try createThreadAndRunResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(RunObject, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn createThreadAndRunResult(client: *Client, requestBody: CreateThreadAndRunRequest) !ApiResult(RunObject) {
+pub fn createThreadAndRunRaw(client: *Client, requestBody: CreateThreadAndRunRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -15050,8 +13970,11 @@ pub fn createThreadAndRunResult(client: *Client, requestBody: CreateThreadAndRun
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(RunObject, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn createThreadAndRunResult(client: *Client, requestBody: CreateThreadAndRunRequest) !ApiResult(RunObject) {
+    return parseRawResponse(RunObject, try createThreadAndRunRaw(client, requestBody));
 }
 
 /////////////////
@@ -15064,44 +13987,21 @@ pub fn createThreadAndRunResult(client: *Client, requestBody: CreateThreadAndRun
 //
 //
 pub fn addUploadPart(client: *Client, upload_id: []const u8, requestBody: AddUploadPartRequest) !Owned(UploadPart) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/uploads/{s}/parts", .{ client.base_url, upload_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try addUploadPartResult(client, upload_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(UploadPart, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn addUploadPartResult(client: *Client, upload_id: []const u8, requestBody: AddUploadPartRequest) !ApiResult(UploadPart) {
+pub fn addUploadPartRaw(client: *Client, upload_id: []const u8, requestBody: AddUploadPartRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -15112,8 +14012,11 @@ pub fn addUploadPartResult(client: *Client, upload_id: []const u8, requestBody: 
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(UploadPart, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn addUploadPartResult(client: *Client, upload_id: []const u8, requestBody: AddUploadPartRequest) !ApiResult(UploadPart) {
+    return parseRawResponse(UploadPart, try addUploadPartRaw(client, upload_id, requestBody));
 }
 
 /////////////////
@@ -15123,45 +14026,32 @@ pub fn addUploadPartResult(client: *Client, upload_id: []const u8, requestBody: 
 //
 //
 pub fn getChatCompletion(client: *Client, completion_id: []const u8) !Owned(CreateChatCompletionResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/chat/completions/{s}", .{ client.base_url, completion_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try getChatCompletionResult(client, completion_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(CreateChatCompletionResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn getChatCompletionResult(client: *Client, completion_id: []const u8) !ApiResult(CreateChatCompletionResponse) {
+pub fn getChatCompletionRaw(client: *Client, completion_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/chat/completions/{s}", .{ client.base_url, completion_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(CreateChatCompletionResponse, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn getChatCompletionResult(client: *Client, completion_id: []const u8) !ApiResult(CreateChatCompletionResponse) {
+    return parseRawResponse(CreateChatCompletionResponse, try getChatCompletionRaw(client, completion_id));
 }
 
 /////////////////
@@ -15172,44 +14062,21 @@ pub fn getChatCompletionResult(client: *Client, completion_id: []const u8) !ApiR
 //
 //
 pub fn updateChatCompletion(client: *Client, completion_id: []const u8, requestBody: std.json.Value) !Owned(CreateChatCompletionResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/chat/completions/{s}", .{ client.base_url, completion_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try updateChatCompletionResult(client, completion_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(CreateChatCompletionResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn updateChatCompletionResult(client: *Client, completion_id: []const u8, requestBody: std.json.Value) !ApiResult(CreateChatCompletionResponse) {
+pub fn updateChatCompletionRaw(client: *Client, completion_id: []const u8, requestBody: std.json.Value) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -15220,8 +14087,11 @@ pub fn updateChatCompletionResult(client: *Client, completion_id: []const u8, re
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(CreateChatCompletionResponse, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn updateChatCompletionResult(client: *Client, completion_id: []const u8, requestBody: std.json.Value) !ApiResult(CreateChatCompletionResponse) {
+    return parseRawResponse(CreateChatCompletionResponse, try updateChatCompletionRaw(client, completion_id, requestBody));
 }
 
 /////////////////
@@ -15231,45 +14101,32 @@ pub fn updateChatCompletionResult(client: *Client, completion_id: []const u8, re
 //
 //
 pub fn deleteChatCompletion(client: *Client, completion_id: []const u8) !Owned(ChatCompletionDeleted) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/chat/completions/{s}", .{ client.base_url, completion_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.DELETE,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try deleteChatCompletionResult(client, completion_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ChatCompletionDeleted, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn deleteChatCompletionResult(client: *Client, completion_id: []const u8) !ApiResult(ChatCompletionDeleted) {
+pub fn deleteChatCompletionRaw(client: *Client, completion_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/chat/completions/{s}", .{ client.base_url, completion_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
-    return parseRawResponse(ChatCompletionDeleted, raw);
+    return requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
+}
+
+pub fn deleteChatCompletionResult(client: *Client, completion_id: []const u8) !ApiResult(ChatCompletionDeleted) {
+    return parseRawResponse(ChatCompletionDeleted, try deleteChatCompletionRaw(client, completion_id));
 }
 
 /////////////////
@@ -15277,50 +14134,21 @@ pub fn deleteChatCompletionResult(client: *Client, completion_id: []const u8) !A
 // List items that belong to a ChatKit thread.
 //
 pub fn ListThreadItemsMethod(client: *Client, thread_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8, before: ?[]const u8) !Owned(ThreadItemListResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/chatkit/threads/{s}/items", .{ client.base_url, thread_id });
-    var first_query = true;
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
+    var result = try ListThreadItemsMethodResult(client, thread_id, limit, order, after, before);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (order) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "order", value);
-    }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    if (before) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "before", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ThreadItemListResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn ListThreadItemsMethodResult(client: *Client, thread_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8, before: ?[]const u8) !ApiResult(ThreadItemListResource) {
+pub fn ListThreadItemsMethodRaw(client: *Client, thread_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8, before: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -15340,8 +14168,11 @@ pub fn ListThreadItemsMethodResult(client: *Client, thread_id: []const u8, limit
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ThreadItemListResource, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn ListThreadItemsMethodResult(client: *Client, thread_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8, before: ?[]const u8) !ApiResult(ThreadItemListResource) {
+    return parseRawResponse(ThreadItemListResource, try ListThreadItemsMethodRaw(client, thread_id, limit, order, after, before));
 }
 
 /////////////////
@@ -15353,44 +14184,21 @@ pub fn ListThreadItemsMethodResult(client: *Client, thread_id: []const u8, limit
 //
 //
 pub fn createTranscription(client: *Client, requestBody: CreateTranscriptionRequest) !Owned(std.json.Value) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/audio/transcriptions", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try createTranscriptionResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(std.json.Value, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn createTranscriptionResult(client: *Client, requestBody: CreateTranscriptionRequest) !ApiResult(std.json.Value) {
+pub fn createTranscriptionRaw(client: *Client, requestBody: CreateTranscriptionRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -15401,8 +14209,11 @@ pub fn createTranscriptionResult(client: *Client, requestBody: CreateTranscripti
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(std.json.Value, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn createTranscriptionResult(client: *Client, requestBody: CreateTranscriptionRequest) !ApiResult(std.json.Value) {
+    return parseRawResponse(std.json.Value, try createTranscriptionRaw(client, requestBody));
 }
 
 /////////////////
@@ -15410,44 +14221,21 @@ pub fn createTranscriptionResult(client: *Client, requestBody: CreateTranscripti
 // List your organization's batches.
 //
 pub fn listBatches(client: *Client, after: ?[]const u8, limit: ?i64) !Owned(ListBatchesResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/batches", .{client.base_url});
-    var first_query = true;
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
+    var result = try listBatchesResult(client, after, limit);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ListBatchesResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn listBatchesResult(client: *Client, after: ?[]const u8, limit: ?i64) !ApiResult(ListBatchesResponse) {
+pub fn listBatchesRaw(client: *Client, after: ?[]const u8, limit: ?i64) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -15461,8 +14249,11 @@ pub fn listBatchesResult(client: *Client, after: ?[]const u8, limit: ?i64) !ApiR
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ListBatchesResponse, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn listBatchesResult(client: *Client, after: ?[]const u8, limit: ?i64) !ApiResult(ListBatchesResponse) {
+    return parseRawResponse(ListBatchesResponse, try listBatchesRaw(client, after, limit));
 }
 
 /////////////////
@@ -15470,44 +14261,21 @@ pub fn listBatchesResult(client: *Client, after: ?[]const u8, limit: ?i64) !ApiR
 // Creates and executes a batch from an uploaded file of requests
 //
 pub fn createBatch(client: *Client, requestBody: std.json.Value) !Owned(Batch) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/batches", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try createBatchResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(Batch, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn createBatchResult(client: *Client, requestBody: std.json.Value) !ApiResult(Batch) {
+pub fn createBatchRaw(client: *Client, requestBody: std.json.Value) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -15518,8 +14286,11 @@ pub fn createBatchResult(client: *Client, requestBody: std.json.Value) !ApiResul
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(Batch, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn createBatchResult(client: *Client, requestBody: std.json.Value) !ApiResult(Batch) {
+    return parseRawResponse(Batch, try createBatchRaw(client, requestBody));
 }
 
 /////////////////
@@ -15528,44 +14299,21 @@ pub fn createBatchResult(client: *Client, requestBody: std.json.Value) !ApiResul
 //
 //
 pub fn submitToolOuputsToRun(client: *Client, thread_id: []const u8, run_id: []const u8, requestBody: SubmitToolOutputsRunRequest) !Owned(RunObject) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/threads/{s}/runs/{s}/submit_tool_outputs", .{ client.base_url, thread_id, run_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try submitToolOuputsToRunResult(client, thread_id, run_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(RunObject, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn submitToolOuputsToRunResult(client: *Client, thread_id: []const u8, run_id: []const u8, requestBody: SubmitToolOutputsRunRequest) !ApiResult(RunObject) {
+pub fn submitToolOuputsToRunRaw(client: *Client, thread_id: []const u8, run_id: []const u8, requestBody: SubmitToolOutputsRunRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -15576,8 +14324,11 @@ pub fn submitToolOuputsToRunResult(client: *Client, thread_id: []const u8, run_i
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(RunObject, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn submitToolOuputsToRunResult(client: *Client, thread_id: []const u8, run_id: []const u8, requestBody: SubmitToolOutputsRunRequest) !ApiResult(RunObject) {
+    return parseRawResponse(RunObject, try submitToolOuputsToRunRaw(client, thread_id, run_id, requestBody));
 }
 
 /////////////////
@@ -15585,45 +14336,32 @@ pub fn submitToolOuputsToRunResult(client: *Client, thread_id: []const u8, run_i
 // Fetch the latest metadata for a generated video.
 //
 pub fn GetVideo(client: *Client, video_id: []const u8) !Owned(VideoResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/videos/{s}", .{ client.base_url, video_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try GetVideoResult(client, video_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(VideoResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn GetVideoResult(client: *Client, video_id: []const u8) !ApiResult(VideoResource) {
+pub fn GetVideoRaw(client: *Client, video_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/videos/{s}", .{ client.base_url, video_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(VideoResource, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn GetVideoResult(client: *Client, video_id: []const u8) !ApiResult(VideoResource) {
+    return parseRawResponse(VideoResource, try GetVideoRaw(client, video_id));
 }
 
 /////////////////
@@ -15631,45 +14369,32 @@ pub fn GetVideoResult(client: *Client, video_id: []const u8) !ApiResult(VideoRes
 // Permanently delete a completed or failed video and its stored assets.
 //
 pub fn DeleteVideo(client: *Client, video_id: []const u8) !Owned(DeletedVideoResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/videos/{s}", .{ client.base_url, video_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.DELETE,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try DeleteVideoResult(client, video_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(DeletedVideoResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn DeleteVideoResult(client: *Client, video_id: []const u8) !ApiResult(DeletedVideoResource) {
+pub fn DeleteVideoRaw(client: *Client, video_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/videos/{s}", .{ client.base_url, video_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
-    return parseRawResponse(DeletedVideoResource, raw);
+    return requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
+}
+
+pub fn DeleteVideoResult(client: *Client, video_id: []const u8) !ApiResult(DeletedVideoResource) {
+    return parseRawResponse(DeletedVideoResource, try DeleteVideoRaw(client, video_id));
 }
 
 /////////////////
@@ -15677,45 +14402,32 @@ pub fn DeleteVideoResult(client: *Client, video_id: []const u8) !ApiResult(Delet
 // Retrieves an assistant.
 //
 pub fn getAssistant(client: *Client, assistant_id: []const u8) !Owned(AssistantObject) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/assistants/{s}", .{ client.base_url, assistant_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try getAssistantResult(client, assistant_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(AssistantObject, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn getAssistantResult(client: *Client, assistant_id: []const u8) !ApiResult(AssistantObject) {
+pub fn getAssistantRaw(client: *Client, assistant_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/assistants/{s}", .{ client.base_url, assistant_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(AssistantObject, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn getAssistantResult(client: *Client, assistant_id: []const u8) !ApiResult(AssistantObject) {
+    return parseRawResponse(AssistantObject, try getAssistantRaw(client, assistant_id));
 }
 
 /////////////////
@@ -15723,44 +14435,21 @@ pub fn getAssistantResult(client: *Client, assistant_id: []const u8) !ApiResult(
 // Modifies an assistant.
 //
 pub fn modifyAssistant(client: *Client, assistant_id: []const u8, requestBody: ModifyAssistantRequest) !Owned(AssistantObject) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/assistants/{s}", .{ client.base_url, assistant_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try modifyAssistantResult(client, assistant_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(AssistantObject, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn modifyAssistantResult(client: *Client, assistant_id: []const u8, requestBody: ModifyAssistantRequest) !ApiResult(AssistantObject) {
+pub fn modifyAssistantRaw(client: *Client, assistant_id: []const u8, requestBody: ModifyAssistantRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -15771,8 +14460,11 @@ pub fn modifyAssistantResult(client: *Client, assistant_id: []const u8, requestB
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(AssistantObject, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn modifyAssistantResult(client: *Client, assistant_id: []const u8, requestBody: ModifyAssistantRequest) !ApiResult(AssistantObject) {
+    return parseRawResponse(AssistantObject, try modifyAssistantRaw(client, assistant_id, requestBody));
 }
 
 /////////////////
@@ -15780,45 +14472,32 @@ pub fn modifyAssistantResult(client: *Client, assistant_id: []const u8, requestB
 // Delete an assistant.
 //
 pub fn deleteAssistant(client: *Client, assistant_id: []const u8) !Owned(DeleteAssistantResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/assistants/{s}", .{ client.base_url, assistant_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.DELETE,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try deleteAssistantResult(client, assistant_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(DeleteAssistantResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn deleteAssistantResult(client: *Client, assistant_id: []const u8) !ApiResult(DeleteAssistantResponse) {
+pub fn deleteAssistantRaw(client: *Client, assistant_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/assistants/{s}", .{ client.base_url, assistant_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
-    return parseRawResponse(DeleteAssistantResponse, raw);
+    return requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
+}
+
+pub fn deleteAssistantResult(client: *Client, assistant_id: []const u8) !ApiResult(DeleteAssistantResponse) {
+    return parseRawResponse(DeleteAssistantResponse, try deleteAssistantRaw(client, assistant_id));
 }
 
 /////////////////
@@ -15829,45 +14508,32 @@ pub fn deleteAssistantResult(client: *Client, assistant_id: []const u8) !ApiResu
 // Retrieves a container.
 //
 pub fn RetrieveContainer(client: *Client, container_id: []const u8) !Owned(ContainerResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/containers/{s}", .{ client.base_url, container_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try RetrieveContainerResult(client, container_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ContainerResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn RetrieveContainerResult(client: *Client, container_id: []const u8) !ApiResult(ContainerResource) {
+pub fn RetrieveContainerRaw(client: *Client, container_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/containers/{s}", .{ client.base_url, container_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ContainerResource, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn RetrieveContainerResult(client: *Client, container_id: []const u8) !ApiResult(ContainerResource) {
+    return parseRawResponse(ContainerResource, try RetrieveContainerRaw(client, container_id));
 }
 
 /////////////////
@@ -15878,25 +14544,19 @@ pub fn RetrieveContainerResult(client: *Client, container_id: []const u8) !ApiRe
 // Delete a container.
 //
 pub fn DeleteContainer(client: *Client, container_id: []const u8) !void {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
+    var raw = try DeleteContainerRaw(client, container_id);
+    defer raw.deinit();
+    if (raw.status.class() != .success) return error.ResponseError;
+}
 
+pub fn DeleteContainerRaw(client: *Client, container_id: []const u8) !RawResponse {
+    const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/containers/{s}", .{ client.base_url, container_id });
-    const uri = try std.Uri.parse(uri_buf.written());
+    const payload: ?[]const u8 = null;
 
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.DELETE,
-        .extra_headers = headers.items,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
+    return requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
 }
 
 /////////////////
@@ -15907,45 +14567,32 @@ pub fn DeleteContainer(client: *Client, container_id: []const u8) !void {
 //
 //
 pub fn cancelResponse(client: *Client, response_id: []const u8) !Owned(Response) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/responses/{s}/cancel", .{ client.base_url, response_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try cancelResponseResult(client, response_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(Response, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn cancelResponseResult(client: *Client, response_id: []const u8) !ApiResult(Response) {
+pub fn cancelResponseRaw(client: *Client, response_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/responses/{s}/cancel", .{ client.base_url, response_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(Response, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn cancelResponseResult(client: *Client, response_id: []const u8) !ApiResult(Response) {
+    return parseRawResponse(Response, try cancelResponseRaw(client, response_id));
 }
 
 /////////////////
@@ -15954,45 +14601,32 @@ pub fn cancelResponseResult(client: *Client, response_id: []const u8) !ApiResult
 //
 //
 pub fn getEvalRunOutputItem(client: *Client, eval_id: []const u8, run_id: []const u8, output_item_id: []const u8) !Owned(EvalRunOutputItem) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/evals/{s}/runs/{s}/output_items/{s}", .{ client.base_url, eval_id, run_id, output_item_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try getEvalRunOutputItemResult(client, eval_id, run_id, output_item_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(EvalRunOutputItem, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn getEvalRunOutputItemResult(client: *Client, eval_id: []const u8, run_id: []const u8, output_item_id: []const u8) !ApiResult(EvalRunOutputItem) {
+pub fn getEvalRunOutputItemRaw(client: *Client, eval_id: []const u8, run_id: []const u8, output_item_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/evals/{s}/runs/{s}/output_items/{s}", .{ client.base_url, eval_id, run_id, output_item_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(EvalRunOutputItem, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn getEvalRunOutputItemResult(client: *Client, eval_id: []const u8, run_id: []const u8, output_item_id: []const u8) !ApiResult(EvalRunOutputItem) {
+    return parseRawResponse(EvalRunOutputItem, try getEvalRunOutputItemRaw(client, eval_id, run_id, output_item_id));
 }
 
 /////////////////
@@ -16003,45 +14637,32 @@ pub fn getEvalRunOutputItemResult(client: *Client, eval_id: []const u8, run_id: 
 //
 //
 pub fn retrieveFineTuningJob(client: *Client, fine_tuning_job_id: []const u8) !Owned(FineTuningJob) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/fine_tuning/jobs/{s}", .{ client.base_url, fine_tuning_job_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try retrieveFineTuningJobResult(client, fine_tuning_job_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(FineTuningJob, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn retrieveFineTuningJobResult(client: *Client, fine_tuning_job_id: []const u8) !ApiResult(FineTuningJob) {
+pub fn retrieveFineTuningJobRaw(client: *Client, fine_tuning_job_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/fine_tuning/jobs/{s}", .{ client.base_url, fine_tuning_job_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(FineTuningJob, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn retrieveFineTuningJobResult(client: *Client, fine_tuning_job_id: []const u8) !ApiResult(FineTuningJob) {
+    return parseRawResponse(FineTuningJob, try retrieveFineTuningJobRaw(client, fine_tuning_job_id));
 }
 
 /////////////////
@@ -16049,53 +14670,21 @@ pub fn retrieveFineTuningJobResult(client: *Client, fine_tuning_job_id: []const 
 // Returns a list of vector store files in a batch.
 //
 pub fn listFilesInVectorStoreBatch(client: *Client, vector_store_id: []const u8, batch_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8, before: ?[]const u8, filter: ?[]const u8) !Owned(ListVectorStoreFilesResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/vector_stores/{s}/file_batches/{s}/files", .{ client.base_url, vector_store_id, batch_id });
-    var first_query = true;
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
+    var result = try listFilesInVectorStoreBatchResult(client, vector_store_id, batch_id, limit, order, after, before, filter);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (order) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "order", value);
-    }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    if (before) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "before", value);
-    }
-    if (filter) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "filter", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ListVectorStoreFilesResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn listFilesInVectorStoreBatchResult(client: *Client, vector_store_id: []const u8, batch_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8, before: ?[]const u8, filter: ?[]const u8) !ApiResult(ListVectorStoreFilesResponse) {
+pub fn listFilesInVectorStoreBatchRaw(client: *Client, vector_store_id: []const u8, batch_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8, before: ?[]const u8, filter: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -16118,8 +14707,11 @@ pub fn listFilesInVectorStoreBatchResult(client: *Client, vector_store_id: []con
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ListVectorStoreFilesResponse, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn listFilesInVectorStoreBatchResult(client: *Client, vector_store_id: []const u8, batch_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8, before: ?[]const u8, filter: ?[]const u8) !ApiResult(ListVectorStoreFilesResponse) {
+    return parseRawResponse(ListVectorStoreFilesResponse, try listFilesInVectorStoreBatchRaw(client, vector_store_id, batch_id, limit, order, after, before, filter));
 }
 
 /////////////////
@@ -16127,50 +14719,21 @@ pub fn listFilesInVectorStoreBatchResult(client: *Client, vector_store_id: []con
 // Returns a list of vector stores.
 //
 pub fn listVectorStores(client: *Client, limit: ?i64, order: ?[]const u8, after: ?[]const u8, before: ?[]const u8) !Owned(ListVectorStoresResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/vector_stores", .{client.base_url});
-    var first_query = true;
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
+    var result = try listVectorStoresResult(client, limit, order, after, before);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (order) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "order", value);
-    }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    if (before) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "before", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ListVectorStoresResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn listVectorStoresResult(client: *Client, limit: ?i64, order: ?[]const u8, after: ?[]const u8, before: ?[]const u8) !ApiResult(ListVectorStoresResponse) {
+pub fn listVectorStoresRaw(client: *Client, limit: ?i64, order: ?[]const u8, after: ?[]const u8, before: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -16190,8 +14753,11 @@ pub fn listVectorStoresResult(client: *Client, limit: ?i64, order: ?[]const u8, 
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ListVectorStoresResponse, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn listVectorStoresResult(client: *Client, limit: ?i64, order: ?[]const u8, after: ?[]const u8, before: ?[]const u8) !ApiResult(ListVectorStoresResponse) {
+    return parseRawResponse(ListVectorStoresResponse, try listVectorStoresRaw(client, limit, order, after, before));
 }
 
 /////////////////
@@ -16199,44 +14765,21 @@ pub fn listVectorStoresResult(client: *Client, limit: ?i64, order: ?[]const u8, 
 // Create a vector store.
 //
 pub fn createVectorStore(client: *Client, requestBody: CreateVectorStoreRequest) !Owned(VectorStoreObject) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/vector_stores", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try createVectorStoreResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(VectorStoreObject, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn createVectorStoreResult(client: *Client, requestBody: CreateVectorStoreRequest) !ApiResult(VectorStoreObject) {
+pub fn createVectorStoreRaw(client: *Client, requestBody: CreateVectorStoreRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -16247,8 +14790,11 @@ pub fn createVectorStoreResult(client: *Client, requestBody: CreateVectorStoreRe
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(VectorStoreObject, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn createVectorStoreResult(client: *Client, requestBody: CreateVectorStoreRequest) !ApiResult(VectorStoreObject) {
+    return parseRawResponse(VectorStoreObject, try createVectorStoreRaw(client, requestBody));
 }
 
 /////////////////
@@ -16259,47 +14805,21 @@ pub fn createVectorStoreResult(client: *Client, requestBody: CreateVectorStoreRe
 //
 //
 pub fn getChatCompletionMessages(client: *Client, completion_id: []const u8, after: ?[]const u8, limit: ?i64, order: ?[]const u8) !Owned(ChatCompletionMessageList) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/chat/completions/{s}/messages", .{ client.base_url, completion_id });
-    var first_query = true;
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
+    var result = try getChatCompletionMessagesResult(client, completion_id, after, limit, order);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
-    }
-    if (order) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "order", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ChatCompletionMessageList, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn getChatCompletionMessagesResult(client: *Client, completion_id: []const u8, after: ?[]const u8, limit: ?i64, order: ?[]const u8) !ApiResult(ChatCompletionMessageList) {
+pub fn getChatCompletionMessagesRaw(client: *Client, completion_id: []const u8, after: ?[]const u8, limit: ?i64, order: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -16316,8 +14836,11 @@ pub fn getChatCompletionMessagesResult(client: *Client, completion_id: []const u
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ChatCompletionMessageList, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn getChatCompletionMessagesResult(client: *Client, completion_id: []const u8, after: ?[]const u8, limit: ?i64, order: ?[]const u8) !ApiResult(ChatCompletionMessageList) {
+    return parseRawResponse(ChatCompletionMessageList, try getChatCompletionMessagesRaw(client, completion_id, after, limit, order));
 }
 
 /////////////////
@@ -16325,45 +14848,32 @@ pub fn getChatCompletionMessagesResult(client: *Client, completion_id: []const u
 // Retrieves a batch.
 //
 pub fn retrieveBatch(client: *Client, batch_id: []const u8) !Owned(Batch) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/batches/{s}", .{ client.base_url, batch_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try retrieveBatchResult(client, batch_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(Batch, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn retrieveBatchResult(client: *Client, batch_id: []const u8) !ApiResult(Batch) {
+pub fn retrieveBatchRaw(client: *Client, batch_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/batches/{s}", .{ client.base_url, batch_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(Batch, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn retrieveBatchResult(client: *Client, batch_id: []const u8) !ApiResult(Batch) {
+    return parseRawResponse(Batch, try retrieveBatchRaw(client, batch_id));
 }
 
 /////////////////
@@ -16371,57 +14881,21 @@ pub fn retrieveBatchResult(client: *Client, batch_id: []const u8) !ApiResult(Bat
 // Get vector stores usage details for the organization.
 //
 pub fn @"usage-vector-stores"(client: *Client, start_time: i64, end_time: ?i64, bucket_width: ?[]const u8, project_ids: ?[]const u8, group_by: ?[]const u8, limit: ?i64, page: ?[]const u8) !Owned(UsageResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/usage/vector_stores", .{client.base_url});
-    var first_query = true;
-    try appendQueryParam(&uri_buf.writer, &first_query, "start_time", start_time);
-    if (end_time) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "end_time", value);
+    var result = try @"usage-vector-storesResult"(client, start_time, end_time, bucket_width, project_ids, group_by, limit, page);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (bucket_width) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "bucket_width", value);
-    }
-    if (project_ids) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "project_ids", value);
-    }
-    if (group_by) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "group_by", value);
-    }
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
-    }
-    if (page) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "page", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(UsageResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"usage-vector-storesResult"(client: *Client, start_time: i64, end_time: ?i64, bucket_width: ?[]const u8, project_ids: ?[]const u8, group_by: ?[]const u8, limit: ?i64, page: ?[]const u8) !ApiResult(UsageResponse) {
+pub fn @"usage-vector-storesRaw"(client: *Client, start_time: i64, end_time: ?i64, bucket_width: ?[]const u8, project_ids: ?[]const u8, group_by: ?[]const u8, limit: ?i64, page: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -16448,8 +14922,11 @@ pub fn @"usage-vector-storesResult"(client: *Client, start_time: i64, end_time: 
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(UsageResponse, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn @"usage-vector-storesResult"(client: *Client, start_time: i64, end_time: ?i64, bucket_width: ?[]const u8, project_ids: ?[]const u8, group_by: ?[]const u8, limit: ?i64, page: ?[]const u8) !ApiResult(UsageResponse) {
+    return parseRawResponse(UsageResponse, try @"usage-vector-storesRaw"(client, start_time, end_time, bucket_width, project_ids, group_by, limit, page));
 }
 
 /////////////////
@@ -16457,45 +14934,32 @@ pub fn @"usage-vector-storesResult"(client: *Client, start_time: i64, end_time: 
 // Returns the contents of the specified file.
 //
 pub fn downloadFile(client: *Client, file_id: []const u8) !Owned([]const u8) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/files/{s}/content", .{ client.base_url, file_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try downloadFileResult(client, file_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice([]const u8, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn downloadFileResult(client: *Client, file_id: []const u8) !ApiResult([]const u8) {
+pub fn downloadFileRaw(client: *Client, file_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/files/{s}/content", .{ client.base_url, file_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse([]const u8, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn downloadFileResult(client: *Client, file_id: []const u8) !ApiResult([]const u8) {
+    return parseRawResponse([]const u8, try downloadFileRaw(client, file_id));
 }
 
 /////////////////
@@ -16503,47 +14967,21 @@ pub fn downloadFileResult(client: *Client, file_id: []const u8) !ApiResult([]con
 // Lists all of the users in the organization.
 //
 pub fn @"list-users"(client: *Client, limit: ?i64, after: ?[]const u8, emails: ?[]const u8) !Owned(UserListResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/users", .{client.base_url});
-    var first_query = true;
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
+    var result = try @"list-usersResult"(client, limit, after, emails);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    if (emails) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "emails", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(UserListResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"list-usersResult"(client: *Client, limit: ?i64, after: ?[]const u8, emails: ?[]const u8) !ApiResult(UserListResponse) {
+pub fn @"list-usersRaw"(client: *Client, limit: ?i64, after: ?[]const u8, emails: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -16560,8 +14998,11 @@ pub fn @"list-usersResult"(client: *Client, limit: ?i64, after: ?[]const u8, ema
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(UserListResponse, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn @"list-usersResult"(client: *Client, limit: ?i64, after: ?[]const u8, emails: ?[]const u8) !ApiResult(UserListResponse) {
+    return parseRawResponse(UserListResponse, try @"list-usersRaw"(client, limit, after, emails));
 }
 
 /////////////////
@@ -16569,45 +15010,32 @@ pub fn @"list-usersResult"(client: *Client, limit: ?i64, after: ?[]const u8, ema
 // Returns information about a specific file.
 //
 pub fn retrieveFile(client: *Client, file_id: []const u8) !Owned(OpenAIFile) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/files/{s}", .{ client.base_url, file_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try retrieveFileResult(client, file_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(OpenAIFile, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn retrieveFileResult(client: *Client, file_id: []const u8) !ApiResult(OpenAIFile) {
+pub fn retrieveFileRaw(client: *Client, file_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/files/{s}", .{ client.base_url, file_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(OpenAIFile, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn retrieveFileResult(client: *Client, file_id: []const u8) !ApiResult(OpenAIFile) {
+    return parseRawResponse(OpenAIFile, try retrieveFileRaw(client, file_id));
 }
 
 /////////////////
@@ -16615,45 +15043,32 @@ pub fn retrieveFileResult(client: *Client, file_id: []const u8) !ApiResult(OpenA
 // Delete a file and remove it from all vector stores.
 //
 pub fn deleteFile(client: *Client, file_id: []const u8) !Owned(DeleteFileResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/files/{s}", .{ client.base_url, file_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.DELETE,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try deleteFileResult(client, file_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(DeleteFileResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn deleteFileResult(client: *Client, file_id: []const u8) !ApiResult(DeleteFileResponse) {
+pub fn deleteFileRaw(client: *Client, file_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/files/{s}", .{ client.base_url, file_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
-    return parseRawResponse(DeleteFileResponse, raw);
+    return requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
+}
+
+pub fn deleteFileResult(client: *Client, file_id: []const u8) !ApiResult(DeleteFileResponse) {
+    return parseRawResponse(DeleteFileResponse, try deleteFileRaw(client, file_id));
 }
 
 /////////////////
@@ -16661,47 +15076,21 @@ pub fn deleteFileResult(client: *Client, file_id: []const u8) !ApiResult(DeleteF
 // Returns the rate limits per model for a project.
 //
 pub fn @"list-project-rate-limits"(client: *Client, project_id: []const u8, limit: ?i64, after: ?[]const u8, before: ?[]const u8) !Owned(ProjectRateLimitListResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/projects/{s}/rate_limits", .{ client.base_url, project_id });
-    var first_query = true;
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
+    var result = try @"list-project-rate-limitsResult"(client, project_id, limit, after, before);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    if (before) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "before", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ProjectRateLimitListResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"list-project-rate-limitsResult"(client: *Client, project_id: []const u8, limit: ?i64, after: ?[]const u8, before: ?[]const u8) !ApiResult(ProjectRateLimitListResponse) {
+pub fn @"list-project-rate-limitsRaw"(client: *Client, project_id: []const u8, limit: ?i64, after: ?[]const u8, before: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -16718,8 +15107,11 @@ pub fn @"list-project-rate-limitsResult"(client: *Client, project_id: []const u8
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ProjectRateLimitListResponse, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn @"list-project-rate-limitsResult"(client: *Client, project_id: []const u8, limit: ?i64, after: ?[]const u8, before: ?[]const u8) !ApiResult(ProjectRateLimitListResponse) {
+    return parseRawResponse(ProjectRateLimitListResponse, try @"list-project-rate-limitsRaw"(client, project_id, limit, after, before));
 }
 
 /////////////////
@@ -16727,44 +15119,21 @@ pub fn @"list-project-rate-limitsResult"(client: *Client, project_id: []const u8
 // Updates a project rate limit.
 //
 pub fn @"update-project-rate-limits"(client: *Client, project_id: []const u8, rate_limit_id: []const u8, requestBody: ProjectRateLimitUpdateRequest) !Owned(ProjectRateLimit) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/projects/{s}/rate_limits/{s}", .{ client.base_url, project_id, rate_limit_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"update-project-rate-limitsResult"(client, project_id, rate_limit_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ProjectRateLimit, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"update-project-rate-limitsResult"(client: *Client, project_id: []const u8, rate_limit_id: []const u8, requestBody: ProjectRateLimitUpdateRequest) !ApiResult(ProjectRateLimit) {
+pub fn @"update-project-rate-limitsRaw"(client: *Client, project_id: []const u8, rate_limit_id: []const u8, requestBody: ProjectRateLimitUpdateRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -16775,8 +15144,11 @@ pub fn @"update-project-rate-limitsResult"(client: *Client, project_id: []const 
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(ProjectRateLimit, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn @"update-project-rate-limitsResult"(client: *Client, project_id: []const u8, rate_limit_id: []const u8, requestBody: ProjectRateLimitUpdateRequest) !ApiResult(ProjectRateLimit) {
+    return parseRawResponse(ProjectRateLimit, try @"update-project-rate-limitsRaw"(client, project_id, rate_limit_id, requestBody));
 }
 
 /////////////////
@@ -16784,66 +15156,21 @@ pub fn @"update-project-rate-limitsResult"(client: *Client, project_id: []const 
 // Get audio transcriptions usage details for the organization.
 //
 pub fn @"usage-audio-transcriptions"(client: *Client, start_time: i64, end_time: ?i64, bucket_width: ?[]const u8, project_ids: ?[]const u8, user_ids: ?[]const u8, api_key_ids: ?[]const u8, models: ?[]const u8, group_by: ?[]const u8, limit: ?i64, page: ?[]const u8) !Owned(UsageResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/usage/audio_transcriptions", .{client.base_url});
-    var first_query = true;
-    try appendQueryParam(&uri_buf.writer, &first_query, "start_time", start_time);
-    if (end_time) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "end_time", value);
+    var result = try @"usage-audio-transcriptionsResult"(client, start_time, end_time, bucket_width, project_ids, user_ids, api_key_ids, models, group_by, limit, page);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (bucket_width) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "bucket_width", value);
-    }
-    if (project_ids) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "project_ids", value);
-    }
-    if (user_ids) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "user_ids", value);
-    }
-    if (api_key_ids) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "api_key_ids", value);
-    }
-    if (models) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "models", value);
-    }
-    if (group_by) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "group_by", value);
-    }
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
-    }
-    if (page) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "page", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(UsageResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"usage-audio-transcriptionsResult"(client: *Client, start_time: i64, end_time: ?i64, bucket_width: ?[]const u8, project_ids: ?[]const u8, user_ids: ?[]const u8, api_key_ids: ?[]const u8, models: ?[]const u8, group_by: ?[]const u8, limit: ?i64, page: ?[]const u8) !ApiResult(UsageResponse) {
+pub fn @"usage-audio-transcriptionsRaw"(client: *Client, start_time: i64, end_time: ?i64, bucket_width: ?[]const u8, project_ids: ?[]const u8, user_ids: ?[]const u8, api_key_ids: ?[]const u8, models: ?[]const u8, group_by: ?[]const u8, limit: ?i64, page: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -16879,8 +15206,11 @@ pub fn @"usage-audio-transcriptionsResult"(client: *Client, start_time: i64, end
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(UsageResponse, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn @"usage-audio-transcriptionsResult"(client: *Client, start_time: i64, end_time: ?i64, bucket_width: ?[]const u8, project_ids: ?[]const u8, user_ids: ?[]const u8, api_key_ids: ?[]const u8, models: ?[]const u8, group_by: ?[]const u8, limit: ?i64, page: ?[]const u8) !ApiResult(UsageResponse) {
+    return parseRawResponse(UsageResponse, try @"usage-audio-transcriptionsRaw"(client, start_time, end_time, bucket_width, project_ids, user_ids, api_key_ids, models, group_by, limit, page));
 }
 
 /////////////////
@@ -16888,44 +15218,21 @@ pub fn @"usage-audio-transcriptionsResult"(client: *Client, start_time: i64, end
 // Creates a variation of a given image. This endpoint only supports `dall-e-2`.
 //
 pub fn createImageVariation(client: *Client, requestBody: CreateImageVariationRequest) !Owned(ImagesResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/images/variations", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try createImageVariationResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ImagesResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn createImageVariationResult(client: *Client, requestBody: CreateImageVariationRequest) !ApiResult(ImagesResponse) {
+pub fn createImageVariationRaw(client: *Client, requestBody: CreateImageVariationRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -16936,8 +15243,11 @@ pub fn createImageVariationResult(client: *Client, requestBody: CreateImageVaria
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(ImagesResponse, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn createImageVariationResult(client: *Client, requestBody: CreateImageVariationRequest) !ApiResult(ImagesResponse) {
+    return parseRawResponse(ImagesResponse, try createImageVariationRaw(client, requestBody));
 }
 
 /////////////////
@@ -16946,44 +15256,21 @@ pub fn createImageVariationResult(client: *Client, requestBody: CreateImageVaria
 // to complete the peer connection.
 //
 pub fn @"create-realtime-call"(client: *Client, requestBody: []const u8) !Owned([]const u8) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/realtime/calls", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"create-realtime-callResult"(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice([]const u8, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"create-realtime-callResult"(client: *Client, requestBody: []const u8) !ApiResult([]const u8) {
+pub fn @"create-realtime-callRaw"(client: *Client, requestBody: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -16994,8 +15281,11 @@ pub fn @"create-realtime-callResult"(client: *Client, requestBody: []const u8) !
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse([]const u8, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn @"create-realtime-callResult"(client: *Client, requestBody: []const u8) !ApiResult([]const u8) {
+    return parseRawResponse([]const u8, try @"create-realtime-callRaw"(client, requestBody));
 }
 
 /////////////////
@@ -17003,44 +15293,21 @@ pub fn @"create-realtime-callResult"(client: *Client, requestBody: []const u8) !
 // Create a thread.
 //
 pub fn createThread(client: *Client, requestBody: CreateThreadRequest) !Owned(ThreadObject) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/threads", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try createThreadResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ThreadObject, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn createThreadResult(client: *Client, requestBody: CreateThreadRequest) !ApiResult(ThreadObject) {
+pub fn createThreadRaw(client: *Client, requestBody: CreateThreadRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -17051,8 +15318,11 @@ pub fn createThreadResult(client: *Client, requestBody: CreateThreadRequest) !Ap
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(ThreadObject, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn createThreadResult(client: *Client, requestBody: CreateThreadRequest) !ApiResult(ThreadObject) {
+    return parseRawResponse(ThreadObject, try createThreadRaw(client, requestBody));
 }
 
 /////////////////
@@ -17060,45 +15330,32 @@ pub fn createThreadResult(client: *Client, requestBody: CreateThreadRequest) !Ap
 // Retrieves a vector store file.
 //
 pub fn getVectorStoreFile(client: *Client, vector_store_id: []const u8, file_id: []const u8) !Owned(VectorStoreFileObject) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/vector_stores/{s}/files/{s}", .{ client.base_url, vector_store_id, file_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try getVectorStoreFileResult(client, vector_store_id, file_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(VectorStoreFileObject, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn getVectorStoreFileResult(client: *Client, vector_store_id: []const u8, file_id: []const u8) !ApiResult(VectorStoreFileObject) {
+pub fn getVectorStoreFileRaw(client: *Client, vector_store_id: []const u8, file_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/vector_stores/{s}/files/{s}", .{ client.base_url, vector_store_id, file_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(VectorStoreFileObject, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn getVectorStoreFileResult(client: *Client, vector_store_id: []const u8, file_id: []const u8) !ApiResult(VectorStoreFileObject) {
+    return parseRawResponse(VectorStoreFileObject, try getVectorStoreFileRaw(client, vector_store_id, file_id));
 }
 
 /////////////////
@@ -17106,44 +15363,21 @@ pub fn getVectorStoreFileResult(client: *Client, vector_store_id: []const u8, fi
 // Update attributes on a vector store file.
 //
 pub fn updateVectorStoreFileAttributes(client: *Client, vector_store_id: []const u8, file_id: []const u8, requestBody: UpdateVectorStoreFileAttributesRequest) !Owned(VectorStoreFileObject) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/vector_stores/{s}/files/{s}", .{ client.base_url, vector_store_id, file_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try updateVectorStoreFileAttributesResult(client, vector_store_id, file_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(VectorStoreFileObject, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn updateVectorStoreFileAttributesResult(client: *Client, vector_store_id: []const u8, file_id: []const u8, requestBody: UpdateVectorStoreFileAttributesRequest) !ApiResult(VectorStoreFileObject) {
+pub fn updateVectorStoreFileAttributesRaw(client: *Client, vector_store_id: []const u8, file_id: []const u8, requestBody: UpdateVectorStoreFileAttributesRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -17154,8 +15388,11 @@ pub fn updateVectorStoreFileAttributesResult(client: *Client, vector_store_id: [
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(VectorStoreFileObject, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn updateVectorStoreFileAttributesResult(client: *Client, vector_store_id: []const u8, file_id: []const u8, requestBody: UpdateVectorStoreFileAttributesRequest) !ApiResult(VectorStoreFileObject) {
+    return parseRawResponse(VectorStoreFileObject, try updateVectorStoreFileAttributesRaw(client, vector_store_id, file_id, requestBody));
 }
 
 /////////////////
@@ -17163,45 +15400,32 @@ pub fn updateVectorStoreFileAttributesResult(client: *Client, vector_store_id: [
 // Delete a vector store file. This will remove the file from the vector store but the file itself will not be deleted. To delete the file, use the [delete file](/docs/api-reference/files/delete) endpoint.
 //
 pub fn deleteVectorStoreFile(client: *Client, vector_store_id: []const u8, file_id: []const u8) !Owned(DeleteVectorStoreFileResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/vector_stores/{s}/files/{s}", .{ client.base_url, vector_store_id, file_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.DELETE,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try deleteVectorStoreFileResult(client, vector_store_id, file_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(DeleteVectorStoreFileResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn deleteVectorStoreFileResult(client: *Client, vector_store_id: []const u8, file_id: []const u8) !ApiResult(DeleteVectorStoreFileResponse) {
+pub fn deleteVectorStoreFileRaw(client: *Client, vector_store_id: []const u8, file_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/vector_stores/{s}/files/{s}", .{ client.base_url, vector_store_id, file_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
-    return parseRawResponse(DeleteVectorStoreFileResponse, raw);
+    return requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
+}
+
+pub fn deleteVectorStoreFileResult(client: *Client, vector_store_id: []const u8, file_id: []const u8) !ApiResult(DeleteVectorStoreFileResponse) {
+    return parseRawResponse(DeleteVectorStoreFileResponse, try deleteVectorStoreFileRaw(client, vector_store_id, file_id));
 }
 
 /////////////////
@@ -17212,50 +15436,21 @@ pub fn deleteVectorStoreFileResult(client: *Client, vector_store_id: []const u8,
 // Lists containers.
 //
 pub fn ListContainers(client: *Client, limit: ?i64, order: ?[]const u8, after: ?[]const u8, name: ?[]const u8) !Owned(ContainerListResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/containers", .{client.base_url});
-    var first_query = true;
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
+    var result = try ListContainersResult(client, limit, order, after, name);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (order) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "order", value);
-    }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    if (name) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "name", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ContainerListResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn ListContainersResult(client: *Client, limit: ?i64, order: ?[]const u8, after: ?[]const u8, name: ?[]const u8) !ApiResult(ContainerListResource) {
+pub fn ListContainersRaw(client: *Client, limit: ?i64, order: ?[]const u8, after: ?[]const u8, name: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -17275,8 +15470,11 @@ pub fn ListContainersResult(client: *Client, limit: ?i64, order: ?[]const u8, af
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ContainerListResource, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn ListContainersResult(client: *Client, limit: ?i64, order: ?[]const u8, after: ?[]const u8, name: ?[]const u8) !ApiResult(ContainerListResource) {
+    return parseRawResponse(ContainerListResource, try ListContainersRaw(client, limit, order, after, name));
 }
 
 /////////////////
@@ -17287,44 +15485,21 @@ pub fn ListContainersResult(client: *Client, limit: ?i64, order: ?[]const u8, af
 // Creates a container.
 //
 pub fn CreateContainer(client: *Client, requestBody: CreateContainerBody) !Owned(ContainerResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/containers", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try CreateContainerResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ContainerResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn CreateContainerResult(client: *Client, requestBody: CreateContainerBody) !ApiResult(ContainerResource) {
+pub fn CreateContainerRaw(client: *Client, requestBody: CreateContainerBody) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -17335,8 +15510,11 @@ pub fn CreateContainerResult(client: *Client, requestBody: CreateContainerBody) 
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(ContainerResource, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn CreateContainerResult(client: *Client, requestBody: CreateContainerBody) !ApiResult(ContainerResource) {
+    return parseRawResponse(ContainerResource, try CreateContainerRaw(client, requestBody));
 }
 
 /////////////////
@@ -17344,45 +15522,32 @@ pub fn CreateContainerResult(client: *Client, requestBody: CreateContainerBody) 
 // Get a skill by its ID.
 //
 pub fn GetSkill(client: *Client, skill_id: []const u8) !Owned(SkillResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/skills/{s}", .{ client.base_url, skill_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try GetSkillResult(client, skill_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(SkillResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn GetSkillResult(client: *Client, skill_id: []const u8) !ApiResult(SkillResource) {
+pub fn GetSkillRaw(client: *Client, skill_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/skills/{s}", .{ client.base_url, skill_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(SkillResource, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn GetSkillResult(client: *Client, skill_id: []const u8) !ApiResult(SkillResource) {
+    return parseRawResponse(SkillResource, try GetSkillRaw(client, skill_id));
 }
 
 /////////////////
@@ -17390,44 +15555,21 @@ pub fn GetSkillResult(client: *Client, skill_id: []const u8) !ApiResult(SkillRes
 // Update the default version pointer for a skill.
 //
 pub fn UpdateSkillDefaultVersion(client: *Client, skill_id: []const u8, requestBody: SetDefaultSkillVersionBody) !Owned(SkillResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/skills/{s}", .{ client.base_url, skill_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try UpdateSkillDefaultVersionResult(client, skill_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(SkillResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn UpdateSkillDefaultVersionResult(client: *Client, skill_id: []const u8, requestBody: SetDefaultSkillVersionBody) !ApiResult(SkillResource) {
+pub fn UpdateSkillDefaultVersionRaw(client: *Client, skill_id: []const u8, requestBody: SetDefaultSkillVersionBody) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -17438,8 +15580,11 @@ pub fn UpdateSkillDefaultVersionResult(client: *Client, skill_id: []const u8, re
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(SkillResource, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn UpdateSkillDefaultVersionResult(client: *Client, skill_id: []const u8, requestBody: SetDefaultSkillVersionBody) !ApiResult(SkillResource) {
+    return parseRawResponse(SkillResource, try UpdateSkillDefaultVersionRaw(client, skill_id, requestBody));
 }
 
 /////////////////
@@ -17447,45 +15592,32 @@ pub fn UpdateSkillDefaultVersionResult(client: *Client, skill_id: []const u8, re
 // Delete a skill by its ID.
 //
 pub fn DeleteSkill(client: *Client, skill_id: []const u8) !Owned(DeletedSkillResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/skills/{s}", .{ client.base_url, skill_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.DELETE,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try DeleteSkillResult(client, skill_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(DeletedSkillResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn DeleteSkillResult(client: *Client, skill_id: []const u8) !ApiResult(DeletedSkillResource) {
+pub fn DeleteSkillRaw(client: *Client, skill_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/skills/{s}", .{ client.base_url, skill_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
-    return parseRawResponse(DeletedSkillResource, raw);
+    return requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
+}
+
+pub fn DeleteSkillResult(client: *Client, skill_id: []const u8) !ApiResult(DeletedSkillResource) {
+    return parseRawResponse(DeletedSkillResource, try DeleteSkillRaw(client, skill_id));
 }
 
 /////////////////
@@ -17496,45 +15628,32 @@ pub fn DeleteSkillResult(client: *Client, skill_id: []const u8) !ApiResult(Delet
 //
 //
 pub fn deleteFineTuningCheckpointPermission(client: *Client, fine_tuned_model_checkpoint: []const u8, permission_id: []const u8) !Owned(DeleteFineTuningCheckpointPermissionResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/fine_tuning/checkpoints/{s}/permissions/{s}", .{ client.base_url, fine_tuned_model_checkpoint, permission_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.DELETE,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try deleteFineTuningCheckpointPermissionResult(client, fine_tuned_model_checkpoint, permission_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(DeleteFineTuningCheckpointPermissionResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn deleteFineTuningCheckpointPermissionResult(client: *Client, fine_tuned_model_checkpoint: []const u8, permission_id: []const u8) !ApiResult(DeleteFineTuningCheckpointPermissionResponse) {
+pub fn deleteFineTuningCheckpointPermissionRaw(client: *Client, fine_tuned_model_checkpoint: []const u8, permission_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/fine_tuning/checkpoints/{s}/permissions/{s}", .{ client.base_url, fine_tuned_model_checkpoint, permission_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
-    return parseRawResponse(DeleteFineTuningCheckpointPermissionResponse, raw);
+    return requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
+}
+
+pub fn deleteFineTuningCheckpointPermissionResult(client: *Client, fine_tuned_model_checkpoint: []const u8, permission_id: []const u8) !ApiResult(DeleteFineTuningCheckpointPermissionResponse) {
+    return parseRawResponse(DeleteFineTuningCheckpointPermissionResponse, try deleteFineTuningCheckpointPermissionRaw(client, fine_tuned_model_checkpoint, permission_id));
 }
 
 /////////////////
@@ -17542,45 +15661,32 @@ pub fn deleteFineTuningCheckpointPermissionResult(client: *Client, fine_tuned_mo
 // Lists the currently available models, and provides basic information about each one such as the owner and availability.
 //
 pub fn listModels(client: *Client) !Owned(ListModelsResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/models", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try listModelsResult(client);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ListModelsResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn listModelsResult(client: *Client) !ApiResult(ListModelsResponse) {
+pub fn listModelsRaw(client: *Client) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/models", .{client.base_url});
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ListModelsResponse, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn listModelsResult(client: *Client) !ApiResult(ListModelsResponse) {
+    return parseRawResponse(ListModelsResponse, try listModelsRaw(client));
 }
 
 /////////////////
@@ -17588,45 +15694,32 @@ pub fn listModelsResult(client: *Client) !ApiResult(ListModelsResponse) {
 // Download a skill version zip bundle.
 //
 pub fn GetSkillVersionContent(client: *Client, skill_id: []const u8, version: []const u8) !Owned([]const u8) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/skills/{s}/ss/{s}/content", .{ client.base_url, skill_id, version });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try GetSkillVersionContentResult(client, skill_id, version);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice([]const u8, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn GetSkillVersionContentResult(client: *Client, skill_id: []const u8, version: []const u8) !ApiResult([]const u8) {
+pub fn GetSkillVersionContentRaw(client: *Client, skill_id: []const u8, version: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/skills/{s}/ss/{s}/content", .{ client.base_url, skill_id, version });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse([]const u8, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn GetSkillVersionContentResult(client: *Client, skill_id: []const u8, version: []const u8) !ApiResult([]const u8) {
+    return parseRawResponse([]const u8, try GetSkillVersionContentRaw(client, skill_id, version));
 }
 
 /////////////////
@@ -17635,32 +15728,23 @@ pub fn GetSkillVersionContentResult(client: *Client, skill_id: []const u8, versi
 // handle it.
 //
 pub fn @"accept-realtime-call"(client: *Client, call_id: []const u8, requestBody: RealtimeSessionCreateRequestGA) !void {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
+    var raw = try @"accept-realtime-callRaw"(client, call_id, requestBody);
+    defer raw.deinit();
+    if (raw.status.class() != .success) return error.ResponseError;
+}
 
+pub fn @"accept-realtime-callRaw"(client: *Client, call_id: []const u8, requestBody: RealtimeSessionCreateRequestGA) !RawResponse {
+    const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/realtime/calls/{s}/accept", .{ client.base_url, call_id });
-    const uri = try std.Uri.parse(uri_buf.written());
 
     var str: std.Io.Writer.Allocating = .init(allocator);
     defer str.deinit();
-
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
+    const payload: ?[]const u8 = str.written();
 
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
 }
 
 /////////////////
@@ -17668,47 +15752,21 @@ pub fn @"accept-realtime-call"(client: *Client, call_id: []const u8, requestBody
 // List all skills for the current project.
 //
 pub fn ListSkills(client: *Client, limit: ?i64, order: ?[]const u8, after: ?[]const u8) !Owned(SkillListResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/skills", .{client.base_url});
-    var first_query = true;
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
+    var result = try ListSkillsResult(client, limit, order, after);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (order) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "order", value);
-    }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(SkillListResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn ListSkillsResult(client: *Client, limit: ?i64, order: ?[]const u8, after: ?[]const u8) !ApiResult(SkillListResource) {
+pub fn ListSkillsRaw(client: *Client, limit: ?i64, order: ?[]const u8, after: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -17725,8 +15783,11 @@ pub fn ListSkillsResult(client: *Client, limit: ?i64, order: ?[]const u8, after:
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(SkillListResource, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn ListSkillsResult(client: *Client, limit: ?i64, order: ?[]const u8, after: ?[]const u8) !ApiResult(SkillListResource) {
+    return parseRawResponse(SkillListResource, try ListSkillsRaw(client, limit, order, after));
 }
 
 /////////////////
@@ -17734,44 +15795,21 @@ pub fn ListSkillsResult(client: *Client, limit: ?i64, order: ?[]const u8, after:
 // Create a new skill.
 //
 pub fn CreateSkill(client: *Client, requestBody: CreateSkillBody) !Owned(SkillResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/skills", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try CreateSkillResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(SkillResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn CreateSkillResult(client: *Client, requestBody: CreateSkillBody) !ApiResult(SkillResource) {
+pub fn CreateSkillRaw(client: *Client, requestBody: CreateSkillBody) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -17782,8 +15820,11 @@ pub fn CreateSkillResult(client: *Client, requestBody: CreateSkillBody) !ApiResu
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(SkillResource, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn CreateSkillResult(client: *Client, requestBody: CreateSkillBody) !ApiResult(SkillResource) {
+    return parseRawResponse(SkillResource, try CreateSkillRaw(client, requestBody));
 }
 
 /////////////////
@@ -17797,44 +15838,21 @@ pub fn CreateSkillResult(client: *Client, requestBody: CreateSkillBody) !ApiResu
 //
 //
 pub fn listVoiceConsents(client: *Client, after: ?[]const u8, limit: ?i64) !Owned(VoiceConsentListResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/audio/voice_consents", .{client.base_url});
-    var first_query = true;
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
+    var result = try listVoiceConsentsResult(client, after, limit);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(VoiceConsentListResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn listVoiceConsentsResult(client: *Client, after: ?[]const u8, limit: ?i64) !ApiResult(VoiceConsentListResource) {
+pub fn listVoiceConsentsRaw(client: *Client, after: ?[]const u8, limit: ?i64) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -17848,8 +15866,11 @@ pub fn listVoiceConsentsResult(client: *Client, after: ?[]const u8, limit: ?i64)
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(VoiceConsentListResource, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn listVoiceConsentsResult(client: *Client, after: ?[]const u8, limit: ?i64) !ApiResult(VoiceConsentListResource) {
+    return parseRawResponse(VoiceConsentListResource, try listVoiceConsentsRaw(client, after, limit));
 }
 
 /////////////////
@@ -17863,44 +15884,21 @@ pub fn listVoiceConsentsResult(client: *Client, after: ?[]const u8, limit: ?i64)
 //
 //
 pub fn createVoiceConsent(client: *Client, requestBody: CreateVoiceConsentRequest) !Owned(VoiceConsentResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/audio/voice_consents", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try createVoiceConsentResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(VoiceConsentResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn createVoiceConsentResult(client: *Client, requestBody: CreateVoiceConsentRequest) !ApiResult(VoiceConsentResource) {
+pub fn createVoiceConsentRaw(client: *Client, requestBody: CreateVoiceConsentRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -17911,8 +15909,11 @@ pub fn createVoiceConsentResult(client: *Client, requestBody: CreateVoiceConsent
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(VoiceConsentResource, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn createVoiceConsentResult(client: *Client, requestBody: CreateVoiceConsentRequest) !ApiResult(VoiceConsentResource) {
+    return parseRawResponse(VoiceConsentResource, try createVoiceConsentRaw(client, requestBody));
 }
 
 /////////////////
@@ -17923,45 +15924,32 @@ pub fn createVoiceConsentResult(client: *Client, requestBody: CreateVoiceConsent
 // Get details for a specific organization API key by its ID.
 //
 pub fn @"admin-api-keys-get"(client: *Client, key_id: []const u8) !Owned(AdminApiKey) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/admin_api_keys/{s}", .{ client.base_url, key_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"admin-api-keys-getResult"(client, key_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(AdminApiKey, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"admin-api-keys-getResult"(client: *Client, key_id: []const u8) !ApiResult(AdminApiKey) {
+pub fn @"admin-api-keys-getRaw"(client: *Client, key_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/organization/admin_api_keys/{s}", .{ client.base_url, key_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(AdminApiKey, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn @"admin-api-keys-getResult"(client: *Client, key_id: []const u8) !ApiResult(AdminApiKey) {
+    return parseRawResponse(AdminApiKey, try @"admin-api-keys-getRaw"(client, key_id));
 }
 
 /////////////////
@@ -17972,45 +15960,32 @@ pub fn @"admin-api-keys-getResult"(client: *Client, key_id: []const u8) !ApiResu
 // Delete the specified admin API key.
 //
 pub fn @"admin-api-keys-delete"(client: *Client, key_id: []const u8) !Owned(std.json.Value) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/admin_api_keys/{s}", .{ client.base_url, key_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.DELETE,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"admin-api-keys-deleteResult"(client, key_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(std.json.Value, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"admin-api-keys-deleteResult"(client: *Client, key_id: []const u8) !ApiResult(std.json.Value) {
+pub fn @"admin-api-keys-deleteRaw"(client: *Client, key_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/organization/admin_api_keys/{s}", .{ client.base_url, key_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
-    return parseRawResponse(std.json.Value, raw);
+    return requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
+}
+
+pub fn @"admin-api-keys-deleteResult"(client: *Client, key_id: []const u8) !ApiResult(std.json.Value) {
+    return parseRawResponse(std.json.Value, try @"admin-api-keys-deleteRaw"(client, key_id));
 }
 
 /////////////////
@@ -18018,47 +15993,21 @@ pub fn @"admin-api-keys-deleteResult"(client: *Client, key_id: []const u8) !ApiR
 // Lists the groups that have access to a project.
 //
 pub fn @"list-project-groups"(client: *Client, project_id: []const u8, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !Owned(ProjectGroupListResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/projects/{s}/groups", .{ client.base_url, project_id });
-    var first_query = true;
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
+    var result = try @"list-project-groupsResult"(client, project_id, limit, after, order);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    if (order) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "order", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ProjectGroupListResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"list-project-groupsResult"(client: *Client, project_id: []const u8, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !ApiResult(ProjectGroupListResource) {
+pub fn @"list-project-groupsRaw"(client: *Client, project_id: []const u8, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -18075,8 +16024,11 @@ pub fn @"list-project-groupsResult"(client: *Client, project_id: []const u8, lim
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ProjectGroupListResource, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn @"list-project-groupsResult"(client: *Client, project_id: []const u8, limit: ?i64, after: ?[]const u8, order: ?[]const u8) !ApiResult(ProjectGroupListResource) {
+    return parseRawResponse(ProjectGroupListResource, try @"list-project-groupsRaw"(client, project_id, limit, after, order));
 }
 
 /////////////////
@@ -18084,44 +16036,21 @@ pub fn @"list-project-groupsResult"(client: *Client, project_id: []const u8, lim
 // Grants a group access to a project.
 //
 pub fn @"add-project-group"(client: *Client, project_id: []const u8, requestBody: InviteProjectGroupBody) !Owned(ProjectGroup) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/projects/{s}/groups", .{ client.base_url, project_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"add-project-groupResult"(client, project_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ProjectGroup, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"add-project-groupResult"(client: *Client, project_id: []const u8, requestBody: InviteProjectGroupBody) !ApiResult(ProjectGroup) {
+pub fn @"add-project-groupRaw"(client: *Client, project_id: []const u8, requestBody: InviteProjectGroupBody) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -18132,8 +16061,11 @@ pub fn @"add-project-groupResult"(client: *Client, project_id: []const u8, reque
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(ProjectGroup, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn @"add-project-groupResult"(client: *Client, project_id: []const u8, requestBody: InviteProjectGroupBody) !ApiResult(ProjectGroup) {
+    return parseRawResponse(ProjectGroup, try @"add-project-groupRaw"(client, project_id, requestBody));
 }
 
 /////////////////
@@ -18142,45 +16074,32 @@ pub fn @"add-project-groupResult"(client: *Client, project_id: []const u8, reque
 //
 //
 pub fn resumeFineTuningJob(client: *Client, fine_tuning_job_id: []const u8) !Owned(FineTuningJob) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/fine_tuning/jobs/{s}/resume", .{ client.base_url, fine_tuning_job_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try resumeFineTuningJobResult(client, fine_tuning_job_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(FineTuningJob, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn resumeFineTuningJobResult(client: *Client, fine_tuning_job_id: []const u8) !ApiResult(FineTuningJob) {
+pub fn resumeFineTuningJobRaw(client: *Client, fine_tuning_job_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/fine_tuning/jobs/{s}/resume", .{ client.base_url, fine_tuning_job_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(FineTuningJob, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn resumeFineTuningJobResult(client: *Client, fine_tuning_job_id: []const u8) !ApiResult(FineTuningJob) {
+    return parseRawResponse(FineTuningJob, try resumeFineTuningJobRaw(client, fine_tuning_job_id));
 }
 
 /////////////////
@@ -18189,44 +16108,21 @@ pub fn resumeFineTuningJobResult(client: *Client, fine_tuning_job_id: []const u8
 //
 //
 pub fn validateGrader(client: *Client, requestBody: ValidateGraderRequest) !Owned(ValidateGraderResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/fine_tuning/alpha/graders/validate", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try validateGraderResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ValidateGraderResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn validateGraderResult(client: *Client, requestBody: ValidateGraderRequest) !ApiResult(ValidateGraderResponse) {
+pub fn validateGraderRaw(client: *Client, requestBody: ValidateGraderRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -18237,8 +16133,11 @@ pub fn validateGraderResult(client: *Client, requestBody: ValidateGraderRequest)
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(ValidateGraderResponse, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn validateGraderResult(client: *Client, requestBody: ValidateGraderRequest) !ApiResult(ValidateGraderResponse) {
+    return parseRawResponse(ValidateGraderResponse, try validateGraderRaw(client, requestBody));
 }
 
 /////////////////
@@ -18246,44 +16145,21 @@ pub fn validateGraderResult(client: *Client, requestBody: ValidateGraderRequest)
 // Returns a list of invites in the organization.
 //
 pub fn @"list-invites"(client: *Client, limit: ?i64, after: ?[]const u8) !Owned(InviteListResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/invites", .{client.base_url});
-    var first_query = true;
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
+    var result = try @"list-invitesResult"(client, limit, after);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(InviteListResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"list-invitesResult"(client: *Client, limit: ?i64, after: ?[]const u8) !ApiResult(InviteListResponse) {
+pub fn @"list-invitesRaw"(client: *Client, limit: ?i64, after: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -18297,8 +16173,11 @@ pub fn @"list-invitesResult"(client: *Client, limit: ?i64, after: ?[]const u8) !
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(InviteListResponse, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn @"list-invitesResult"(client: *Client, limit: ?i64, after: ?[]const u8) !ApiResult(InviteListResponse) {
+    return parseRawResponse(InviteListResponse, try @"list-invitesRaw"(client, limit, after));
 }
 
 /////////////////
@@ -18306,44 +16185,21 @@ pub fn @"list-invitesResult"(client: *Client, limit: ?i64, after: ?[]const u8) !
 // Create an invite for a user to the organization. The invite must be accepted by the user before they have access to the organization.
 //
 pub fn inviteUser(client: *Client, requestBody: InviteRequest) !Owned(Invite) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/invites", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try inviteUserResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(Invite, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn inviteUserResult(client: *Client, requestBody: InviteRequest) !ApiResult(Invite) {
+pub fn inviteUserRaw(client: *Client, requestBody: InviteRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -18354,8 +16210,11 @@ pub fn inviteUserResult(client: *Client, requestBody: InviteRequest) !ApiResult(
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(Invite, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn inviteUserResult(client: *Client, requestBody: InviteRequest) !ApiResult(Invite) {
+    return parseRawResponse(Invite, try inviteUserRaw(client, requestBody));
 }
 
 /////////////////
@@ -18363,44 +16222,21 @@ pub fn inviteUserResult(client: *Client, requestBody: InviteRequest) !ApiResult(
 // Create an extension of a completed video.
 //
 pub fn CreateVideoExtend(client: *Client, requestBody: CreateVideoExtendJsonBody) !Owned(VideoResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/videos/extensions", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try CreateVideoExtendResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(VideoResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn CreateVideoExtendResult(client: *Client, requestBody: CreateVideoExtendJsonBody) !ApiResult(VideoResource) {
+pub fn CreateVideoExtendRaw(client: *Client, requestBody: CreateVideoExtendJsonBody) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -18411,8 +16247,11 @@ pub fn CreateVideoExtendResult(client: *Client, requestBody: CreateVideoExtendJs
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(VideoResource, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn CreateVideoExtendResult(client: *Client, requestBody: CreateVideoExtendJsonBody) !ApiResult(VideoResource) {
+    return parseRawResponse(VideoResource, try CreateVideoExtendRaw(client, requestBody));
 }
 
 /////////////////
@@ -18420,69 +16259,21 @@ pub fn CreateVideoExtendResult(client: *Client, requestBody: CreateVideoExtendJs
 // Get completions usage details for the organization.
 //
 pub fn @"usage-completions"(client: *Client, start_time: i64, end_time: ?i64, bucket_width: ?[]const u8, project_ids: ?[]const u8, user_ids: ?[]const u8, api_key_ids: ?[]const u8, models: ?[]const u8, batch: ?bool, group_by: ?[]const u8, limit: ?i64, page: ?[]const u8) !Owned(UsageResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/usage/completions", .{client.base_url});
-    var first_query = true;
-    try appendQueryParam(&uri_buf.writer, &first_query, "start_time", start_time);
-    if (end_time) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "end_time", value);
+    var result = try @"usage-completionsResult"(client, start_time, end_time, bucket_width, project_ids, user_ids, api_key_ids, models, batch, group_by, limit, page);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (bucket_width) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "bucket_width", value);
-    }
-    if (project_ids) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "project_ids", value);
-    }
-    if (user_ids) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "user_ids", value);
-    }
-    if (api_key_ids) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "api_key_ids", value);
-    }
-    if (models) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "models", value);
-    }
-    if (batch) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "batch", value);
-    }
-    if (group_by) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "group_by", value);
-    }
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
-    }
-    if (page) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "page", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(UsageResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"usage-completionsResult"(client: *Client, start_time: i64, end_time: ?i64, bucket_width: ?[]const u8, project_ids: ?[]const u8, user_ids: ?[]const u8, api_key_ids: ?[]const u8, models: ?[]const u8, batch: ?bool, group_by: ?[]const u8, limit: ?i64, page: ?[]const u8) !ApiResult(UsageResponse) {
+pub fn @"usage-completionsRaw"(client: *Client, start_time: i64, end_time: ?i64, bucket_width: ?[]const u8, project_ids: ?[]const u8, user_ids: ?[]const u8, api_key_ids: ?[]const u8, models: ?[]const u8, batch: ?bool, group_by: ?[]const u8, limit: ?i64, page: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -18521,8 +16312,11 @@ pub fn @"usage-completionsResult"(client: *Client, start_time: i64, end_time: ?i
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(UsageResponse, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn @"usage-completionsResult"(client: *Client, start_time: i64, end_time: ?i64, bucket_width: ?[]const u8, project_ids: ?[]const u8, user_ids: ?[]const u8, api_key_ids: ?[]const u8, models: ?[]const u8, batch: ?bool, group_by: ?[]const u8, limit: ?i64, page: ?[]const u8) !ApiResult(UsageResponse) {
+    return parseRawResponse(UsageResponse, try @"usage-completionsRaw"(client, start_time, end_time, bucket_width, project_ids, user_ids, api_key_ids, models, batch, group_by, limit, page));
 }
 
 /////////////////
@@ -18530,44 +16324,21 @@ pub fn @"usage-completionsResult"(client: *Client, start_time: i64, end_time: ?i
 // Updates an existing project role.
 //
 pub fn @"update-project-role"(client: *Client, project_id: []const u8, role_id: []const u8, requestBody: PublicUpdateOrganizationRoleBody) !Owned(Role) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/projects/{s}/roles/{s}", .{ client.base_url, project_id, role_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"update-project-roleResult"(client, project_id, role_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(Role, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"update-project-roleResult"(client: *Client, project_id: []const u8, role_id: []const u8, requestBody: PublicUpdateOrganizationRoleBody) !ApiResult(Role) {
+pub fn @"update-project-roleRaw"(client: *Client, project_id: []const u8, role_id: []const u8, requestBody: PublicUpdateOrganizationRoleBody) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -18578,8 +16349,11 @@ pub fn @"update-project-roleResult"(client: *Client, project_id: []const u8, rol
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(Role, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn @"update-project-roleResult"(client: *Client, project_id: []const u8, role_id: []const u8, requestBody: PublicUpdateOrganizationRoleBody) !ApiResult(Role) {
+    return parseRawResponse(Role, try @"update-project-roleRaw"(client, project_id, role_id, requestBody));
 }
 
 /////////////////
@@ -18587,45 +16361,32 @@ pub fn @"update-project-roleResult"(client: *Client, project_id: []const u8, rol
 // Deletes a custom role from a project.
 //
 pub fn @"delete-project-role"(client: *Client, project_id: []const u8, role_id: []const u8) !Owned(RoleDeletedResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/projects/{s}/roles/{s}", .{ client.base_url, project_id, role_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.DELETE,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"delete-project-roleResult"(client, project_id, role_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(RoleDeletedResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"delete-project-roleResult"(client: *Client, project_id: []const u8, role_id: []const u8) !ApiResult(RoleDeletedResource) {
+pub fn @"delete-project-roleRaw"(client: *Client, project_id: []const u8, role_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/projects/{s}/roles/{s}", .{ client.base_url, project_id, role_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
-    return parseRawResponse(RoleDeletedResource, raw);
+    return requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
+}
+
+pub fn @"delete-project-roleResult"(client: *Client, project_id: []const u8, role_id: []const u8) !ApiResult(RoleDeletedResource) {
+    return parseRawResponse(RoleDeletedResource, try @"delete-project-roleRaw"(client, project_id, role_id));
 }
 
 /////////////////
@@ -18634,45 +16395,32 @@ pub fn @"delete-project-roleResult"(client: *Client, project_id: []const u8, rol
 //
 //
 pub fn getEvalRun(client: *Client, eval_id: []const u8, run_id: []const u8) !Owned(EvalRun) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/evals/{s}/runs/{s}", .{ client.base_url, eval_id, run_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try getEvalRunResult(client, eval_id, run_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(EvalRun, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn getEvalRunResult(client: *Client, eval_id: []const u8, run_id: []const u8) !ApiResult(EvalRun) {
+pub fn getEvalRunRaw(client: *Client, eval_id: []const u8, run_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/evals/{s}/runs/{s}", .{ client.base_url, eval_id, run_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(EvalRun, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn getEvalRunResult(client: *Client, eval_id: []const u8, run_id: []const u8) !ApiResult(EvalRun) {
+    return parseRawResponse(EvalRun, try getEvalRunRaw(client, eval_id, run_id));
 }
 
 /////////////////
@@ -18681,45 +16429,32 @@ pub fn getEvalRunResult(client: *Client, eval_id: []const u8, run_id: []const u8
 //
 //
 pub fn cancelEvalRun(client: *Client, eval_id: []const u8, run_id: []const u8) !Owned(EvalRun) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/evals/{s}/runs/{s}", .{ client.base_url, eval_id, run_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try cancelEvalRunResult(client, eval_id, run_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(EvalRun, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn cancelEvalRunResult(client: *Client, eval_id: []const u8, run_id: []const u8) !ApiResult(EvalRun) {
+pub fn cancelEvalRunRaw(client: *Client, eval_id: []const u8, run_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/evals/{s}/runs/{s}", .{ client.base_url, eval_id, run_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(EvalRun, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn cancelEvalRunResult(client: *Client, eval_id: []const u8, run_id: []const u8) !ApiResult(EvalRun) {
+    return parseRawResponse(EvalRun, try cancelEvalRunRaw(client, eval_id, run_id));
 }
 
 /////////////////
@@ -18728,45 +16463,32 @@ pub fn cancelEvalRunResult(client: *Client, eval_id: []const u8, run_id: []const
 //
 //
 pub fn deleteEvalRun(client: *Client, eval_id: []const u8, run_id: []const u8) !Owned(std.json.Value) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/evals/{s}/runs/{s}", .{ client.base_url, eval_id, run_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.DELETE,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try deleteEvalRunResult(client, eval_id, run_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(std.json.Value, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn deleteEvalRunResult(client: *Client, eval_id: []const u8, run_id: []const u8) !ApiResult(std.json.Value) {
+pub fn deleteEvalRunRaw(client: *Client, eval_id: []const u8, run_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/evals/{s}/runs/{s}", .{ client.base_url, eval_id, run_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
-    return parseRawResponse(std.json.Value, raw);
+    return requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
+}
+
+pub fn deleteEvalRunResult(client: *Client, eval_id: []const u8, run_id: []const u8) !ApiResult(std.json.Value) {
+    return parseRawResponse(std.json.Value, try deleteEvalRunRaw(client, eval_id, run_id));
 }
 
 /////////////////
@@ -18775,44 +16497,21 @@ pub fn deleteEvalRunResult(client: *Client, eval_id: []const u8, run_id: []const
 //
 //
 pub fn runGrader(client: *Client, requestBody: RunGraderRequest) !Owned(RunGraderResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/fine_tuning/alpha/graders/run", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try runGraderResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(RunGraderResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn runGraderResult(client: *Client, requestBody: RunGraderRequest) !ApiResult(RunGraderResponse) {
+pub fn runGraderRaw(client: *Client, requestBody: RunGraderRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -18823,8 +16522,11 @@ pub fn runGraderResult(client: *Client, requestBody: RunGraderRequest) !ApiResul
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(RunGraderResponse, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn runGraderResult(client: *Client, requestBody: RunGraderRequest) !ApiResult(RunGraderResponse) {
+    return parseRawResponse(RunGraderResponse, try runGraderRaw(client, requestBody));
 }
 
 /////////////////
@@ -18833,45 +16535,32 @@ pub fn runGraderResult(client: *Client, requestBody: RunGraderRequest) !ApiResul
 //
 //
 pub fn cancelFineTuningJob(client: *Client, fine_tuning_job_id: []const u8) !Owned(FineTuningJob) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/fine_tuning/jobs/{s}/cancel", .{ client.base_url, fine_tuning_job_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try cancelFineTuningJobResult(client, fine_tuning_job_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(FineTuningJob, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn cancelFineTuningJobResult(client: *Client, fine_tuning_job_id: []const u8) !ApiResult(FineTuningJob) {
+pub fn cancelFineTuningJobRaw(client: *Client, fine_tuning_job_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/fine_tuning/jobs/{s}/cancel", .{ client.base_url, fine_tuning_job_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(FineTuningJob, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn cancelFineTuningJobResult(client: *Client, fine_tuning_job_id: []const u8) !ApiResult(FineTuningJob) {
+    return parseRawResponse(FineTuningJob, try cancelFineTuningJobRaw(client, fine_tuning_job_id));
 }
 
 /////////////////
@@ -18879,45 +16568,32 @@ pub fn cancelFineTuningJobResult(client: *Client, fine_tuning_job_id: []const u8
 // Retrieves a model instance, providing basic information about the model such as the owner and permissioning.
 //
 pub fn retrieveModel(client: *Client, model: []const u8) !Owned(Model) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/ss/{s}", .{ client.base_url, model });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try retrieveModelResult(client, model);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(Model, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn retrieveModelResult(client: *Client, model: []const u8) !ApiResult(Model) {
+pub fn retrieveModelRaw(client: *Client, model: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/ss/{s}", .{ client.base_url, model });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(Model, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn retrieveModelResult(client: *Client, model: []const u8) !ApiResult(Model) {
+    return parseRawResponse(Model, try retrieveModelRaw(client, model));
 }
 
 /////////////////
@@ -18925,45 +16601,32 @@ pub fn retrieveModelResult(client: *Client, model: []const u8) !ApiResult(Model)
 // Delete a fine-tuned model. You must have the Owner role in your organization to delete a model.
 //
 pub fn deleteModel(client: *Client, model: []const u8) !Owned(DeleteModelResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/ss/{s}", .{ client.base_url, model });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.DELETE,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try deleteModelResult(client, model);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(DeleteModelResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn deleteModelResult(client: *Client, model: []const u8) !ApiResult(DeleteModelResponse) {
+pub fn deleteModelRaw(client: *Client, model: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/ss/{s}", .{ client.base_url, model });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
-    return parseRawResponse(DeleteModelResponse, raw);
+    return requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
+}
+
+pub fn deleteModelResult(client: *Client, model: []const u8) !ApiResult(DeleteModelResponse) {
+    return parseRawResponse(DeleteModelResponse, try deleteModelRaw(client, model));
 }
 
 /////////////////
@@ -18973,44 +16636,21 @@ pub fn deleteModelResult(client: *Client, model: []const u8) !ApiResult(DeleteMo
 //
 //
 pub fn deactivateProjectCertificates(client: *Client, project_id: []const u8, requestBody: ToggleCertificatesRequest) !Owned(ListCertificatesResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/projects/{s}/certificates/deactivate", .{ client.base_url, project_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try deactivateProjectCertificatesResult(client, project_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ListCertificatesResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn deactivateProjectCertificatesResult(client: *Client, project_id: []const u8, requestBody: ToggleCertificatesRequest) !ApiResult(ListCertificatesResponse) {
+pub fn deactivateProjectCertificatesRaw(client: *Client, project_id: []const u8, requestBody: ToggleCertificatesRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -19021,8 +16661,11 @@ pub fn deactivateProjectCertificatesResult(client: *Client, project_id: []const 
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(ListCertificatesResponse, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn deactivateProjectCertificatesResult(client: *Client, project_id: []const u8, requestBody: ToggleCertificatesRequest) !ApiResult(ListCertificatesResponse) {
+    return parseRawResponse(ListCertificatesResponse, try deactivateProjectCertificatesRaw(client, project_id, requestBody));
 }
 
 /////////////////
@@ -19031,50 +16674,21 @@ pub fn deactivateProjectCertificatesResult(client: *Client, project_id: []const 
 //
 //
 pub fn getEvalRunOutputItems(client: *Client, eval_id: []const u8, run_id: []const u8, after: ?[]const u8, limit: ?i64, status: ?[]const u8, order: ?[]const u8) !Owned(EvalRunOutputItemList) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/evals/{s}/runs/{s}/output_items", .{ client.base_url, eval_id, run_id });
-    var first_query = true;
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
+    var result = try getEvalRunOutputItemsResult(client, eval_id, run_id, after, limit, status, order);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
-    }
-    if (status) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "status", value);
-    }
-    if (order) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "order", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(EvalRunOutputItemList, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn getEvalRunOutputItemsResult(client: *Client, eval_id: []const u8, run_id: []const u8, after: ?[]const u8, limit: ?i64, status: ?[]const u8, order: ?[]const u8) !ApiResult(EvalRunOutputItemList) {
+pub fn getEvalRunOutputItemsRaw(client: *Client, eval_id: []const u8, run_id: []const u8, after: ?[]const u8, limit: ?i64, status: ?[]const u8, order: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -19094,8 +16708,11 @@ pub fn getEvalRunOutputItemsResult(client: *Client, eval_id: []const u8, run_id:
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(EvalRunOutputItemList, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn getEvalRunOutputItemsResult(client: *Client, eval_id: []const u8, run_id: []const u8, after: ?[]const u8, limit: ?i64, status: ?[]const u8, order: ?[]const u8) !ApiResult(EvalRunOutputItemList) {
+    return parseRawResponse(EvalRunOutputItemList, try getEvalRunOutputItemsRaw(client, eval_id, run_id, after, limit, status, order));
 }
 
 /////////////////
@@ -19103,45 +16720,32 @@ pub fn getEvalRunOutputItemsResult(client: *Client, eval_id: []const u8, run_id:
 // Retrieves a run.
 //
 pub fn getRun(client: *Client, thread_id: []const u8, run_id: []const u8) !Owned(RunObject) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/threads/{s}/runs/{s}", .{ client.base_url, thread_id, run_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try getRunResult(client, thread_id, run_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(RunObject, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn getRunResult(client: *Client, thread_id: []const u8, run_id: []const u8) !ApiResult(RunObject) {
+pub fn getRunRaw(client: *Client, thread_id: []const u8, run_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/threads/{s}/runs/{s}", .{ client.base_url, thread_id, run_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(RunObject, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn getRunResult(client: *Client, thread_id: []const u8, run_id: []const u8) !ApiResult(RunObject) {
+    return parseRawResponse(RunObject, try getRunRaw(client, thread_id, run_id));
 }
 
 /////////////////
@@ -19149,44 +16753,21 @@ pub fn getRunResult(client: *Client, thread_id: []const u8, run_id: []const u8) 
 // Modifies a run.
 //
 pub fn modifyRun(client: *Client, thread_id: []const u8, run_id: []const u8, requestBody: ModifyRunRequest) !Owned(RunObject) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/threads/{s}/runs/{s}", .{ client.base_url, thread_id, run_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try modifyRunResult(client, thread_id, run_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(RunObject, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn modifyRunResult(client: *Client, thread_id: []const u8, run_id: []const u8, requestBody: ModifyRunRequest) !ApiResult(RunObject) {
+pub fn modifyRunRaw(client: *Client, thread_id: []const u8, run_id: []const u8, requestBody: ModifyRunRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -19197,8 +16778,11 @@ pub fn modifyRunResult(client: *Client, thread_id: []const u8, run_id: []const u
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(RunObject, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn modifyRunResult(client: *Client, thread_id: []const u8, run_id: []const u8, requestBody: ModifyRunRequest) !ApiResult(RunObject) {
+    return parseRawResponse(RunObject, try modifyRunRaw(client, thread_id, run_id, requestBody));
 }
 
 /////////////////
@@ -19206,50 +16790,21 @@ pub fn modifyRunResult(client: *Client, thread_id: []const u8, run_id: []const u
 // Returns a list of assistants.
 //
 pub fn listAssistants(client: *Client, limit: ?i64, order: ?[]const u8, after: ?[]const u8, before: ?[]const u8) !Owned(ListAssistantsResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/assistants", .{client.base_url});
-    var first_query = true;
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
+    var result = try listAssistantsResult(client, limit, order, after, before);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (order) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "order", value);
-    }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    if (before) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "before", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ListAssistantsResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn listAssistantsResult(client: *Client, limit: ?i64, order: ?[]const u8, after: ?[]const u8, before: ?[]const u8) !ApiResult(ListAssistantsResponse) {
+pub fn listAssistantsRaw(client: *Client, limit: ?i64, order: ?[]const u8, after: ?[]const u8, before: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -19269,8 +16824,11 @@ pub fn listAssistantsResult(client: *Client, limit: ?i64, order: ?[]const u8, af
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ListAssistantsResponse, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn listAssistantsResult(client: *Client, limit: ?i64, order: ?[]const u8, after: ?[]const u8, before: ?[]const u8) !ApiResult(ListAssistantsResponse) {
+    return parseRawResponse(ListAssistantsResponse, try listAssistantsRaw(client, limit, order, after, before));
 }
 
 /////////////////
@@ -19278,44 +16836,21 @@ pub fn listAssistantsResult(client: *Client, limit: ?i64, order: ?[]const u8, af
 // Create an assistant with a model and instructions.
 //
 pub fn createAssistant(client: *Client, requestBody: CreateAssistantRequest) !Owned(AssistantObject) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/assistants", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try createAssistantResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(AssistantObject, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn createAssistantResult(client: *Client, requestBody: CreateAssistantRequest) !ApiResult(AssistantObject) {
+pub fn createAssistantRaw(client: *Client, requestBody: CreateAssistantRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -19326,8 +16861,11 @@ pub fn createAssistantResult(client: *Client, requestBody: CreateAssistantReques
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(AssistantObject, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn createAssistantResult(client: *Client, requestBody: CreateAssistantRequest) !ApiResult(AssistantObject) {
+    return parseRawResponse(AssistantObject, try createAssistantRaw(client, requestBody));
 }
 
 /////////////////
@@ -19335,45 +16873,32 @@ pub fn createAssistantResult(client: *Client, requestBody: CreateAssistantReques
 // Retrieves a service account in the project.
 //
 pub fn @"retrieve-project-service-account"(client: *Client, project_id: []const u8, service_account_id: []const u8) !Owned(ProjectServiceAccount) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/projects/{s}/service_accounts/{s}", .{ client.base_url, project_id, service_account_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"retrieve-project-service-accountResult"(client, project_id, service_account_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ProjectServiceAccount, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"retrieve-project-service-accountResult"(client: *Client, project_id: []const u8, service_account_id: []const u8) !ApiResult(ProjectServiceAccount) {
+pub fn @"retrieve-project-service-accountRaw"(client: *Client, project_id: []const u8, service_account_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/organization/projects/{s}/service_accounts/{s}", .{ client.base_url, project_id, service_account_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ProjectServiceAccount, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn @"retrieve-project-service-accountResult"(client: *Client, project_id: []const u8, service_account_id: []const u8) !ApiResult(ProjectServiceAccount) {
+    return parseRawResponse(ProjectServiceAccount, try @"retrieve-project-service-accountRaw"(client, project_id, service_account_id));
 }
 
 /////////////////
@@ -19385,45 +16910,32 @@ pub fn @"retrieve-project-service-accountResult"(client: *Client, project_id: []
 //
 //
 pub fn @"delete-project-service-account"(client: *Client, project_id: []const u8, service_account_id: []const u8) !Owned(ProjectServiceAccountDeleteResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/projects/{s}/service_accounts/{s}", .{ client.base_url, project_id, service_account_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.DELETE,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"delete-project-service-accountResult"(client, project_id, service_account_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ProjectServiceAccountDeleteResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"delete-project-service-accountResult"(client: *Client, project_id: []const u8, service_account_id: []const u8) !ApiResult(ProjectServiceAccountDeleteResponse) {
+pub fn @"delete-project-service-accountRaw"(client: *Client, project_id: []const u8, service_account_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/organization/projects/{s}/service_accounts/{s}", .{ client.base_url, project_id, service_account_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
-    return parseRawResponse(ProjectServiceAccountDeleteResponse, raw);
+    return requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
+}
+
+pub fn @"delete-project-service-accountResult"(client: *Client, project_id: []const u8, service_account_id: []const u8) !ApiResult(ProjectServiceAccountDeleteResponse) {
+    return parseRawResponse(ProjectServiceAccountDeleteResponse, try @"delete-project-service-accountRaw"(client, project_id, service_account_id));
 }
 
 /////////////////
@@ -19431,45 +16943,32 @@ pub fn @"delete-project-service-accountResult"(client: *Client, project_id: []co
 // Unassigns a project role from a group within a project.
 //
 pub fn @"unassign-project-group-role"(client: *Client, project_id: []const u8, group_id: []const u8, role_id: []const u8) !Owned(DeletedRoleAssignmentResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/projects/{s}/groups/{s}/roles/{s}", .{ client.base_url, project_id, group_id, role_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.DELETE,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"unassign-project-group-roleResult"(client, project_id, group_id, role_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(DeletedRoleAssignmentResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"unassign-project-group-roleResult"(client: *Client, project_id: []const u8, group_id: []const u8, role_id: []const u8) !ApiResult(DeletedRoleAssignmentResource) {
+pub fn @"unassign-project-group-roleRaw"(client: *Client, project_id: []const u8, group_id: []const u8, role_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/projects/{s}/groups/{s}/roles/{s}", .{ client.base_url, project_id, group_id, role_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
-    return parseRawResponse(DeletedRoleAssignmentResource, raw);
+    return requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
+}
+
+pub fn @"unassign-project-group-roleResult"(client: *Client, project_id: []const u8, group_id: []const u8, role_id: []const u8) !ApiResult(DeletedRoleAssignmentResource) {
+    return parseRawResponse(DeletedRoleAssignmentResource, try @"unassign-project-group-roleRaw"(client, project_id, group_id, role_id));
 }
 
 /////////////////
@@ -19477,45 +16976,32 @@ pub fn @"unassign-project-group-roleResult"(client: *Client, project_id: []const
 // Unassigns an organization role from a user within the organization.
 //
 pub fn @"unassign-user-role"(client: *Client, user_id: []const u8, role_id: []const u8) !Owned(DeletedRoleAssignmentResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/users/{s}/roles/{s}", .{ client.base_url, user_id, role_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.DELETE,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"unassign-user-roleResult"(client, user_id, role_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(DeletedRoleAssignmentResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"unassign-user-roleResult"(client: *Client, user_id: []const u8, role_id: []const u8) !ApiResult(DeletedRoleAssignmentResource) {
+pub fn @"unassign-user-roleRaw"(client: *Client, user_id: []const u8, role_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/organization/users/{s}/roles/{s}", .{ client.base_url, user_id, role_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
-    return parseRawResponse(DeletedRoleAssignmentResource, raw);
+    return requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
+}
+
+pub fn @"unassign-user-roleResult"(client: *Client, user_id: []const u8, role_id: []const u8) !ApiResult(DeletedRoleAssignmentResource) {
+    return parseRawResponse(DeletedRoleAssignmentResource, try @"unassign-user-roleRaw"(client, user_id, role_id));
 }
 
 /////////////////
@@ -19523,45 +17009,32 @@ pub fn @"unassign-user-roleResult"(client: *Client, user_id: []const u8, role_id
 // Removes a user from a group.
 //
 pub fn @"remove-group-user"(client: *Client, group_id: []const u8, user_id: []const u8) !Owned(GroupUserDeletedResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/groups/{s}/users/{s}", .{ client.base_url, group_id, user_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.DELETE,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"remove-group-userResult"(client, group_id, user_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(GroupUserDeletedResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"remove-group-userResult"(client: *Client, group_id: []const u8, user_id: []const u8) !ApiResult(GroupUserDeletedResource) {
+pub fn @"remove-group-userRaw"(client: *Client, group_id: []const u8, user_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/organization/groups/{s}/users/{s}", .{ client.base_url, group_id, user_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
-    return parseRawResponse(GroupUserDeletedResource, raw);
+    return requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
+}
+
+pub fn @"remove-group-userResult"(client: *Client, group_id: []const u8, user_id: []const u8) !ApiResult(GroupUserDeletedResource) {
+    return parseRawResponse(GroupUserDeletedResource, try @"remove-group-userRaw"(client, group_id, user_id));
 }
 
 /////////////////
@@ -19569,53 +17042,21 @@ pub fn @"remove-group-userResult"(client: *Client, group_id: []const u8, user_id
 // Returns a list of run steps belonging to a run.
 //
 pub fn listRunSteps(client: *Client, thread_id: []const u8, run_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8, before: ?[]const u8, @"include[]": ?[]const u8) !Owned(ListRunStepsResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/threads/{s}/runs/{s}/steps", .{ client.base_url, thread_id, run_id });
-    var first_query = true;
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
+    var result = try listRunStepsResult(client, thread_id, run_id, limit, order, after, before, @"include[]");
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (order) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "order", value);
-    }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    if (before) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "before", value);
-    }
-    if (@"include[]") |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "include[]", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ListRunStepsResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn listRunStepsResult(client: *Client, thread_id: []const u8, run_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8, before: ?[]const u8, @"include[]": ?[]const u8) !ApiResult(ListRunStepsResponse) {
+pub fn listRunStepsRaw(client: *Client, thread_id: []const u8, run_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8, before: ?[]const u8, @"include[]": ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -19638,8 +17079,11 @@ pub fn listRunStepsResult(client: *Client, thread_id: []const u8, run_id: []cons
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ListRunStepsResponse, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn listRunStepsResult(client: *Client, thread_id: []const u8, run_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8, before: ?[]const u8, @"include[]": ?[]const u8) !ApiResult(ListRunStepsResponse) {
+    return parseRawResponse(ListRunStepsResponse, try listRunStepsRaw(client, thread_id, run_id, limit, order, after, before, @"include[]"));
 }
 
 /////////////////
@@ -19666,44 +17110,21 @@ pub fn listRunStepsResult(client: *Client, thread_id: []const u8, run_id: []cons
 //
 //
 pub fn createUpload(client: *Client, requestBody: CreateUploadRequest) !Owned(Upload) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/uploads", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try createUploadResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(Upload, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn createUploadResult(client: *Client, requestBody: CreateUploadRequest) !ApiResult(Upload) {
+pub fn createUploadRaw(client: *Client, requestBody: CreateUploadRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -19714,8 +17135,11 @@ pub fn createUploadResult(client: *Client, requestBody: CreateUploadRequest) !Ap
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(Upload, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn createUploadResult(client: *Client, requestBody: CreateUploadRequest) !ApiResult(Upload) {
+    return parseRawResponse(Upload, try createUploadRaw(client, requestBody));
 }
 
 /////////////////
@@ -19723,45 +17147,32 @@ pub fn createUploadResult(client: *Client, requestBody: CreateUploadRequest) !Ap
 // Retrieves an invite.
 //
 pub fn @"retrieve-invite"(client: *Client, invite_id: []const u8) !Owned(Invite) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/invites/{s}", .{ client.base_url, invite_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"retrieve-inviteResult"(client, invite_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(Invite, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"retrieve-inviteResult"(client: *Client, invite_id: []const u8) !ApiResult(Invite) {
+pub fn @"retrieve-inviteRaw"(client: *Client, invite_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/organization/invites/{s}", .{ client.base_url, invite_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(Invite, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn @"retrieve-inviteResult"(client: *Client, invite_id: []const u8) !ApiResult(Invite) {
+    return parseRawResponse(Invite, try @"retrieve-inviteRaw"(client, invite_id));
 }
 
 /////////////////
@@ -19769,45 +17180,32 @@ pub fn @"retrieve-inviteResult"(client: *Client, invite_id: []const u8) !ApiResu
 // Delete an invite. If the invite has already been accepted, it cannot be deleted.
 //
 pub fn @"delete-invite"(client: *Client, invite_id: []const u8) !Owned(InviteDeleteResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/invites/{s}", .{ client.base_url, invite_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.DELETE,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"delete-inviteResult"(client, invite_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(InviteDeleteResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"delete-inviteResult"(client: *Client, invite_id: []const u8) !ApiResult(InviteDeleteResponse) {
+pub fn @"delete-inviteRaw"(client: *Client, invite_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/organization/invites/{s}", .{ client.base_url, invite_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
-    return parseRawResponse(InviteDeleteResponse, raw);
+    return requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
+}
+
+pub fn @"delete-inviteResult"(client: *Client, invite_id: []const u8) !ApiResult(InviteDeleteResponse) {
+    return parseRawResponse(InviteDeleteResponse, try @"delete-inviteRaw"(client, invite_id));
 }
 
 /////////////////
@@ -19818,45 +17216,32 @@ pub fn @"delete-inviteResult"(client: *Client, invite_id: []const u8) !ApiResult
 //
 //
 pub fn cancelUpload(client: *Client, upload_id: []const u8) !Owned(Upload) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/uploads/{s}/cancel", .{ client.base_url, upload_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try cancelUploadResult(client, upload_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(Upload, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn cancelUploadResult(client: *Client, upload_id: []const u8) !ApiResult(Upload) {
+pub fn cancelUploadRaw(client: *Client, upload_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/uploads/{s}/cancel", .{ client.base_url, upload_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(Upload, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn cancelUploadResult(client: *Client, upload_id: []const u8) !ApiResult(Upload) {
+    return parseRawResponse(Upload, try cancelUploadRaw(client, upload_id));
 }
 
 /////////////////
@@ -19864,53 +17249,21 @@ pub fn cancelUploadResult(client: *Client, upload_id: []const u8) !ApiResult(Upl
 // Returns a list of messages for a given thread.
 //
 pub fn listMessages(client: *Client, thread_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8, before: ?[]const u8, run_id: ?[]const u8) !Owned(ListMessagesResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/threads/{s}/messages", .{ client.base_url, thread_id });
-    var first_query = true;
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
+    var result = try listMessagesResult(client, thread_id, limit, order, after, before, run_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (order) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "order", value);
-    }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    if (before) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "before", value);
-    }
-    if (run_id) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "run_id", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ListMessagesResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn listMessagesResult(client: *Client, thread_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8, before: ?[]const u8, run_id: ?[]const u8) !ApiResult(ListMessagesResponse) {
+pub fn listMessagesRaw(client: *Client, thread_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8, before: ?[]const u8, run_id: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -19933,8 +17286,11 @@ pub fn listMessagesResult(client: *Client, thread_id: []const u8, limit: ?i64, o
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ListMessagesResponse, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn listMessagesResult(client: *Client, thread_id: []const u8, limit: ?i64, order: ?[]const u8, after: ?[]const u8, before: ?[]const u8, run_id: ?[]const u8) !ApiResult(ListMessagesResponse) {
+    return parseRawResponse(ListMessagesResponse, try listMessagesRaw(client, thread_id, limit, order, after, before, run_id));
 }
 
 /////////////////
@@ -19942,44 +17298,21 @@ pub fn listMessagesResult(client: *Client, thread_id: []const u8, limit: ?i64, o
 // Create a message.
 //
 pub fn createMessage(client: *Client, thread_id: []const u8, requestBody: CreateMessageRequest) !Owned(MessageObject) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/threads/{s}/messages", .{ client.base_url, thread_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try createMessageResult(client, thread_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(MessageObject, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn createMessageResult(client: *Client, thread_id: []const u8, requestBody: CreateMessageRequest) !ApiResult(MessageObject) {
+pub fn createMessageRaw(client: *Client, thread_id: []const u8, requestBody: CreateMessageRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -19990,8 +17323,11 @@ pub fn createMessageResult(client: *Client, thread_id: []const u8, requestBody: 
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(MessageObject, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn createMessageResult(client: *Client, thread_id: []const u8, requestBody: CreateMessageRequest) !ApiResult(MessageObject) {
+    return parseRawResponse(MessageObject, try createMessageRaw(client, thread_id, requestBody));
 }
 
 /////////////////
@@ -20002,50 +17338,21 @@ pub fn createMessageResult(client: *Client, thread_id: []const u8, requestBody: 
 //
 //
 pub fn listFineTuningCheckpointPermissions(client: *Client, fine_tuned_model_checkpoint: []const u8, project_id: ?[]const u8, after: ?[]const u8, limit: ?i64, order: ?[]const u8) !Owned(ListFineTuningCheckpointPermissionResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/fine_tuning/checkpoints/{s}/permissions", .{ client.base_url, fine_tuned_model_checkpoint });
-    var first_query = true;
-    if (project_id) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "project_id", value);
+    var result = try listFineTuningCheckpointPermissionsResult(client, fine_tuned_model_checkpoint, project_id, after, limit, order);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-    if (after) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "after", value);
-    }
-    if (limit) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "limit", value);
-    }
-    if (order) |value| {
-        try appendQueryParam(&uri_buf.writer, &first_query, "order", value);
-    }
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ListFineTuningCheckpointPermissionResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn listFineTuningCheckpointPermissionsResult(client: *Client, fine_tuned_model_checkpoint: []const u8, project_id: ?[]const u8, after: ?[]const u8, limit: ?i64, order: ?[]const u8) !ApiResult(ListFineTuningCheckpointPermissionResponse) {
+pub fn listFineTuningCheckpointPermissionsRaw(client: *Client, fine_tuned_model_checkpoint: []const u8, project_id: ?[]const u8, after: ?[]const u8, limit: ?i64, order: ?[]const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -20065,8 +17372,11 @@ pub fn listFineTuningCheckpointPermissionsResult(client: *Client, fine_tuned_mod
     }
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ListFineTuningCheckpointPermissionResponse, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn listFineTuningCheckpointPermissionsResult(client: *Client, fine_tuned_model_checkpoint: []const u8, project_id: ?[]const u8, after: ?[]const u8, limit: ?i64, order: ?[]const u8) !ApiResult(ListFineTuningCheckpointPermissionResponse) {
+    return parseRawResponse(ListFineTuningCheckpointPermissionResponse, try listFineTuningCheckpointPermissionsRaw(client, fine_tuned_model_checkpoint, project_id, after, limit, order));
 }
 
 /////////////////
@@ -20077,44 +17387,21 @@ pub fn listFineTuningCheckpointPermissionsResult(client: *Client, fine_tuned_mod
 //
 //
 pub fn createFineTuningCheckpointPermission(client: *Client, fine_tuned_model_checkpoint: []const u8, requestBody: CreateFineTuningCheckpointPermissionRequest) !Owned(ListFineTuningCheckpointPermissionResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/fine_tuning/checkpoints/{s}/permissions", .{ client.base_url, fine_tuned_model_checkpoint });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try createFineTuningCheckpointPermissionResult(client, fine_tuned_model_checkpoint, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ListFineTuningCheckpointPermissionResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn createFineTuningCheckpointPermissionResult(client: *Client, fine_tuned_model_checkpoint: []const u8, requestBody: CreateFineTuningCheckpointPermissionRequest) !ApiResult(ListFineTuningCheckpointPermissionResponse) {
+pub fn createFineTuningCheckpointPermissionRaw(client: *Client, fine_tuned_model_checkpoint: []const u8, requestBody: CreateFineTuningCheckpointPermissionRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -20125,8 +17412,11 @@ pub fn createFineTuningCheckpointPermissionResult(client: *Client, fine_tuned_mo
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(ListFineTuningCheckpointPermissionResponse, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn createFineTuningCheckpointPermissionResult(client: *Client, fine_tuned_model_checkpoint: []const u8, requestBody: CreateFineTuningCheckpointPermissionRequest) !ApiResult(ListFineTuningCheckpointPermissionResponse) {
+    return parseRawResponse(ListFineTuningCheckpointPermissionResponse, try createFineTuningCheckpointPermissionRaw(client, fine_tuned_model_checkpoint, requestBody));
 }
 
 /////////////////
@@ -20142,44 +17432,21 @@ pub fn createFineTuningCheckpointPermissionResult(client: *Client, fine_tuned_mo
 //
 //
 pub fn completeUpload(client: *Client, upload_id: []const u8, requestBody: CompleteUploadRequest) !Owned(Upload) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/uploads/{s}/complete", .{ client.base_url, upload_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try completeUploadResult(client, upload_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(Upload, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn completeUploadResult(client: *Client, upload_id: []const u8, requestBody: CompleteUploadRequest) !ApiResult(Upload) {
+pub fn completeUploadRaw(client: *Client, upload_id: []const u8, requestBody: CompleteUploadRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -20190,8 +17457,11 @@ pub fn completeUploadResult(client: *Client, upload_id: []const u8, requestBody:
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(Upload, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn completeUploadResult(client: *Client, upload_id: []const u8, requestBody: CompleteUploadRequest) !ApiResult(Upload) {
+    return parseRawResponse(Upload, try completeUploadRaw(client, upload_id, requestBody));
 }
 
 /////////////////
@@ -20199,45 +17469,32 @@ pub fn completeUploadResult(client: *Client, upload_id: []const u8, requestBody:
 // Retrieve the parsed contents of a vector store file.
 //
 pub fn retrieveVectorStoreFileContent(client: *Client, vector_store_id: []const u8, file_id: []const u8) !Owned(VectorStoreFileContentResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/vector_stores/{s}/files/{s}/content", .{ client.base_url, vector_store_id, file_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try retrieveVectorStoreFileContentResult(client, vector_store_id, file_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(VectorStoreFileContentResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn retrieveVectorStoreFileContentResult(client: *Client, vector_store_id: []const u8, file_id: []const u8) !ApiResult(VectorStoreFileContentResponse) {
+pub fn retrieveVectorStoreFileContentRaw(client: *Client, vector_store_id: []const u8, file_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/vector_stores/{s}/files/{s}/content", .{ client.base_url, vector_store_id, file_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(VectorStoreFileContentResponse, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn retrieveVectorStoreFileContentResult(client: *Client, vector_store_id: []const u8, file_id: []const u8) !ApiResult(VectorStoreFileContentResponse) {
+    return parseRawResponse(VectorStoreFileContentResponse, try retrieveVectorStoreFileContentRaw(client, vector_store_id, file_id));
 }
 
 /////////////////
@@ -20245,45 +17502,32 @@ pub fn retrieveVectorStoreFileContentResult(client: *Client, vector_store_id: []
 // Get a specific skill version.
 //
 pub fn GetSkillVersion(client: *Client, skill_id: []const u8, version: []const u8) !Owned(SkillVersionResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/skills/{s}/ss/{s}", .{ client.base_url, skill_id, version });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try GetSkillVersionResult(client, skill_id, version);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(SkillVersionResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn GetSkillVersionResult(client: *Client, skill_id: []const u8, version: []const u8) !ApiResult(SkillVersionResource) {
+pub fn GetSkillVersionRaw(client: *Client, skill_id: []const u8, version: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/skills/{s}/ss/{s}", .{ client.base_url, skill_id, version });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(SkillVersionResource, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn GetSkillVersionResult(client: *Client, skill_id: []const u8, version: []const u8) !ApiResult(SkillVersionResource) {
+    return parseRawResponse(SkillVersionResource, try GetSkillVersionRaw(client, skill_id, version));
 }
 
 /////////////////
@@ -20291,45 +17535,32 @@ pub fn GetSkillVersionResult(client: *Client, skill_id: []const u8, version: []c
 // Delete a skill version.
 //
 pub fn DeleteSkillVersion(client: *Client, skill_id: []const u8, version: []const u8) !Owned(DeletedSkillVersionResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/skills/{s}/ss/{s}", .{ client.base_url, skill_id, version });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.DELETE,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try DeleteSkillVersionResult(client, skill_id, version);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(DeletedSkillVersionResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn DeleteSkillVersionResult(client: *Client, skill_id: []const u8, version: []const u8) !ApiResult(DeletedSkillVersionResource) {
+pub fn DeleteSkillVersionRaw(client: *Client, skill_id: []const u8, version: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/skills/{s}/ss/{s}", .{ client.base_url, skill_id, version });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
-    return parseRawResponse(DeletedSkillVersionResource, raw);
+    return requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
+}
+
+pub fn DeleteSkillVersionResult(client: *Client, skill_id: []const u8, version: []const u8) !ApiResult(DeletedSkillVersionResource) {
+    return parseRawResponse(DeletedSkillVersionResource, try DeleteSkillVersionRaw(client, skill_id, version));
 }
 
 /////////////////
@@ -20340,45 +17571,32 @@ pub fn DeleteSkillVersionResult(client: *Client, skill_id: []const u8, version: 
 // Retrieves a container file.
 //
 pub fn RetrieveContainerFile(client: *Client, container_id: []const u8, file_id: []const u8) !Owned(ContainerFileResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/containers/{s}/files/{s}", .{ client.base_url, container_id, file_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try RetrieveContainerFileResult(client, container_id, file_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ContainerFileResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn RetrieveContainerFileResult(client: *Client, container_id: []const u8, file_id: []const u8) !ApiResult(ContainerFileResource) {
+pub fn RetrieveContainerFileRaw(client: *Client, container_id: []const u8, file_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/containers/{s}/files/{s}", .{ client.base_url, container_id, file_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ContainerFileResource, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn RetrieveContainerFileResult(client: *Client, container_id: []const u8, file_id: []const u8) !ApiResult(ContainerFileResource) {
+    return parseRawResponse(ContainerFileResource, try RetrieveContainerFileRaw(client, container_id, file_id));
 }
 
 /////////////////
@@ -20389,25 +17607,19 @@ pub fn RetrieveContainerFileResult(client: *Client, container_id: []const u8, fi
 // Delete a container file.
 //
 pub fn DeleteContainerFile(client: *Client, container_id: []const u8, file_id: []const u8) !void {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
+    var raw = try DeleteContainerFileRaw(client, container_id, file_id);
+    defer raw.deinit();
+    if (raw.status.class() != .success) return error.ResponseError;
+}
 
+pub fn DeleteContainerFileRaw(client: *Client, container_id: []const u8, file_id: []const u8) !RawResponse {
+    const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/containers/{s}/files/{s}", .{ client.base_url, container_id, file_id });
-    const uri = try std.Uri.parse(uri_buf.written());
+    const payload: ?[]const u8 = null;
 
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.DELETE,
-        .extra_headers = headers.items,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
-    }
+    return requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
 }
 
 /////////////////
@@ -20415,45 +17627,32 @@ pub fn DeleteContainerFile(client: *Client, container_id: []const u8, file_id: [
 // Retrieves a user in the project.
 //
 pub fn @"retrieve-project-user"(client: *Client, project_id: []const u8, user_id: []const u8) !Owned(ProjectUser) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/projects/{s}/users/{s}", .{ client.base_url, project_id, user_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"retrieve-project-userResult"(client, project_id, user_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ProjectUser, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"retrieve-project-userResult"(client: *Client, project_id: []const u8, user_id: []const u8) !ApiResult(ProjectUser) {
+pub fn @"retrieve-project-userRaw"(client: *Client, project_id: []const u8, user_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/organization/projects/{s}/users/{s}", .{ client.base_url, project_id, user_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(ProjectUser, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn @"retrieve-project-userResult"(client: *Client, project_id: []const u8, user_id: []const u8) !ApiResult(ProjectUser) {
+    return parseRawResponse(ProjectUser, try @"retrieve-project-userRaw"(client, project_id, user_id));
 }
 
 /////////////////
@@ -20461,44 +17660,21 @@ pub fn @"retrieve-project-userResult"(client: *Client, project_id: []const u8, u
 // Modifies a user's role in the project.
 //
 pub fn @"modify-project-user"(client: *Client, project_id: []const u8, user_id: []const u8, requestBody: ProjectUserUpdateRequest) !Owned(ProjectUser) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/projects/{s}/users/{s}", .{ client.base_url, project_id, user_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"modify-project-userResult"(client, project_id, user_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ProjectUser, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"modify-project-userResult"(client: *Client, project_id: []const u8, user_id: []const u8, requestBody: ProjectUserUpdateRequest) !ApiResult(ProjectUser) {
+pub fn @"modify-project-userRaw"(client: *Client, project_id: []const u8, user_id: []const u8, requestBody: ProjectUserUpdateRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -20509,8 +17685,11 @@ pub fn @"modify-project-userResult"(client: *Client, project_id: []const u8, use
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(ProjectUser, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn @"modify-project-userResult"(client: *Client, project_id: []const u8, user_id: []const u8, requestBody: ProjectUserUpdateRequest) !ApiResult(ProjectUser) {
+    return parseRawResponse(ProjectUser, try @"modify-project-userRaw"(client, project_id, user_id, requestBody));
 }
 
 /////////////////
@@ -20522,45 +17701,32 @@ pub fn @"modify-project-userResult"(client: *Client, project_id: []const u8, use
 //
 //
 pub fn @"delete-project-user"(client: *Client, project_id: []const u8, user_id: []const u8) !Owned(ProjectUserDeleteResponse) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/projects/{s}/users/{s}", .{ client.base_url, project_id, user_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.DELETE,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"delete-project-userResult"(client, project_id, user_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(ProjectUserDeleteResponse, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"delete-project-userResult"(client: *Client, project_id: []const u8, user_id: []const u8) !ApiResult(ProjectUserDeleteResponse) {
+pub fn @"delete-project-userRaw"(client: *Client, project_id: []const u8, user_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/organization/projects/{s}/users/{s}", .{ client.base_url, project_id, user_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
-    return parseRawResponse(ProjectUserDeleteResponse, raw);
+    return requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
+}
+
+pub fn @"delete-project-userResult"(client: *Client, project_id: []const u8, user_id: []const u8) !ApiResult(ProjectUserDeleteResponse) {
+    return parseRawResponse(ProjectUserDeleteResponse, try @"delete-project-userRaw"(client, project_id, user_id));
 }
 
 /////////////////
@@ -20569,45 +17735,32 @@ pub fn @"delete-project-userResult"(client: *Client, project_id: []const u8, use
 //
 //
 pub fn getEval(client: *Client, eval_id: []const u8) !Owned(Eval) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/evals/{s}", .{ client.base_url, eval_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try getEvalResult(client, eval_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(Eval, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn getEvalResult(client: *Client, eval_id: []const u8) !ApiResult(Eval) {
+pub fn getEvalRaw(client: *Client, eval_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/evals/{s}", .{ client.base_url, eval_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(Eval, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn getEvalResult(client: *Client, eval_id: []const u8) !ApiResult(Eval) {
+    return parseRawResponse(Eval, try getEvalRaw(client, eval_id));
 }
 
 /////////////////
@@ -20616,44 +17769,21 @@ pub fn getEvalResult(client: *Client, eval_id: []const u8) !ApiResult(Eval) {
 //
 //
 pub fn updateEval(client: *Client, eval_id: []const u8, requestBody: std.json.Value) !Owned(Eval) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/evals/{s}", .{ client.base_url, eval_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try updateEvalResult(client, eval_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(Eval, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn updateEvalResult(client: *Client, eval_id: []const u8, requestBody: std.json.Value) !ApiResult(Eval) {
+pub fn updateEvalRaw(client: *Client, eval_id: []const u8, requestBody: std.json.Value) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -20664,8 +17794,11 @@ pub fn updateEvalResult(client: *Client, eval_id: []const u8, requestBody: std.j
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(Eval, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn updateEvalResult(client: *Client, eval_id: []const u8, requestBody: std.json.Value) !ApiResult(Eval) {
+    return parseRawResponse(Eval, try updateEvalRaw(client, eval_id, requestBody));
 }
 
 /////////////////
@@ -20674,45 +17807,32 @@ pub fn updateEvalResult(client: *Client, eval_id: []const u8, requestBody: std.j
 //
 //
 pub fn deleteEval(client: *Client, eval_id: []const u8) !Owned(std.json.Value) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/evals/{s}", .{ client.base_url, eval_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.DELETE,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try deleteEvalResult(client, eval_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(std.json.Value, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn deleteEvalResult(client: *Client, eval_id: []const u8) !ApiResult(std.json.Value) {
+pub fn deleteEvalRaw(client: *Client, eval_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/evals/{s}", .{ client.base_url, eval_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
-    return parseRawResponse(std.json.Value, raw);
+    return requestRaw(client, std.http.Method.DELETE, uri_buf.written(), payload);
+}
+
+pub fn deleteEvalResult(client: *Client, eval_id: []const u8) !ApiResult(std.json.Value) {
+    return parseRawResponse(std.json.Value, try deleteEvalRaw(client, eval_id));
 }
 
 /////////////////
@@ -20720,45 +17840,32 @@ pub fn deleteEvalResult(client: *Client, eval_id: []const u8) !ApiResult(std.jso
 // Retrieves a project.
 //
 pub fn @"retrieve-project"(client: *Client, project_id: []const u8) !Owned(Project) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, false, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/projects/{s}", .{ client.base_url, project_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.GET,
-        .extra_headers = headers.items,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"retrieve-projectResult"(client, project_id);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(Project, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"retrieve-projectResult"(client: *Client, project_id: []const u8) !ApiResult(Project) {
+pub fn @"retrieve-projectRaw"(client: *Client, project_id: []const u8) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
     try uri_buf.writer.print("{s}/organization/projects/{s}", .{ client.base_url, project_id });
     const payload: ?[]const u8 = null;
 
-    const raw = try requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
-    return parseRawResponse(Project, raw);
+    return requestRaw(client, std.http.Method.GET, uri_buf.written(), payload);
+}
+
+pub fn @"retrieve-projectResult"(client: *Client, project_id: []const u8) !ApiResult(Project) {
+    return parseRawResponse(Project, try @"retrieve-projectRaw"(client, project_id));
 }
 
 /////////////////
@@ -20766,44 +17873,21 @@ pub fn @"retrieve-projectResult"(client: *Client, project_id: []const u8) !ApiRe
 // Modifies a project in the organization.
 //
 pub fn @"modify-project"(client: *Client, project_id: []const u8, requestBody: ProjectUpdateRequest) !Owned(Project) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/organization/projects/{s}", .{ client.base_url, project_id });
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try @"modify-projectResult"(client, project_id, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(Project, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn @"modify-projectResult"(client: *Client, project_id: []const u8, requestBody: ProjectUpdateRequest) !ApiResult(Project) {
+pub fn @"modify-projectRaw"(client: *Client, project_id: []const u8, requestBody: ProjectUpdateRequest) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -20814,8 +17898,11 @@ pub fn @"modify-projectResult"(client: *Client, project_id: []const u8, requestB
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(Project, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn @"modify-projectResult"(client: *Client, project_id: []const u8, requestBody: ProjectUpdateRequest) !ApiResult(Project) {
+    return parseRawResponse(Project, try @"modify-projectRaw"(client, project_id, requestBody));
 }
 
 /////////////////
@@ -20823,44 +17910,21 @@ pub fn @"modify-projectResult"(client: *Client, project_id: []const u8, requestB
 // Create a new video generation job by editing a source video or existing generated video.
 //
 pub fn CreateVideoEdit(client: *Client, requestBody: CreateVideoEditJsonBody) !Owned(VideoResource) {
-    const allocator = client.allocator;
-    var headers = std.ArrayList(std.http.Header).empty;
-    defer headers.deinit(allocator);
-    const auth_header = try appendClientHeaders(allocator, &headers, client, true, "application/json");
-    defer if (auth_header) |value| allocator.free(value);
-
-    var uri_buf: std.Io.Writer.Allocating = .init(allocator);
-    defer uri_buf.deinit();
-    try uri_buf.writer.print("{s}/videos/edits", .{client.base_url});
-    const uri = try std.Uri.parse(uri_buf.written());
-
-    var str: std.Io.Writer.Allocating = .init(allocator);
-    defer str.deinit();
-
-    try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
-    const payload = str.written();
-
-    var response_body: std.Io.Writer.Allocating = .init(allocator);
-    defer response_body.deinit();
-
-    const result = try client.http.fetch(.{
-        .location = .{ .uri = uri },
-        .method = std.http.Method.POST,
-        .extra_headers = headers.items,
-        .payload = payload,
-        .response_writer = &response_body.writer,
-    });
-    if (result.status.class() != .success) {
-        return error.ResponseError;
+    var result = try CreateVideoEditResult(client, requestBody);
+    switch (result) {
+        .ok => |ok| return ok,
+        .api_error => |*err| {
+            err.deinit();
+            return error.ResponseError;
+        },
+        .parse_error => |*err| {
+            err.raw.deinit();
+            return error.ResponseParseError;
+        },
     }
-
-    const body = try response_body.toOwnedSlice();
-    errdefer allocator.free(body);
-    const parsed = try std.json.parseFromSlice(VideoResource, allocator, body, .{ .ignore_unknown_fields = true });
-    return .{ .allocator = allocator, .body = body, .parsed = parsed };
 }
 
-pub fn CreateVideoEditResult(client: *Client, requestBody: CreateVideoEditJsonBody) !ApiResult(VideoResource) {
+pub fn CreateVideoEditRaw(client: *Client, requestBody: CreateVideoEditJsonBody) !RawResponse {
     const allocator = client.allocator;
     var uri_buf: std.Io.Writer.Allocating = .init(allocator);
     defer uri_buf.deinit();
@@ -20871,8 +17935,11 @@ pub fn CreateVideoEditResult(client: *Client, requestBody: CreateVideoEditJsonBo
     try std.json.Stringify.value(requestBody, .{ .emit_null_optional_fields = false }, &str.writer);
     const payload: ?[]const u8 = str.written();
 
-    const raw = try requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
-    return parseRawResponse(VideoResource, raw);
+    return requestRaw(client, std.http.Method.POST, uri_buf.written(), payload);
+}
+
+pub fn CreateVideoEditResult(client: *Client, requestBody: CreateVideoEditJsonBody) !ApiResult(VideoResource) {
+    return parseRawResponse(VideoResource, try CreateVideoEditRaw(client, requestBody));
 }
 
 pub const resources = struct {
