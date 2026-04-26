@@ -362,9 +362,41 @@ pub const ResponseAudioDoneEvent = struct {
     sequence_number: i64,
 };
 
+pub const CompoundFilterItem = union(enum) {
+    comparison_filter: ComparisonFilter,
+    compound_filter: CompoundFilter,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (source != .object) return .{ .raw = source };
+        const discriminator = source.object.get("type") orelse return .{ .raw = source };
+        if (discriminator != .string) return .{ .raw = source };
+        if (std.mem.eql(u8, discriminator.string, "and") or std.mem.eql(u8, discriminator.string, "or")) {
+            if (std.json.parseFromValueLeaky(CompoundFilter, allocator, source, options)) |value| return .{ .compound_filter = value } else |_| return .{ .raw = source };
+        }
+        if (std.mem.eql(u8, discriminator.string, "eq") or std.mem.eql(u8, discriminator.string, "ne") or std.mem.eql(u8, discriminator.string, "gt") or std.mem.eql(u8, discriminator.string, "gte") or std.mem.eql(u8, discriminator.string, "lt") or std.mem.eql(u8, discriminator.string, "lte") or std.mem.eql(u8, discriminator.string, "in") or std.mem.eql(u8, discriminator.string, "nin")) {
+            if (std.json.parseFromValueLeaky(ComparisonFilter, allocator, source, options)) |value| return .{ .comparison_filter = value } else |_| return .{ .raw = source };
+        }
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .comparison_filter => |value| try jw.write(value),
+            .compound_filter => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
+};
+
 pub const CompoundFilter = struct {
-    filters: []const std.json.Value,
     type: []const u8,
+    filters: []const CompoundFilterItem,
 };
 
 pub const RealtimeServerEventInputAudioBufferSpeechStarted = struct {
@@ -4821,9 +4853,9 @@ pub const ResponseImageGenCallInProgressEvent = struct {
 };
 
 pub const ToolChoiceAllowed = struct {
-    tools: []const std.json.Value,
     type: []const u8,
     mode: []const u8,
+    tools: []const Tool,
 };
 
 pub const MessageRole = []const u8;
@@ -5450,11 +5482,37 @@ pub const OutputMessage = struct {
     content: []const OutputMessageContent,
 };
 
-pub const OutputMessageContent = struct {
-    type: []const u8,
-    text: ?[]const u8 = null,
-    annotations: ?[]const std.json.Value = null,
-    refusal: ?[]const u8 = null,
+pub const OutputMessageContent = union(enum) {
+    output_text: OutputTextContent,
+    refusal: RefusalContent,
+    raw: std.json.Value,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(allocator: std.mem.Allocator, source: std.json.Value, options: std.json.ParseOptions) !@This() {
+        if (source != .object) return error.UnexpectedToken;
+        const discriminator = source.object.get("type") orelse return .{ .raw = source };
+        if (discriminator != .string) return .{ .raw = source };
+        if (std.mem.eql(u8, discriminator.string, "output_text")) {
+            return .{ .output_text = try std.json.parseFromValueLeaky(OutputTextContent, allocator, source, options) };
+        }
+        if (std.mem.eql(u8, discriminator.string, "refusal")) {
+            return .{ .refusal = try std.json.parseFromValueLeaky(RefusalContent, allocator, source, options) };
+        }
+
+        return .{ .raw = source };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .output_text => |value| try jw.write(value),
+            .refusal => |value| try jw.write(value),
+            .raw => |value| try jw.write(value),
+        }
+    }
 };
 
 pub const InviteDeleteResponse = struct {
@@ -5970,13 +6028,25 @@ pub const RealtimeClientEventConversationItemDelete = struct {
     type: []const u8,
 };
 
+pub const ChatCompletionResponseMessageUrlCitation = struct {
+    end_index: i64,
+    start_index: i64,
+    url: []const u8,
+    title: []const u8,
+};
+
+pub const ChatCompletionResponseMessageAnnotation = struct {
+    type: []const u8,
+    url_citation: ChatCompletionResponseMessageUrlCitation,
+};
+
 pub const ChatCompletionResponseMessage = struct {
     role: []const u8,
     content: ?[]const u8 = null,
     refusal: ?[]const u8 = null,
     tool_calls: ?[]const ChatCompletionMessageToolCall = null,
     reasoning_details: ?std.json.Value = null,
-    annotations: ?[]const std.json.Value = null,
+    annotations: ?[]const ChatCompletionResponseMessageAnnotation = null,
     function_call: ?std.json.Value = null,
     audio: ?std.json.Value = null,
 };
@@ -9025,8 +9095,8 @@ pub const CreateGroupUserBody = struct {
 };
 
 pub const ChatCompletionAllowedTools = struct {
-    tools: []const std.json.Value,
     mode: []const u8,
+    tools: []const ChatCompletionTool,
 };
 
 pub const ProjectApiKey = struct {
