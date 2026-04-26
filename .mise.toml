@@ -1,2 +1,41 @@
 [tools]
 zig = "0.16.0"
+
+[env]
+_.file = ".env"
+
+[tasks.fmt]
+description = "Format Zig sources"
+run = "zig fmt build.zig build.zig.zon src/api.zig"
+
+[tasks.fmt-check]
+description = "Check Zig formatting"
+run = "zig fmt --check build.zig build.zig.zon src/api.zig"
+
+[tasks.lint]
+description = "Run static checks"
+run = "zig fmt --check build.zig build.zig.zon src/api.zig"
+
+[tasks.build]
+description = "Build package"
+run = "zig build"
+
+[tasks.test]
+description = "Run tests"
+run = "zig build test"
+
+[tasks.generate]
+description = "Fetch OpenAI spec and regenerate src/api.zig"
+run = "zig build generate"
+
+[tasks.check]
+description = "Run format check, build, and tests"
+run = """
+zig fmt --check build.zig build.zig.zon src/api.zig
+zig build
+zig build test
+"""
+
+[tasks.clean]
+description = "Remove local build artifacts"
+run = "rm -rf .zig-cache zig-out zig-pkg"
