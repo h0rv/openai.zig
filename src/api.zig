@@ -319,7 +319,7 @@ pub const ChatkitWorkflow = struct {
     tracing: ChatkitWorkflowTracing,
     id: []const u8,
     version: ?[]const u8,
-    state_variables: ?std.json.Value,
+    state_variables: ?ChatkitWorkflowStateVariables,
 };
 
 pub const EvalResponsesSource = struct {
@@ -330,7 +330,7 @@ pub const EvalResponsesSource = struct {
     reasoning_effort: ?[]const u8 = null,
     temperature: ?f64 = null,
     created_after: ?i64 = null,
-    metadata: ?std.json.Value = null,
+    metadata: ?EvalResponsesSourceMetadata = null,
     model: ?[]const u8 = null,
     type: []const u8,
     instructions_search: ?[]const u8 = null,
@@ -1869,7 +1869,7 @@ pub const EvalItemContent = union(enum) {
 pub const EvalRunOutputItemResult = struct {
     passed: bool,
     score: f64,
-    sample: ?std.json.Value = null,
+    sample: ?EvalRunOutputItemResultSample = null,
     name: []const u8,
     type: ?[]const u8 = null,
 };
@@ -6713,9 +6713,9 @@ pub const AssignedRoleDetails = struct {
     updated_at: ?i64,
     resource_type: []const u8,
     permissions: []const []const u8,
-    created_by_user_obj: ?std.json.Value,
+    created_by_user_obj: ?AssignedRoleDetailsCreatedByUserObj,
     description: ?[]const u8,
-    metadata: ?std.json.Value,
+    metadata: ?AssignedRoleDetailsMetadata,
     predefined_role: bool,
     id: []const u8,
     name: []const u8,
@@ -9225,7 +9225,7 @@ pub const ChatCompletionResponseMessage = struct {
     reasoning_details: ?std.json.Value = null,
     annotations: ?[]const ChatCompletionResponseMessageAnnotation = null,
     function_call: ?std.json.Value = null,
-    audio: ?std.json.Value = null,
+    audio: ?ChatCompletionResponseMessageAudio = null,
 };
 
 pub const FunctionShellCallOutputOutcomeParam = union(enum) {
@@ -12170,7 +12170,7 @@ pub const CreateVideoEditMultipartBody = struct {
 };
 
 pub const MCPListToolsTool = struct {
-    annotations: ?std.json.Value = null,
+    annotations: ?MCPListToolsToolAnnotations = null,
     description: ?[]const u8 = null,
     input_schema: std.json.Value,
     name: []const u8,
@@ -13319,7 +13319,7 @@ pub const MCPTool = struct {
     server_url: ?[]const u8 = null,
     allowed_tools: ?McptoolAllowedTools = null,
     type: []const u8,
-    headers: ?std.json.Value = null,
+    headers: ?MCPToolHeaders = null,
 };
 
 pub const AuditLogActorServiceAccount = struct {
@@ -16176,6 +16176,56 @@ pub const EvalItemContentOutputText = struct {
     text: []const u8,
     type: []const u8,
 };
+
+pub const OpenApi2ZigDynamicObject = std.json.ArrayHashMap(std.json.Value);
+
+pub const EvalResponsesSourceMetadata = OpenApi2ZigDynamicObject;
+pub const EvalRunOutputItemResultSample = OpenApi2ZigDynamicObject;
+pub const AssignedRoleDetailsCreatedByUserObj = OpenApi2ZigDynamicObject;
+pub const AssignedRoleDetailsMetadata = OpenApi2ZigDynamicObject;
+pub const MCPListToolsToolAnnotations = OpenApi2ZigDynamicObject;
+
+pub const MCPToolHeaders = std.json.ArrayHashMap([]const u8);
+
+pub const ChatCompletionResponseMessageAudio = struct {
+    id: []const u8,
+    expires_at: i64,
+    data: []const u8,
+    transcript: []const u8,
+};
+
+pub const ChatkitWorkflowStateVariable = union(enum) {
+    string: []const u8,
+    integer: i64,
+    boolean: bool,
+    number: f64,
+
+    pub fn jsonParse(allocator: std.mem.Allocator, source: anytype, options: std.json.ParseOptions) !@This() {
+        const value = try std.json.innerParse(std.json.Value, allocator, source, options);
+        return jsonParseFromValue(allocator, value, options);
+    }
+
+    pub fn jsonParseFromValue(_: std.mem.Allocator, source: std.json.Value, _: std.json.ParseOptions) !@This() {
+        return switch (source) {
+            .string => |value| .{ .string = value },
+            .integer => |value| .{ .integer = value },
+            .bool => |value| .{ .boolean = value },
+            .float => |value| .{ .number = value },
+            else => error.UnexpectedToken,
+        };
+    }
+
+    pub fn jsonStringify(self: @This(), jw: *std.json.Stringify) !void {
+        switch (self) {
+            .string => |value| try jw.write(value),
+            .integer => |value| try jw.write(value),
+            .boolean => |value| try jw.write(value),
+            .number => |value| try jw.write(value),
+        }
+    }
+};
+
+pub const ChatkitWorkflowStateVariables = std.json.ArrayHashMap(ChatkitWorkflowStateVariable);
 
 pub const InputMessageContent = union(enum) {
     text: []const u8,
