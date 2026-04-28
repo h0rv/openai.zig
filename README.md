@@ -4,19 +4,16 @@
 
 Generated Zig SDK for the OpenAI REST API.
 
-Targets Zig `0.16.0` stable APIs. The package and module name is `openai`.
-
-The public API is generated from the OpenAI OpenAPI spec. No handwritten client layer is maintained in this repository.
+- Zig `0.16.0+`
+- package/module name: `openai`
+- generated from the OpenAI OpenAPI spec with [`openapi2zig`](https://github.com/h0rv/openapi2zig)
+- generated root module: `src/api.zig`
 
 ## Install
-
-Add the package from GitHub:
 
 ```sh
 zig fetch --save=openai git+https://github.com/h0rv/openai.zig.git
 ```
-
-Then add the module in your `build.zig`:
 
 ```zig
 const dep = b.dependency("openai", .{
@@ -39,16 +36,12 @@ pub fn main(init: std.process.Init) !void {
 
     var client = openai.Client.init(gpa, init.io, api_key);
     defer client.deinit();
-
-    // calls go here
 }
 ```
 
-`openai.Client` owns a `std.http.Client`. Returned `Owned(T)` values own their response body and parsed JSON tree. Always call `deinit()`.
+Returned `Owned(T)` values own their response body and parsed JSON tree. Call `deinit()`.
 
-## Responses API
-
-Port of the basic `openai-python` Responses example:
+## Responses
 
 ```zig
 var response = try openai.responses.create(&client, .{
@@ -64,8 +57,6 @@ if (response.value().output_text) |text| {
 ```
 
 ## Chat completions
-
-Port of the `openai-python` Chat Completions example:
 
 ```zig
 const messages = [_]openai.ChatCompletionRequestMessage{
@@ -84,11 +75,11 @@ if (completion.value().choices[0].message.content) |text| {
 }
 ```
 
-The generated request and response types are open enough for provider extensions. Model IDs are plain strings.
+Model IDs are strings, not enums.
 
 ## Streaming
 
-Responses stream, ported from the `openai-python` streaming example:
+Responses stream:
 
 ```zig
 const Events = struct {
@@ -108,7 +99,7 @@ try openai.responses.streamEvents(openai.ResponseStreamEvent, &client, .{
 }, &events);
 ```
 
-Typed chat chunks:
+Chat completion chunks:
 
 ```zig
 const Chunks = struct {
@@ -131,11 +122,9 @@ try openai.chat.completions.streamEvents(openai.ChatCompletionChunk, &client, .{
 }, &chunks);
 ```
 
-Callback data is borrowed and valid only during the callback. Copy it if you need to keep it.
+Callback values are borrowed. Copy data if you need to keep it.
 
 ## Vision
-
-Port of the `openai-python` image URL example.
 
 ```zig
 const content = [_]openai.InputContent{
@@ -161,11 +150,11 @@ var response = try openai.responses.create(&client, .{
 defer response.deinit();
 ```
 
-For base64 images, use the same shape with an `image_url` value like `data:image/png;base64,...`.
+Base64 images use the same shape with an `image_url` value like `data:image/png;base64,...`.
 
 ## Error bodies
 
-Use `*Result` methods when you need status and response body on non-2xx responses.
+Use `*Result` methods to keep non-2xx response bodies.
 
 ```zig
 const messages = [_]openai.ChatCompletionRequestMessage{
@@ -192,11 +181,9 @@ switch (result) {
 }
 ```
 
-The plain methods, such as `create`, return `error.ResponseError` for non-2xx or parse-error responses.
+Plain methods such as `create` return `error.ResponseError` for non-2xx or parse-error responses.
 
 ## OpenAI-compatible providers
-
-Set the base URL for OpenRouter or other compatible APIs:
 
 ```zig
 var client = openai.Client.init(gpa, init.io, init.environ_map.get("OPENROUTER_API_KEY") orelse return error.MissingApiKey);
@@ -218,8 +205,6 @@ Provider-specific fields can be sent with `extra_body`.
 
 ## API shape
 
-Generated resource wrappers:
-
 ```zig
 openai.responses.create(&client, request)
 openai.responses.createResult(&client, request)
@@ -230,7 +215,7 @@ openai.chat.completions.createResult(&client, request)
 openai.chat.completions.streamEvents(openai.ChatCompletionChunk, &client, request, &callback)
 ```
 
-Lower-level helpers are also generated:
+Lower-level helpers are generated too:
 
 ```zig
 openai.postJsonRaw(&client, "/chat/completions", payload)
@@ -239,9 +224,14 @@ openai.postJsonResult(openai.CreateChatCompletionResponse, &client, "/chat/compl
 
 ## Regenerate
 
-No OpenAPI spec file is vendored.
+No OpenAPI spec is vendored.
 
-`zig build generate` reads the spec URL below, fetches it into `.zig-cache/`, converts YAML to JSON, runs the pinned `h0rv/openapi2zig` build dependency, generates `src/api.zig`, then formats it.
+```sh
+zig build generate
+zig build test
+```
+
+`zig build generate` fetches the spec, converts YAML to JSON, runs the pinned `openapi2zig` dependency, writes `src/api.zig`, then formats it.
 
 Spec source:
 
@@ -249,15 +239,4 @@ Spec source:
 https://app.stainless.com/api/spec/documented/openai/openapi.documented.yml
 ```
 
-Requirements: `curl` and `yq` on `PATH`.
-
-```sh
-zig build generate
-zig build test
-```
-
-## Scope
-
-This repository ships the generated API surface. It does not add a handwritten compatibility layer over the generated code.
-
-Multipart and file upload ergonomics are still generator work. Use raw helpers for unsupported edges.
+Requirements: `curl` and `yq`.
