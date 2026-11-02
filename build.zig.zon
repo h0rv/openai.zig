@@ -1,20 +1,24 @@
 .{
     .name = .openai,
-    .version = "0.0.0",
+    .version = "0.1.0",
     .fingerprint = 0xb78b9ee20c255166, // Changing this has security and trust implications.
-    .minimum_zig_version = "0.16.0",
+    .minimum_zig_version = "0.17.0",
     .dependencies = .{
         .openapi2zig = .{
-            .url = "https://github.com/christianhelle/openapi2zig/archive/0414274333a3f01e54775565af351467bcbe0db2.tar.gz",
-            .hash = "openapi2zig-0.1.1-ykENAg_WDQADhcfLlHnjtAQHv9bJzbjjy88Bpfi05uF7",
+            .url = "git+https://github.com/h0rv/openapi2zig.git#ee0c76bf6533bffabe8781d6b5b89f82a1939a71",
+            .hash = "openapi2zig-0.6.0-ykENAhOkcwHsDpcBZ-Z9m7yyK4ngD5QdLrRgg8AesEk4",
+            .lazy = true,
         },
     },
     .paths = .{
         "build.zig",
         "build.zig.zon",
+        "spec.lock.json",
         "src",
+        "examples",
         "docs",
         "README.md",
         "LICENSE",
+        "THIRD_PARTY_LICENSES",
     },
 }
