@@ -16,7 +16,7 @@ Future generated SDK mode may split output into `Client`, `types`, `resources`, 
 
 ## Principles
 
-- Zig `0.16.0+` only.
+- Zig `0.17.0` only.
 - Hide `std.http.Client.Request` from endpoint return types.
 - Keep ownership explicit.
 - Prefer flexible JSON over wrong empty structs.
@@ -375,7 +375,7 @@ Add `extra_body` flattening and OpenRouter-compatible examples/tests.
 ## Acceptance checklist
 
 - [ ] Fetches OpenAI Stainless YAML directly, no Python/yq.
-- [ ] Generates Zig 0.16.0 code.
+- [ ] Generates Zig 0.17.0 code.
 - [ ] No empty major request/response structs.
 - [ ] `CreateResponse` usable.
 - [ ] `CreateChatCompletionRequest` usable.

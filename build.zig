@@ -9,47 +9,47 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-
-    const tests = b.addTest(.{ .root_module = openai_mod });
+    const tests = b.addTest(.{ .root_module = b.createModule(.{
+        .root_source_file = b.path("src/tests.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{.{ .name = "openai", .module = openai_mod }},
+    }) });
     const run_tests = b.addRunArtifact(tests);
-
     const test_step = b.step("test", "Run tests");
     test_step.dependOn(&run_tests.step);
+    const smoke = b.addExecutable(.{
+        .name = "openai-smoke",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("examples/smoke.zig"),
+            .target = target,
+            .optimize = optimize,
+            .imports = &.{.{ .name = "openai", .module = openai_mod }},
+        }),
+    });
+    test_step.dependOn(&smoke.step);
 
-    const openapi2zig_dep = b.dependency("openapi2zig", .{});
+    if (!(b.option(bool, "regenerate", "Enable specification download and SDK regeneration") orelse false)) return;
 
-    const fetched_spec_path = ".zig-cache/openai.openapi.json";
-    const fetch_spec_cmd = b.addSystemCommand(&.{
-        "sh",
-        "-c",
-        \\
+    const Spec = struct { url: []const u8, commit: []const u8, sha256: []const u8 };
+    const spec = std.json.parseFromSlice(Spec, b.allocator, @embedFile("spec.lock.json"), .{}) catch @panic("invalid spec.lock.json");
+    const generator = b.dependency("openapi2zig", .{ .target = b.graph.host, .optimize = .ReleaseSafe });
+    const fetch_spec = b.addSystemCommand(&.{
+        "sh",                "-c",
         \\set -eu
-        \\url=$(grep -Eo 'https://[^ `)]+openapi\.documented\.yml' README.md | head -n1)
         \\mkdir -p .zig-cache
-        \\curl -L -A 'openai.zig-generator/0.1' "$url" -o .zig-cache/openai.openapi.yml
-        \\yq '.' .zig-cache/openai.openapi.yml > .zig-cache/openai.openapi.json
+        \\curl --fail --location --retry 3 "$1" -o .zig-cache/openai.openapi.json
+        \\printf '%s  %s\n' "$2" '.zig-cache/openai.openapi.json' | shasum -a 256 -c -
         ,
+        "fetch-openai-spec", spec.value.url,
+        spec.value.sha256,
     });
+    const generate = b.addRunFile(generator.namedLazyPath("openapi2zig-cli"));
+    generate.addArgs(&.{ "generate", "-i", ".zig-cache/openai.openapi.json", "-o", "src/api.zig", "--base-url", "https://api.openai.com/v1", "--parameters-as-struct" });
+    generate.step.dependOn(&fetch_spec.step);
 
-    const generate_cmd = b.addSystemCommand(&.{
-        b.graph.zig_exe,
-        "build",
-        "run",
-        "--",
-        "generate",
-        "-i",
-        b.pathFromRoot(fetched_spec_path),
-        "-o",
-        b.pathFromRoot("src/api.zig"),
-        "--base-url",
-        "https://api.openai.com/v1",
-    });
-    generate_cmd.setCwd(openapi2zig_dep.path("."));
-    generate_cmd.step.dependOn(&fetch_spec_cmd.step);
-
-    const fmt_generated_cmd = b.addSystemCommand(&.{ b.graph.zig_exe, "fmt", "src/api.zig" });
-    fmt_generated_cmd.step.dependOn(&generate_cmd.step);
-
+    const fmt = b.addSystemCommand(&.{ b.graph.zig_exe, "fmt", "src/api.zig" });
+    fmt.step.dependOn(&generate.step);
     const generate_step = b.step("generate", "Fetch latest OpenAI OpenAPI spec and regenerate SDK");
-    generate_step.dependOn(&fmt_generated_cmd.step);
+    generate_step.dependOn(&fmt.step);
 }
