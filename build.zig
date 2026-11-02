@@ -45,7 +45,7 @@ pub fn build(b: *std.Build) void {
         spec.value.sha256,
     });
     const generate = b.addRunFile(generator.namedLazyPath("openapi2zig-cli"));
-    generate.addArgs(&.{ "generate", "-i", ".zig-cache/openai.openapi.json", "-o", "src/api.zig", "--base-url", "https://api.openai.com/v1" });
+    generate.addArgs(&.{ "generate", "-i", ".zig-cache/openai.openapi.json", "-o", "src/api.zig", "--base-url", "https://api.openai.com/v1", "--parameters-as-struct" });
     generate.step.dependOn(&fetch_spec.step);
 
     const fmt = b.addSystemCommand(&.{ b.graph.zig_exe, "fmt", "src/api.zig" });

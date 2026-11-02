@@ -48,4 +48,4 @@ zig build test
 
 [`spec.lock.json`](spec.lock.json) pins the official spec and its checksum. Update its URL, commit, and checksum together to refresh the API. Generation uses the pinned `openapi2zig` dependency and never requires handwritten changes to `src/api.zig`.
 
-Generation needs `curl`, `sh`, and `shasum`. Normal builds and tests do not fetch the spec or build the generator. Tests are offline. Declared multipart endpoints do not imply working multipart uploads.
+Generation needs `curl`, `sh`, and `shasum`. Normal builds and tests do not fetch the spec or build the generator. Tests are offline. Multipart and form uploads are not supported. Responses are buffered without a size limit when not streaming.

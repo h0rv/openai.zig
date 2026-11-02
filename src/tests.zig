@@ -1,6 +1,42 @@
 const std = @import("std");
 const openai = @import("openai");
 
+test "all generated endpoint declarations compile" {
+    @setEvalBranchQuota(100_000);
+    std.testing.refAllDecls(openai);
+}
+
+test "results retain HTTP errors and failed decoding bodies" {
+    const gpa = std.testing.allocator;
+    var failure = try openai.parseRawResponse(std.json.Value, .{
+        .allocator = gpa,
+        .status = .too_many_requests,
+        .body = try gpa.dupe(u8, "rate limited"),
+    });
+    defer failure.deinit();
+    try std.testing.expect(failure == .api_error);
+    try std.testing.expectEqualStrings("rate limited", failure.api_error.body);
+    try std.testing.expectEqual(std.http.Status.too_many_requests, failure.api_error.status);
+
+    var malformed = try openai.parseRawResponse(std.json.Value, .{
+        .allocator = gpa,
+        .status = .ok,
+        .body = try gpa.dupe(u8, "not json"),
+    });
+    defer malformed.deinit();
+    try std.testing.expect(malformed == .parse_error);
+    try std.testing.expectEqualStrings("not json", malformed.parse_error.raw.body);
+
+    var success = try openai.parseRawResponse(std.json.Value, .{
+        .allocator = gpa,
+        .status = .ok,
+        .body = try gpa.dupe(u8, "{\"id\":\"response\"}"),
+    });
+    defer success.deinit();
+    try std.testing.expect(success == .ok);
+    try std.testing.expectEqualStrings("response", success.ok.value().object.get("id").?.string);
+}
+
 test "Responses requests omit absent fields and keep open model names" {
     const allocator = std.testing.allocator;
     const request: openai.CreateResponse = .{

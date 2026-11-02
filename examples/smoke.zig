@@ -22,6 +22,11 @@ pub fn main(init: std.process.Init) !void {
     });
     defer completion.deinit();
 
+    var models = try openai.resources.models.listResult(&client);
+    defer models.deinit();
+    var files = try openai.resources.files.listResult(&client, .{});
+    defer files.deinit();
+
     const questions = [_]openai.QuestionParam{
         .{ .predicate = .{ .type = "predicate", .instructions = .{ .string = "Is this a greeting?" } } },
     };
