@@ -11,7 +11,11 @@ zig fetch --save=openai git+https://github.com/h0rv/openai.zig.git
 Pin a release or commit in your project.
 
 ```zig
-const dep = b.dependency("openai", .{ .target = target, .optimize = optimize });
+const dep = b.dependency("openai", .{
+    .target = target,
+    .optimize = optimize,
+});
+
 exe.root_module.addImport("openai", dep.module("openai"));
 ```
 
@@ -23,14 +27,18 @@ const openai = @import("openai");
 
 pub fn main(init: std.process.Init) !void {
     const key = init.environ_map.get("OPENAI_API_KEY") orelse return error.MissingApiKey;
+
     var client = openai.Client.init(init.gpa, init.io, key);
     defer client.deinit();
 
     var response = try openai.responses.create(&client, .{
         .model = "gpt-5.4-mini",
-        .input = .{ .text = "Say hello." },
+        .input = .{
+            .text = "Say hello.",
+        },
     });
     defer response.deinit();
+
     // Read response.value().output.
 }
 ```
